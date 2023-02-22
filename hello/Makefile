@@ -3,6 +3,7 @@
 SERVICE_NAME=hello
 SERVICE_HANDLER=function.py
 SERVICE_TESTER=test_function.py
+SERVICE_CREDS=?
 
 help:
 	@echo "Makefile for ideabank hello service. Available targets:"
@@ -53,3 +54,6 @@ bootstrap: venv ## Bootstrap the virtual environment
 docker: lint test ## Test the microservice in a local docker environment
 	docker build -t $(SERVICE_NAME) .
 	docker run -p 9000:8080 $(SERVICE_NAME)
+
+deploy: lint test zip ## Deploy the microservice to AWS lambda
+	aws lambda update-function-code --function-name $(SERVICE_NAME) --zip-file fileb://$(SERVICE_NAME).zip --profile=$(SERVICE_CREDS)
