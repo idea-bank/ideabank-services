@@ -8,4 +8,8 @@ import sys
 
 def handler(event, context):
     """A function that returns a simple greeting response"""
-    return f'Hello from AWS lambda using Python {sys.version}!'
+    return {
+                'sysinfo': sys.version,
+                'event': event,
+                'context': str(context)
+            }
