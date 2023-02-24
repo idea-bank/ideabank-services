@@ -9,7 +9,14 @@ import sys
 def handler(event, context):
     """A function that returns a simple greeting response"""
     return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': '*'
+            },
+            'body': {
                 'sysinfo': sys.version,
                 'event': event,
                 'context': str(context)
             }
+        }
