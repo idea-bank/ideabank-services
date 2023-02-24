@@ -1,0 +1,42 @@
+[
+  {
+    "post_id": "1",
+    "author_id": "hdenk0",
+    "contributors": [],
+    "title": "Jetpack",
+    "description": "This is my idea for a",
+    "media_links": "http://dummyimage.com/400x600.png/dddddd/000000"
+  },
+  {
+    "post_id": "2",
+    "author_id": "bcomford1",
+    "contributors": [],
+    "title": "Light Bulb",
+    "description": "This is my idea for a",
+    "media_links": "http://dummyimage.com/400x600.png/5fa2dd/ffffff"
+  },
+  {
+    "post_id": "3",
+    "author_id": "brandle2",
+    "contributors": [],
+    "title": "Jetpack",
+    "description": "This is my idea for a",
+    "media_links": "http://dummyimage.com/400x600.png/5fa2dd/ffffff"
+  },
+  {
+    "post_id": "4",
+    "author_id": "bbatecok3",
+    "contributors": [],
+    "title": "Hoverboard",
+    "description": "This is my idea for a",
+    "media_links": "http://dummyimage.com/400x600.png/ff4444/ffffff"
+  },
+  {
+    "post_id": "5",
+    "author_id": "gkidgell4",
+    "contributors": [],
+    "title": "Jetpack",
+    "description": "This is my idea for a",
+    "media_links": "http://dummyimage.com/400x600.png/cc0000/ffffff"
+  }
+]
