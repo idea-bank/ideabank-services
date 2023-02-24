@@ -5,6 +5,7 @@
 """
 
 import sys
+import json
 
 def handler(event, context):
     """A function that returns a simple greeting response"""
@@ -14,9 +15,9 @@ def handler(event, context):
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': '*'
             },
-            'body': {
+            'body': json.dumps({
                 'sysinfo': sys.version,
                 'event': event,
                 'context': str(context)
-            }
+            })
         }
