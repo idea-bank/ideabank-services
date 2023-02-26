@@ -8,7 +8,7 @@ import sys
 import json
 
 def handler(event, context):
-    """A function that returns a simple greeting response"""
+    """A simple function that returns system/event/context info with CORS headers"""
     return {
             'statusCode': 200,
             'headers': {
