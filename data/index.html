@@ -4,12 +4,8 @@
 	
 	</head>
 	<body>
-		<form onsubmit="sendRequest()">
-			<label for="mesage"> Message: </label>
-			<input id="message" type="text" placeholder="Enter message...">
-			<input id="send" type="submit">
-		</form>
-		<div id="response">
+		<input id="send" type="button" onclick="sendRequest()">
+		<div id="response" onmouseover="clearResponse()">
 		</div>
 		<script>
 			const url = "https://grbe6so7i2.execute-api.us-west-2.amazonaws.com/dev/hello";
@@ -29,6 +25,10 @@
 				console.log(`sending AJAX request to ${url}`);
 				xhttp.send();
 			}
+
+            function clearResponse() {
+                responseContainer.innerHTML = "";
+            }
 			
 		</script>
 	</body>
