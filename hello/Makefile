@@ -3,7 +3,7 @@
 SERVICE_NAME=hello
 SERVICE_HANDLER=function.py
 SERVICE_TESTER=test_function.py
-SERVICE_CREDS=?
+SERVICE_CREDS=$(AWS_SERVICE)
 
 help:
 	@echo "Makefile for ideabank $(SERVICE_NAME) service. Available targets:"
