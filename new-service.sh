@@ -70,7 +70,7 @@ function gen_make_file() {
 	echo 'SERVICE_NAME='${LAST_INPUT} >> ${LAST_INPUT}/Makefile
 	echo 'SERVICE_HANDLER=function.py' >> ${LAST_INPUT}/Makefile
 	echo 'SERVICE_TESTER=test_function.py' >> ${LAST_INPUT}/Makefile
-	echo 'SERVICE_CREDS=?' >> ${LAST_INPUT}/Makefile
+    echo 'SERVICE_CREDS=$(AWS_SERVICE)' >> ${LAST_INPUT}/Makefile
 	echo '' >> ${LAST_INPUT}/Makefile
 	echo 'help:' >> ${LAST_INPUT}/Makefile
 	echo '	@echo "Makefile for ideabank $(SERVICE_NAME) service. Available targets:"' >> ${LAST_INPUT}/Makefile
