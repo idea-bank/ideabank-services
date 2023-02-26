@@ -4,10 +4,33 @@
 	
 	</head>
 	<body>
-		<form>
+		<input id="send" type="button" onclick="sendRequest()">
+		<div id="response" onmouseover="clearResponse()">
+		</div>
+		<script>
+			const url = "https://grbe6so7i2.execute-api.us-west-2.amazonaws.com/dev/hello";
+			const responseContainer = document.getElementById("response")
+			function sendRequest() {
+				let xhttp = new XMLHttpRequest();
+				xhttp.open('GET', `${url}`);
+				xhttp.onreadystatechange = function() {
+					if (this.readyState === 4) {
+						console.log("Response received!");
+						console.log(`Status: ${this.status}`);
+						console.log(`Response: ${this.responseText}`);
+						responseContainer.innerHTML += `<p> Status: <span> ${this.status} </span> </p>`;
+						responseContainer.innerHTML += `<p> ${this.responseText} </p>`;
+					}
+				}
+				console.log(`sending AJAX request to ${url}`);
+				xhttp.send();
+			}
 
-		</form>
-	
+            function clearResponse() {
+                responseContainer.innerHTML = "";
+            }
+			
+		</script>
 	</body>
 
 </html>
