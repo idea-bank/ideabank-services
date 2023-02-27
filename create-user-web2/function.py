@@ -149,7 +149,7 @@ def _decode_credentials(encoded: str) -> (str, str):
         :rtype: tuple (str, str)
     """
     LOGGER.info('Decoding the credential string')
-    decoded = base64.b64decode(encoded.encode('utf-8')).decode().split(':')
+    decoded = base64.b64decode(encoded.encode()).decode().split(':')
     if len(decoded) != 2:
         raise InformationNotInterpretableError(
                 f"Extraneous parts in encoded credentials string: Expected 2, got {len(decoded)}"
