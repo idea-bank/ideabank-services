@@ -28,7 +28,7 @@ def handler(event, context): #pylint: disable=unused-argument
             'body': json.dumps(parse_event(event))
             }
 
-class MissingRequireInformationError(Exception):
+class MissingRequiredInformationError(Exception):
     """
         Raised when required information to complete an action is missing
     """
@@ -100,7 +100,7 @@ def _generate_unique_id() -> str:
         :rtype: str
     """
     LOGGER.info("Generating a random UUID for the new user")
-    return str(uuid.uuid())
+    return str(uuid.uuid4())
 
 def _extract_display_name_from_event(event) -> str:
     """
@@ -137,9 +137,9 @@ def _extract_authkey_from_event(event) -> {str: Web2AuthKey}:
                 'web2' : Web2AuthKey(username, passkey, salt)
                 }
     except KeyError as err:
-        LOOGER.error("Could not find the credentials for new user")
+        LOGGER.error("Could not find the credentials for new user")
         raise MissingRequiredInformationError() from err
-    
+
 def _decode_credentials(encoded: str) -> (str, str):
     """
         Decode the base64 encoded string representing credentials asn `email:password`
@@ -149,10 +149,10 @@ def _decode_credentials(encoded: str) -> (str, str):
         :rtype: tuple (str, str)
     """
     LOGGER.info('Decoding the credential string')
-    decoded = base64.b64decode(encoded.encode('utf-8')).decode().split(':') 
+    decoded = base64.b64decode(encoded.encode('utf-8')).decode().split(':')
     if len(decoded) != 2:
         raise InformationNotInterpretableError(
-                f"Extraneous parts detected in encoded credentials string: Expected 2, got {len(decoded)}"
+                f"Extraneous parts in encoded credentials string: Expected 2, got {len(decoded)}"
                 )
     return decoded[0], decoded[1]
 
@@ -164,7 +164,7 @@ def _generate_user_salt() -> str:
     """
     return secrets.token_hex()
 
-def _hash_passkey(password: str, salt: str) ->:
+def _hash_passkey(password: str, salt: str) -> str:
     """
         Hash the given password and salt
         :arg password: the user provided password
@@ -175,5 +175,3 @@ def _hash_passkey(password: str, salt: str) ->:
         :rtype: str
     """
     return hashlib.sha256(f'{password}{salt}'.encode('utf-8')).hexdigest()
-
-
