@@ -89,7 +89,7 @@ def parse_event(event: dict) -> UserAccount:
     LOGGER.info("Parsing the event object for information required to create a new user")
     return UserAccount(
             _generate_unique_id(),
-            _extract_display_name_from_event(event)
+            _extract_display_name_from_event(event),
             _extract_authkey_from_event(event)
             )
 
