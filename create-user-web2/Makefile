@@ -1,7 +1,8 @@
 # Makefile for ideabank create-user-web2 service
-
+#
 SERVICE_NAME=create-user-web2
-SERVICE_HANDLER=function.py
+SOURCES=function.py decode.py record.py utils.py exceptions.py
+DEPS=.venv/lib/python3.9/site-packages/*
 SERVICE_TESTER=test_function.py
 SERVICE_CREDS=$(AWS_SERVICE)
 
@@ -10,7 +11,7 @@ help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 venv: ## Setup a virtual environment
-	[ -d .venv ] || python3 -m venv .venv --prompt=ideabank-$(SERVICE_NAME)
+	[ -d .venv ] || python3.9 -m venv .venv --prompt=ideabank-$(SERVICE_NAME)
 
 clean-venv: ## Destroy the virtual environment if it exists
 	[ ! -d .venv ] || rm -rf .venv
@@ -38,10 +39,10 @@ test: ## Run unittests on the source directory
 
 .PHONY: lint
 lint: ## Run lint checks on the source directory
-	pylint $(SERVICE_HANDLER)
+	pylint $(SOURCES)
 
 zip: bootstrap
-	zip $(SERVICE_NAME).zip $(SERVICE_HANDLER)
+	zip $(SERVICE_NAME).zip $(SOURCES) $(DEPS)
 
 bootstrap: venv ## Bootstrap the virtual environment
 	@( \
