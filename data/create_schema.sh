@@ -6,7 +6,7 @@ aws dynamodb create-table \
     --key-schema AttributeName=UserID,KeyType=HASH AttributeName=DisplayName,KeyType=RANGE \
     --provisioned-throughput ReadCapacityUnits=1,WriteCapacityUnits=1 \
     --table-class STANDARD \
-    --profile ? 
+    --endpoint-url http://localhost:25000
 
 aws dynamodb create-table \
     --table-name Comment \
@@ -16,7 +16,7 @@ aws dynamodb create-table \
     --key-schema AttributeName=CommentID,KeyType=HASH AttributeName=CommentAuthor,KeyType=RANGE \
     --provisioned-throughput ReadCapacityUnits=1,WriteCapacityUnits=1 \
     --table-class STANDARD \
-    --profile ?
+    --endpoint-url http://localhost:25000
 
 aws dynamodb create-table \
     --table-name Vote \
@@ -26,7 +26,7 @@ aws dynamodb create-table \
     --key-schema AttributeName=VoteID,KeyType=HASH AttributeName=VoteCaster,KeyType=RANGE \
     --provisioned-throughput ReadCapacityUnits=1,WriteCapacityUnits=1 \
     --table-class STANDARD \
-    --profile ?
+    --endpoint-url http://localhost:25000
 
 aws dynamodb create-table \
     --table-name IdeaPost \
@@ -36,7 +36,7 @@ aws dynamodb create-table \
     --key-schema AttributeName=IdeaPostID,KeyType=HASH AttributeName=IdeaAuthorID,KeyType=RANGE \
     --provisioned-throughput ReadCapacityUnits=1,WriteCapacityUnits=1 \
     --table-class STANDARD \
-    --profile ?
+    --endpoint-url http://localhost:25000
 
 aws dynamodb create-table \
     --table-name ProblemPost \
@@ -46,4 +46,4 @@ aws dynamodb create-table \
     --key-schema AttributeName=ProblemPostID,KeyType=HASH AttributeName=ProblemAuthorID,KeyType=RANGE \
     --provisioned-throughput ReadCapacityUnits=1,WriteCapacityUnits=1 \
     --table-class STANDARD \
-    --profile ?
+    --endpoint-url http://localhost:25000
