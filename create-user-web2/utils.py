@@ -36,7 +36,7 @@ class NewUser:
         self.uuid = uuid4()
         self.display_name = name
         self.profile = UserProfile.blank()
-        authkeys = keys
+        self.authkeys = keys
 
 @dataclass
 class Web2Key:
