@@ -15,23 +15,24 @@ class InputDecoder:
     """
     def __init__(self, event_data: dict):
         self._input = event_data
+        self._display_name = None
+        self._credential_string = None
 
-    def extract(self) -> dict:
+    def extract(self):
         """
             Extract the required data from the event
-            :returns: expected information
-            :rtype: dict
+            :returns: updated input decoder object
+            :rtype: self
             :raises: MissingInformationException if expected information is missing
         """
         try:
-            return {
-                    "displayName": self._input['displayName'],
-                    "credentialString": self._input['credentials']
-                    }
+            self._display_name = self._input['displayName'],
+            self._credential_string = self._input['credentials']
+            return self
         except KeyError as err:
             raise MissingInformationException(f"Missing required information: `{err}`") from err
 
-    def decode(self, credential_string):
+    def decode(self):
         """
             Decode the given credential string as a user/pass combination
             :arg credential_string: base64 encoded string with format `user:pass`
@@ -39,10 +40,13 @@ class InputDecoder:
             :rtype: dict
             :raises: MalformedDataException if decode fails or user/pass combination cannot be deciphered
         """
+        if not self._display_name or not self._credential_string:
+            raise MissingInformationException("Cannot decode unknown credentials. Perhaps you forgot to call extract()?")
         try:
-            decoded = base64.b64decode(credential_string.encode('utf-8')).decode('utf-8')
+            decoded = base64.b64decode(self._credential_string.encode('utf-8')).decode('utf-8')
             user_email, pass_phrase = decoded.split(':', 1)
             return {
+                    'display_name': self._display_name
                     'user_email': user_email,
                     'user_pass': pass_phrase
                     }
