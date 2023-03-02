@@ -26,7 +26,7 @@ class InputDecoder:
             :raises: MissingInformationException if expected information is missing
         """
         try:
-            self._display_name = self._input['displayName'],
+            self._display_name = self._input['displayName']
             self._credential_string = self._input['credentials']
             return self
         except KeyError as err:
