@@ -22,7 +22,7 @@ clean-pyc: ## Remove package artifacts and cached byte code
 clean-zip: ## Remove package zip archive
 	find . -name $(SERVICE_NAME).zip -exec rm -f {} +
 
-clean: clean-venv clean-zip ## Clean up develepment environment
+clean: clean-pyc clean-venv clean-zip ## Clean up develepment environment
 
 activate: ## Activate the virtual environment for bootstrapping (does NOT activate for you).
 	@echo 
