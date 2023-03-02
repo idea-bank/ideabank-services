@@ -5,7 +5,11 @@
 """
 
 from decode import InputDecoder
-from record import IdeaBankUser 
+from record import IdeaBankUser
+from utils import NewUser, Web2Key
 
 def handler(event, context): #pylint-disable=unused-argument
-    pass
+    key = Web2Key('some@email.com', 'supersecretpassword')
+    user = NewUser('afunnyname', **{'web2': key})
+    tbl = IdeaBankUser()
+    tbl.create_user(user)
