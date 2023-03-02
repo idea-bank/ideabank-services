@@ -7,9 +7,11 @@
 from decode import InputDecoder
 from record import IdeaBankUser
 from utils import NewUser, Web2Key
+from exceptions import MissingInformationException, MalformedDataException
 
 def handler(event, context): #pylint-disable=unused-argument
-    key = Web2Key('some@email.com', 'supersecretpassword')
-    user = NewUser('afunnyname', **{'web2': key})
-    tbl = IdeaBankUser()
-    tbl.create_user(user)
+    new_user_data = InputDecoder(event).extract().decode()
+    key = Web2Key(new_user_data['user_email'], new_user_data['user_pass'])
+    user = NewUser(new_user_data['display_name'], **{'web2': key})
+    table = IdeaBankUser()
+    table.create_user(user)
