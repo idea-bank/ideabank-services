@@ -10,32 +10,14 @@ from hashlib import sha256
 from secrets import token_hex
 
 @dataclass
-class UserProfile:
-    real_name: str
-    age: int
-    bio: str
-    avatar: str
-
-    @classmethod
-    def blank(cls):
-        return cls(
-                real_name=None,
-                age=None,
-                bio=None,
-                avatar=None
-                )
-
-@dataclass
 class NewUser:
     uuid: str
     display_name: str
-    profile: UserProfile
     authkeys: dict
 
     def __init__(self, name, **keys):
         self.uuid = uuid4()
         self.display_name = name
-        self.profile = UserProfile.blank()
         self.authkeys = keys
 
 @dataclass

@@ -37,7 +37,6 @@ class IdeaBankUser:
                 Item={
                     'UserID': str(new_user.uuid),
                     'DisplayName': new_user.display_name,
-                    'Profile': asdict(new_user.profile),
                     'Authkeys': {
                         'Web2': asdict(new_user.authkeys['web2'])
                         }

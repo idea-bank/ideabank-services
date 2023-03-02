@@ -13,5 +13,4 @@ def handler(event, context): #pylint-disable=unused-argument
     new_user_data = InputDecoder(event).extract().decode()
     key = Web2Key(new_user_data['user_email'], new_user_data['user_pass'])
     user = NewUser(new_user_data['display_name'], **{'web2': key})
-    table = IdeaBankUser()
-    table.create_user(user)
+    IdeaBankUser().create_user(user)
