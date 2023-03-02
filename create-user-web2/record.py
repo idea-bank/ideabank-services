@@ -5,7 +5,11 @@
 """
 
 import os
+from dataclasses import asdict
+
 import boto3
+
+from utils import NewUser
 
 class IdeaBankUser:
     """
@@ -19,5 +23,20 @@ class IdeaBankUser:
         else:
             self._resource = boto3.client('dynamodb', endpoint_url='http://localhost:8000')
 
-    def list_tables(self):
-        print(self._resource.list_tables())
+    def create_user(self, new_user: NewUser) -> None:
+        """
+            Create the user user in the IdeaBankUser table
+            :arg new_user: the user to create
+            :arg type: NewUser
+            :returns: nothing
+            :rtype: None
+            :raises: ClientError if the db interaction fails for any reason
+        """
+        try:
+            self._resource.put_item(
+                    TableName=self.TABLE_NAME,
+                    Item=asdict(new_user)
+                    )
+        except boto3.ClientError as err:
+            print(err)
+            raise
