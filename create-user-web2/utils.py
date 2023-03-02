@@ -11,6 +11,9 @@ from secrets import token_hex
 
 @dataclass
 class NewUser:
+    """
+        Dataclass representing a new user account to create
+    """
     uuid: str
     display_name: str
     authkeys: dict
@@ -22,6 +25,9 @@ class NewUser:
 
 @dataclass
 class Web2Key:
+    """
+        Dataclass representing the credentials of a new web2 user
+    """
     email: str
     pass_hash: str
     salt: str
@@ -41,5 +47,3 @@ class Web2Key:
         user_salt = token_hex()
         user_hash = sha256(f'{thing_to_mix}{user_salt}'.encode('utf-8')).hexdigest()
         return user_hash, user_salt
-
-

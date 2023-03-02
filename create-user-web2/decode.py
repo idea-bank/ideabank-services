@@ -38,10 +38,12 @@ class InputDecoder:
             :arg credential_string: base64 encoded string with format `user:pass`
             :returns: mapping of decoded user / pass combinatino
             :rtype: dict
-            :raises: MalformedDataException if decode fails or user/pass combination cannot be deciphered
+            :raises: MalformedDataException if decode fails or credential string is undecipherable
         """
         if not self._display_name or not self._credential_string:
-            raise MissingInformationException("Cannot decode unknown credentials. Perhaps you forgot to call extract()?")
+            raise MissingInformationException(
+                    "Cannot decode unknown credentials. Perhaps you forgot to call extract()?"
+                )
         try:
             decoded = base64.b64decode(self._credential_string.encode('utf-8')).decode('utf-8')
             user_email, pass_phrase = decoded.split(':', 1)

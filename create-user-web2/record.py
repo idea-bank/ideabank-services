@@ -5,7 +5,6 @@
 """
 
 import os
-from dataclasses import asdict
 
 import boto3
 
@@ -23,6 +22,15 @@ class IdeaBankUser:
         else:
             self._resource = boto3.client('dynamodb', endpoint_url='http://localhost:8000')
 
+    @property
+    def table(self):
+        """
+            getter for the DynamoDB table name to be user
+            :returns: DynamoDb tablename
+            :rtype: str
+        """
+        return self.TABLE_NAME
+
     def create_user(self, new_user: NewUser) -> None:
         """
             Create the user user in the IdeaBankUser table
@@ -33,7 +41,7 @@ class IdeaBankUser:
             :raises: ClientError if the db interaction fails for any reason
         """
         self._resource.put_item(
-                TableName=self.TABLE_NAME,
+                TableName=self.table,
                 Item={
                     'UserID': {
                         'S': str(new_user.uuid)
