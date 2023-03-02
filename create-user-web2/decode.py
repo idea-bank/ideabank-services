@@ -46,7 +46,7 @@ class InputDecoder:
             decoded = base64.b64decode(self._credential_string.encode('utf-8')).decode('utf-8')
             user_email, pass_phrase = decoded.split(':', 1)
             return {
-                    'display_name': self._display_name
+                    'display_name': self._display_name,
                     'user_email': user_email,
                     'user_pass': pass_phrase
                     }
