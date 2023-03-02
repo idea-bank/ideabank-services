@@ -49,6 +49,7 @@ bootstrap: venv ## Bootstrap the virtual environment
 		source .venv/bin/activate; \
 		pip3 install --upgrade pip; \
 		pip3 install --require-virtualenv -r requirements.txt; \
+		pip3 install --require-virtualenv -r dev_requirements.txt; \
 	)
 	@$(MAKE) activate
 
