@@ -13,15 +13,15 @@ from utils import NewUser
 
 class IdeaBankUser:
     """
-        Class that interfaces with DynamDB IdeaBankUser Table
+        Class that interfaces with DynamDB IdeaBankUsers Table
     """
-    TABLE_NAME="IdeaBankUser"
+    TABLE_NAME="IdeaBankUsers"
 
     def __init__(self):
         if os.getenv('ENVIRONMENT') == 'prod':
-            self._resource = boto3.client('dynamodb')
+            self._resource = boto3.resource('dynamodb')
         else:
-            self._resource = boto3.client('dynamodb', endpoint_url='http://localhost:8000')
+            self._resource = boto3.resource('dynamodb', endpoint_url='http://localhost:8000')
 
     def create_user(self, new_user: NewUser) -> None:
         """
@@ -32,11 +32,14 @@ class IdeaBankUser:
             :rtype: None
             :raises: ClientError if the db interaction fails for any reason
         """
-        try:
-            self._resource.put_item(
-                    TableName=self.TABLE_NAME,
-                    Item=asdict(new_user)
-                    )
-        except boto3.ClientError as err:
-            print(err)
-            raise
+        table = self._resource.Table(self.TABLE_NAME)
+        table.put_item(
+                Item={
+                    'UserID': str(new_user.uuid),
+                    'DisplayName': new_user.display_name,
+                    'Profile': asdict(new_user.profile),
+                    'Authkeys': {
+                        'Web2': asdict(new_user.authkeys['web2'])
+                        }
+                    }
+                )
