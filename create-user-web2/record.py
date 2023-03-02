@@ -19,9 +19,9 @@ class IdeaBankUser:
 
     def __init__(self):
         if os.getenv('ENVIRONMENT') == 'prod':
-            self._resource = boto3.resource('dynamodb')
+            self._resource = boto3.client('dynamodb')
         else:
-            self._resource = boto3.resource('dynamodb', endpoint_url='http://localhost:8000')
+            self._resource = boto3.client('dynamodb', endpoint_url='http://localhost:8000')
 
     def create_user(self, new_user: NewUser) -> None:
         """
@@ -32,13 +32,31 @@ class IdeaBankUser:
             :rtype: None
             :raises: ClientError if the db interaction fails for any reason
         """
-        table = self._resource.Table(self.TABLE_NAME)
-        table.put_item(
+        self._resource.put_item(
+                TableName=self.TABLE_NAME,
                 Item={
-                    'UserID': str(new_user.uuid),
-                    'DisplayName': new_user.display_name,
-                    'Authkeys': {
-                        'Web2': asdict(new_user.authkeys['web2'])
+                    'UserID': {
+                        'S': str(new_user.uuid)
+                    },
+                    'DisplayName': {
+                        'S': new_user.display_name
+                    },
+                    'Authkeys': { 
+                        'M': {
+                            'Web2': {
+                                'M': {
+                                    'Email': {
+                                        'S': new_user.authkeys['web2'].email
+                                    },
+                                    'PasswordHash': {
+                                        'S': new_user.authkeys['web2'].pass_hash
+                                    },
+                                    'Salt': {
+                                        'S': new_user.authkeys['web2'].salt
+                                    }
+                                }
+                            }
                         }
                     }
-                )
+                }
+            )
