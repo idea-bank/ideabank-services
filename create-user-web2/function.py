@@ -3,15 +3,18 @@
     :module_summary: main function execution logic
     :module_author: Nathan Mendoza (nathancm@uci.edu)
 """
-import boto3
 
 import os
+import json
 import base64
 import binascii
 from dataclasses import dataclass
 from uuid import uuid4
 from hashlib import sha256
 from secrets import token_hex
+
+import boto3
+import botocore
 
 class MissingInformationException(Exception):
     """
@@ -65,7 +68,7 @@ class Web2Key:
         """
         user_salt = token_hex()
         user_hash = sha256(f'{thing_to_mix}{user_salt}'.encode('utf-8')).hexdigest()
-        return user_hash, user_salt   
+        return user_hash, user_salt
 
 class InputDecoder:
     """
@@ -172,7 +175,7 @@ class IdeaBankUser:
                     }
                 }
             )
-        except boto3.exceptions.ClientError as err:
+        except botocore.exceptions.ClientError as err:
             raise UserCreationException from err
 
 def handler(event, context): #pylint:disable=unused-argument
@@ -185,19 +188,27 @@ def handler(event, context): #pylint:disable=unused-argument
         user = NewUser(new_user_data['display_name'], **{'web2': key})
         IdeaBankUser().create_user(user)
         return user_creation_confirmation()
-    except MissingInformationException, MalformedDataException as err:
+    except (MissingInformationException, MalformedDataException) as err:
         return bad_request_response(err)
     except UserCreationException as err:
         return bad_gateway_response(err)
 
 
 def headers() -> dict:
+    """
+        Function that specifies response headers
+        :returns: headers mapping
+        :rtype: dict
+    """
     return {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'POST'
     }
 
 def user_creation_confirmation():
+    """
+        Successful response
+    """
     return {
             'status': 201,
             'headers': headers(),
@@ -205,6 +216,9 @@ def user_creation_confirmation():
             }
 
 def bad_request_response(error: Exception):
+    """ 
+        Bad request response
+    """
     return {
             'status': 400,
             'headers': headers(),
@@ -212,6 +226,9 @@ def bad_request_response(error: Exception):
             }
 
 def bad_gateway_response(error: Exception):
+    """
+        Timeout response
+    """
     return {
             'status': 502,
             'headers': headers(),
