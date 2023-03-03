@@ -1,7 +1,7 @@
 # Makefile for ideabank create-user-web2 service
 #
 SERVICE_NAME=create-user-web2
-SOURCES=function.py decode.py record.py utils.py exceptions.py
+SOURCES=function.py
 DEPS=.venv/lib/python3.9/site-packages/*
 SERVICE_TESTER=test_function.py
 SERVICE_CREDS=$(AWS_SERVICE)
