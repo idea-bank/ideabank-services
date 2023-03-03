@@ -212,7 +212,7 @@ class IdeaBankUser:
         except botocore.exceptions.ClientError as err:
             LOGGER.error(
                 "Couldn't add new user %s to table %s. Here's why: %s: %s",
-                new_user.dispaly_name, self.table,
+                new_user.display_name, self.table,
                 err.response['Error']['Code'], err.response['Error']['Message']
                     )
             raise UserCreationException from err
