@@ -4,6 +4,7 @@
     :module_author: Nathan Mendoza (nathancm@uci.edu)
 """
 
+import logging
 import os
 import json
 import base64
@@ -15,6 +16,22 @@ from secrets import token_hex
 
 import boto3
 import botocore
+
+LOGGER = logging.getLogger(__name__)
+if os.getenv('ENV') == 'prod':
+    LOGGER.setLevel(logging.INFO)
+else:
+    LOGGER.setLevel(logging.DEBUG)
+
+LOG_HANDLER = logging.StreamHandler()
+if os.getenv('ENV') == 'prod':
+    LOG_HANDLER.setLevel(logging.INFO)
+else:
+    LOG_HANDLER.setLevel(logging.DEBUG)
+
+LOG_FORMAT = logging.Formatter('[%(asctime)s|%(name)s|%(levelname)s] - %(message)s')
+LOG_HANDLER.setFormatter(LOG_FORMAT)
+LOGGER.addHandler(LOG_HANDLER)
 
 class MissingInformationException(Exception):
     """
@@ -44,6 +61,8 @@ class NewUser:
         self.uuid = uuid4()
         self.display_name = name
         self.authkeys = keys
+        LOGGER.info('Created a new user with given information and a unique identifier')
+        LOGGER.debug('\tUnique identifier: %s\n\tDisplay name: %s', str(self.uuid), name)
 
 @dataclass
 class Web2Key:
@@ -55,6 +74,7 @@ class Web2Key:
     salt: str
 
     def __init__(self, raw_user, raw_pass):
+        LOGGER.info('Generating a new web authorization key for the new user')
         self.email = raw_user
         self.pass_hash, self.salt = self.__mix_it_up(raw_pass)
 
@@ -75,6 +95,7 @@ class InputDecoder:
         A class that helps decode event data
     """
     def __init__(self, event_data: dict):
+        LOGGER.info('Received input payload, ready to extract and decode')
         self._input = event_data
         self._display_name = None
         self._credential_string = None
@@ -89,8 +110,14 @@ class InputDecoder:
         try:
             self._display_name = self._input['displayName']
             self._credential_string = self._input['credentials']
+            LOGGER.info('Extracting required information from input')
+            LOGGER.debug('\tDisplay name: %s\n\tEncoded credentials: %s',
+                         self._display_name,
+                         self._credential_string
+                         )
             return self
         except KeyError as err:
+            LOGGER.error('Input did not contain the required key: %s', str(err))
             raise MissingInformationException(f"Missing required information: `{err}`") from err
 
     def decode(self):
@@ -102,10 +129,12 @@ class InputDecoder:
             :raises: MalformedDataException if decode fails or credential string is undecipherable
         """
         if not self._display_name or not self._credential_string:
+            LOGGER.error('Nothing to decode. Stop.')
             raise MissingInformationException(
                     "Cannot decode unknown credentials. Perhaps you forgot to call extract()?"
                 )
         try:
+            LOGGER.info('Decoding the provided new user credentials')
             decoded = base64.b64decode(self._credential_string.encode('utf-8')).decode('utf-8')
             user_email, pass_phrase = decoded.split(':', 1)
             return {
@@ -114,6 +143,7 @@ class InputDecoder:
                     'user_pass': pass_phrase
                     }
         except (ValueError, binascii.Error) as err:
+            LOGGER.error('Failed to decode the provided credentials')
             raise MalformedDataException("Could not decipher credential string") from err
 
 class IdeaBankUser:
@@ -123,9 +153,11 @@ class IdeaBankUser:
     TABLE_NAME="IdeaBankUsers"
 
     def __init__(self):
-        if os.getenv('ENVIRONMENT') == 'prod':
+        if os.getenv('ENV') == 'prod':
+            LOGGER.warning('Using production settings')
             self._resource = boto3.client('dynamodb')
         else:
+            LOGGER.warning('Using local setings')
             self._resource = boto3.client('dynamodb', endpoint_url='http://localhost:8000')
 
     @property
@@ -147,6 +179,7 @@ class IdeaBankUser:
             :raises: ClientError if the db interaction fails for any reason
         """
         try:
+            LOGGER.info('Attempting to create a record for the new user...')
             self._resource.put_item(
                 TableName=self.table,
                 Item={
@@ -175,7 +208,13 @@ class IdeaBankUser:
                     }
                 }
             )
+            LOGGER.info('New user record was successfully created')
         except botocore.exceptions.ClientError as err:
+            LOGGER.error(
+                "Couldn't add new user %s to table %s. Here's why: %s: %s",
+                new_user.dispaly_name, self.table,
+                err.response['Error']['Code'], err.response['Error']['Message']
+                    )
             raise UserCreationException from err
 
 def handler(event, context): #pylint:disable=unused-argument
@@ -183,6 +222,8 @@ def handler(event, context): #pylint:disable=unused-argument
         Handler function for the create web2 user microservice
     """
     try:
+        LOGGER.info('Start service: create-user-web2')
+        LOGGER.debug('Event info: %s', json.dumps(event, tab=4))
         new_user_data = InputDecoder(event).extract().decode()
         key = Web2Key(new_user_data['user_email'], new_user_data['user_pass'])
         user = NewUser(new_user_data['display_name'], **{'web2': key})
@@ -209,6 +250,7 @@ def user_creation_confirmation():
     """
         Successful response
     """
+    LOGGER.info('Service succeeded')
     return {
             'status': 201,
             'headers': headers(),
@@ -219,6 +261,7 @@ def bad_request_response(error: Exception):
     """ 
         Bad request response
     """
+    LOGGER.error('Service could not process request')
     return {
             'status': 400,
             'headers': headers(),
@@ -229,6 +272,7 @@ def bad_gateway_response(error: Exception):
     """
         Timeout response
     """
+    LOGGER.error('Service could not interact with DynamoDB')
     return {
             'status': 502,
             'headers': headers(),
