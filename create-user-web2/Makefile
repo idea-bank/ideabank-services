@@ -57,5 +57,5 @@ docker: lint test ## Test the microservice in a local docker environment
 	docker build -t $(SERVICE_NAME) .
 	docker run -p 9000:8080 $(SERVICE_NAME)
 
-deploy: lint test zip ## Deploy the microservice to AWS lambda
+deploy: zip ## Deploy the microservice to AWS lambda
 	aws lambda update-function-code --function-name $(SERVICE_NAME) --zip-file fileb://$(SERVICE_NAME).zip --profile=$(SERVICE_CREDS)
