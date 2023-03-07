@@ -228,11 +228,11 @@ def handler(event, context): #pylint:disable=unused-argument
         key = Web2Key(new_user_data['user_email'], new_user_data['user_pass'])
         user = NewUser(new_user_data['display_name'], **{'web2': key})
         IdeaBankUser().create_user(user)
-        return json.dumps(user_creation_confirmation())
+        return user_creation_confirmation()
     except (MissingInformationException, MalformedDataException) as err:
-        return json.dumps(bad_request_response(err))
+        return bad_request_response(err)
     except UserCreationException as err:
-        return json.jumps(bad_gateway_response(err))
+        return bad_gateway_response(err)
 
 
 def headers() -> dict:
@@ -255,7 +255,11 @@ def user_creation_confirmation():
             'isBase64Encoded': False,
             'status': 201,
             'headers': headers(),
-            'body': 'CREATED'
+            'body': json.dumps({
+                'success': {
+                    'message': 'CREATED NEW USER'
+                    }
+                })
             }
 
 def bad_request_response(error: Exception):
@@ -267,7 +271,11 @@ def bad_request_response(error: Exception):
             'isBase64Encoded': False,
             'status': 400,
             'headers': headers(),
-            'body': str(error)
+            'body': json.dumps({
+                'error': {
+                    'message': str(error)
+                    }
+                })
             }
 
 def bad_gateway_response(error: Exception):
@@ -279,5 +287,9 @@ def bad_gateway_response(error: Exception):
             'isBase64Encoded': False,
             'status': 502,
             'headers': headers(),
-            'body': str(error)
+            'body': json.dumps({
+                'error': {
+                    'message': str(error)
+                    }
+                })
             }
