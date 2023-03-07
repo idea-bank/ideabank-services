@@ -228,11 +228,11 @@ def handler(event, context): #pylint:disable=unused-argument
         key = Web2Key(new_user_data['user_email'], new_user_data['user_pass'])
         user = NewUser(new_user_data['display_name'], **{'web2': key})
         IdeaBankUser().create_user(user)
-        return user_creation_confirmation()
+        return json.dumps(user_creation_confirmation())
     except (MissingInformationException, MalformedDataException) as err:
-        return bad_request_response(err)
+        return json.dumps(bad_request_response(err))
     except UserCreationException as err:
-        return bad_gateway_response(err)
+        return json.jumps(bad_gateway_response(err))
 
 
 def headers() -> dict:
