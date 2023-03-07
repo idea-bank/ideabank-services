@@ -90,7 +90,7 @@ class InputDecoder:
     """
     def __init__(self, event_data: dict):
         LOGGER.info('Received input payload, ready to extract and decode')
-        self._input = event_data
+        self._input = json.loads(event_data)
         self._display_name = None
         self._credential_string = None
 
