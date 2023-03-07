@@ -224,7 +224,7 @@ def handler(event, context): #pylint:disable=unused-argument
     try:
         LOGGER.info('Start service: create-user-web2')
         LOGGER.debug('Event info: %s', json.dumps(event, indent=4))
-        new_user_data = InputDecoder(event).extract().decode()
+        new_user_data = InputDecoder(event['body']).extract().decode()
         key = Web2Key(new_user_data['user_email'], new_user_data['user_pass'])
         user = NewUser(new_user_data['display_name'], **{'web2': key})
         IdeaBankUser().create_user(user)
