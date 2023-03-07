@@ -18,10 +18,16 @@ import boto3
 import botocore
 
 LOGGER = logging.getLogger(__name__)
-LOGGER.setLevel(logging.DEBUG)
+
 
 LOG_HANDLER = logging.StreamHandler()
-LOG_HANDLER.setLevel(logging.DEBUG)
+
+if os.getenv('ENV') == 'prod':
+    LOGGER.setLevel(logging.INFO)
+    LOG_HANDLER.setLevel(logging.INFO)
+else:
+    LOGGER.setLevel(logging.DEBUG)
+    LOG_HANDLER.setLevel(logging.DEBUG)
 
 LOG_FORMAT = logging.Formatter('[%(asctime)s|%(name)s|%(levelname)s] - %(message)s')
 LOG_HANDLER.setFormatter(LOG_FORMAT)
