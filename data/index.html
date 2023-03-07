@@ -8,11 +8,11 @@
 		<div id="response" onmouseover="clearResponse()">
 		</div>
 		<script>
-			const url = "https://4uoqh2vm4a.execute-api.us-west-2.amazonaws.com/dev/hello";
+			const url = "https://4uoqh2vm4a.execute-api.us-west-2.amazonaws.com/dev/users/web2/new";
 			const responseContainer = document.getElementById("response")
 			function sendRequest() {
 				let xhttp = new XMLHttpRequest();
-				xhttp.open('GET', `${url}`);
+				xhttp.open('POST', `${url}`);
 				xhttp.onreadystatechange = function() {
 					if (this.readyState === 4) {
 						console.log("Response received!");
@@ -23,7 +23,11 @@
 					}
 				}
 				console.log(`sending AJAX request to ${url}`);
-				xhttp.send();
+                xhttp.setRequestHeader('Content-Type', 'application/json;charset=UTF-8');
+				xhttp.send(JSON.stringify({
+                    "displayName": "somethingcatchy",
+                    "credentials": "c29tZXRoaW5nQHRoaXNwbGFjZS5uZXQ6Y3JlYXRpdmVseXNlcmN1cmU="
+                }));
 			}
 
             function clearResponse() {

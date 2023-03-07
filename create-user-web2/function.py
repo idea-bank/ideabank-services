@@ -6,6 +6,7 @@
 
 import logging
 import os
+import json
 import base64
 import binascii
 from dataclasses import dataclass
@@ -17,15 +18,15 @@ import boto3
 import botocore
 
 LOGGER = logging.getLogger(__name__)
-if os.getenv('ENV') == 'prod':
-    LOGGER.setLevel(logging.INFO)
-else:
-    LOGGER.setLevel(logging.DEBUG)
+
 
 LOG_HANDLER = logging.StreamHandler()
+
 if os.getenv('ENV') == 'prod':
+    LOGGER.setLevel(logging.INFO)
     LOG_HANDLER.setLevel(logging.INFO)
 else:
+    LOGGER.setLevel(logging.DEBUG)
     LOG_HANDLER.setLevel(logging.DEBUG)
 
 LOG_FORMAT = logging.Formatter('[%(asctime)s|%(name)s|%(levelname)s] - %(message)s')
@@ -95,7 +96,7 @@ class InputDecoder:
     """
     def __init__(self, event_data: dict):
         LOGGER.info('Received input payload, ready to extract and decode')
-        self._input = event_data['body'] #Access the request body
+        self._input = json.loads(event_data)
         self._display_name = None
         self._credential_string = None
 
@@ -223,7 +224,7 @@ def handler(event, context): #pylint:disable=unused-argument
     try:
         LOGGER.info('Start service: create-user-web2')
         LOGGER.debug('Event info: %s', json.dumps(event, indent=4))
-        new_user_data = InputDecoder(event).extract().decode()
+        new_user_data = InputDecoder(event['body']).extract().decode()
         key = Web2Key(new_user_data['user_email'], new_user_data['user_pass'])
         user = NewUser(new_user_data['display_name'], **{'web2': key})
         IdeaBankUser().create_user(user)
@@ -251,10 +252,14 @@ def user_creation_confirmation():
     """
     LOGGER.info('Service succeeded')
     return {
-            'isBase64Encoded': False
-            'status': 201,
+            'isBase64Encoded': False,
+            'statusCode': 201,
             'headers': headers(),
-            'body': 'CREATED'
+            'body': json.dumps({
+                'success': {
+                    'message': 'CREATED NEW USER'
+                    }
+                })
             }
 
 def bad_request_response(error: Exception):
@@ -263,10 +268,14 @@ def bad_request_response(error: Exception):
     """
     LOGGER.error('Service could not process request')
     return {
-            'isBase64Encoded': False
-            'status': 400,
+            'isBase64Encoded': False,
+            'statusCode': 400,
             'headers': headers(),
-            'body': str(error)
+            'body': json.dumps({
+                'error': {
+                    'message': str(error)
+                    }
+                })
             }
 
 def bad_gateway_response(error: Exception):
@@ -275,8 +284,12 @@ def bad_gateway_response(error: Exception):
     """
     LOGGER.error('Service could not interact with DynamoDB')
     return {
-            'isBase64Encoded': False
-            'status': 502,
+            'isBase64Encoded': False,
+            'statusCode': 502,
             'headers': headers(),
-            'body': str(error)
+            'body': json.dumps({
+                'error': {
+                    'message': str(error)
+                    }
+                })
             }
