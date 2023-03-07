@@ -6,6 +6,7 @@
 
 import logging
 import os
+import json
 import base64
 import binascii
 from dataclasses import dataclass
@@ -251,7 +252,7 @@ def user_creation_confirmation():
     """
     LOGGER.info('Service succeeded')
     return {
-            'isBase64Encoded': False
+            'isBase64Encoded': False,
             'status': 201,
             'headers': headers(),
             'body': 'CREATED'
@@ -263,7 +264,7 @@ def bad_request_response(error: Exception):
     """
     LOGGER.error('Service could not process request')
     return {
-            'isBase64Encoded': False
+            'isBase64Encoded': False,
             'status': 400,
             'headers': headers(),
             'body': str(error)
@@ -275,7 +276,7 @@ def bad_gateway_response(error: Exception):
     """
     LOGGER.error('Service could not interact with DynamoDB')
     return {
-            'isBase64Encoded': False
+            'isBase64Encoded': False,
             'status': 502,
             'headers': headers(),
             'body': str(error)
