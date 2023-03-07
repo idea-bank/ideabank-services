@@ -253,7 +253,7 @@ def user_creation_confirmation():
     LOGGER.info('Service succeeded')
     return {
             'isBase64Encoded': False,
-            'status': 201,
+            'statusCode': 201,
             'headers': headers(),
             'body': json.dumps({
                 'success': {
@@ -269,7 +269,7 @@ def bad_request_response(error: Exception):
     LOGGER.error('Service could not process request')
     return {
             'isBase64Encoded': False,
-            'status': 400,
+            'statusCode': 400,
             'headers': headers(),
             'body': json.dumps({
                 'error': {
@@ -285,7 +285,7 @@ def bad_gateway_response(error: Exception):
     LOGGER.error('Service could not interact with DynamoDB')
     return {
             'isBase64Encoded': False,
-            'status': 502,
+            'statusCode': 502,
             'headers': headers(),
             'body': json.dumps({
                 'error': {
