@@ -34,14 +34,20 @@ activate: ## Activate the virtual environment for bootstrapping (does NOT activa
 	@echo 
 
 .PHONY: test
-test: ## Run unittests on the source directory
-	@python3 $(SERVICE_TESTER)
+test: bootstrap ## Run unittests on the source directory
+	@( \
+		source .venv/bin/activate; \
+		python3 $(SERVICE_TESTER); \
+	)
 
 .PHONY: lint
-lint: ## Run lint checks on the source directory
-	pylint $(SOURCES)
+lint: bootstrap ## Run lint checks on the source directory
+	@( \
+		source .venv/bin/activate; \
+		pylint $(SOURCES); \
+	)
 
-zip: bootstrap
+zip: test lint
 	zip $(SERVICE_NAME).zip $(SOURCES) $(DEPS)
 
 bootstrap: venv ## Bootstrap the virtual environment
