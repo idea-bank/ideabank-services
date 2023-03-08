@@ -69,6 +69,7 @@ function gen_make_file() {
 	echo '' >> ${LAST_INPUT}/Makefile
 	echo 'SERVICE_NAME='${LAST_INPUT} >> ${LAST_INPUT}/Makefile
 	echo 'SOURCES=function.py' >> ${LAST_INPUT}/Makefile
+    echo 'DEPS=.venv/lib/python3.9/site-packages/*' >> ${LAST_INPUT}/Makefile
 	echo 'SERVICE_TESTER=test_function.py' >> ${LAST_INPUT}/Makefile
     echo 'SERVICE_CREDS=$(AWS_SERVICE)' >> ${LAST_INPUT}/Makefile
 	echo '' >> ${LAST_INPUT}/Makefile
@@ -114,7 +115,7 @@ function gen_make_file() {
     echo '  )' >> ${LAST_INPUT}/Makefile
 	echo '' >> ${LAST_INPUT}/Makefile
 	echo 'zip: test lint' >> ${LAST_INPUT}/Makefile
-	echo '	zip $(SERVICE_NAME).zip $(SERVICE_HANDLER)' >> ${LAST_INPUT}/Makefile
+    echo '	zip $(SERVICE_NAME).zip $(SOURCES) $(DEPS)' >> ${LAST_INPUT}/Makefile
 	echo '' >> ${LAST_INPUT}/Makefile
 	echo 'bootstrap: venv ## Bootstrap the virtual environment' >> ${LAST_INPUT}/Makefile
 	echo '	@( \' >> ${LAST_INPUT}/Makefile
@@ -130,9 +131,10 @@ function gen_make_file() {
 	echo '' >> ${LAST_INPUT}/Makefile
 	echo 'deploy: zip ## Deploy the microservice to AWS lambda' >> ${LAST_INPUT}/Makefile
     echo 'ifeq ($(shell git branch --show-current), main)' >> ${LAST_INPUT}/Makefile
-	echo '	aws lambda update-function-code --function-name $(SERVICE_NAME) --zip-file fileb://$(SERVICE_NAME).zip --profile=$(SERVICE_CREDS)' >> ${LAST_INPUT}/Makefile
+	echo -e '\taws lambda update-function-code --function-name $(SERVICE_NAME) --zip-file fileb://$(SERVICE_NAME).zip --profile=$(SERVICE_CREDS)' >> ${LAST_INPUT}/Makefile
     echo 'else' >> ${LAST_INPUT}/Makefile
-    echo '  $(error Not deploying. Expected branch to be `main` was $(shell git branch --show-current) instead)' >> ${LAST_INPUT}/Makefile
+    echo -e '\t$(error Not deploying. Expected branch to be `main` was $(shell git branch --show-current) instead)' >> ${LAST_INPUT}/Makefile
+    echo 'endif' >> ${LAST_INPUT}/Makefile
 }
 
 function main() {
