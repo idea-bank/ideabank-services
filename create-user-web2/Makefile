@@ -64,4 +64,8 @@ docker: lint test ## Test the microservice in a local docker environment
 	docker run -p 9000:8080 $(SERVICE_NAME)
 
 deploy: zip ## Deploy the microservice to AWS lambda
+ifeq ($(shell git branch --show-current), main)
 	aws lambda update-function-code --function-name $(SERVICE_NAME) --zip-file fileb://$(SERVICE_NAME).zip --profile=$(SERVICE_CREDS)
+else
+	$(error Not deploying. Expected banch to be `main`, was $(shell git branch --show-current) instead)
+endif
