@@ -68,7 +68,8 @@ function gen_make_file() {
 	echo '# Makefile for ideabank' ${LAST_INPUT} 'service' >> ${LAST_INPUT}/Makefile
 	echo '' >> ${LAST_INPUT}/Makefile
 	echo 'SERVICE_NAME='${LAST_INPUT} >> ${LAST_INPUT}/Makefile
-	echo 'SERVICE_HANDLER=function.py' >> ${LAST_INPUT}/Makefile
+	echo 'SOURCES=function.py' >> ${LAST_INPUT}/Makefile
+    echo 'DEPS=.venv/lib/python3.9/site-packages/*' >> ${LAST_INPUT}/Makefile
 	echo 'SERVICE_TESTER=test_function.py' >> ${LAST_INPUT}/Makefile
     echo 'SERVICE_CREDS=$(AWS_SERVICE)' >> ${LAST_INPUT}/Makefile
 	echo '' >> ${LAST_INPUT}/Makefile
@@ -77,7 +78,7 @@ function gen_make_file() {
 	echo "	@grep -E ""'^[a-zA-Z_-]+:.*?## .*\$\$' ""$""(MAKEFILE_LIST) | sort | awk" "'BEGIN {FS = \":.*?## \"}; {printf \"\033[36m%-30s\033[0m %s\n\", \$\$1, \$\$2}'" >> ${LAST_INPUT}/Makefile
 	echo >> ${LAST_INPUT}/Makefile
 	echo 'venv: ## Setup a virtual environment' >> ${LAST_INPUT}/Makefile
-	echo '	[ -d .venv ] || python3 -m venv .venv --prompt=ideabank-$(SERVICE_NAME)' >> ${LAST_INPUT}/Makefile
+	echo '	[ -d .venv ] || python3.9 -m venv .venv --prompt=ideabank-$(SERVICE_NAME)' >> ${LAST_INPUT}/Makefile
 	echo '' >> ${LAST_INPUT}/Makefile
 	echo 'clean-venv: ## Destroy the virtual environment if it exists' >> ${LAST_INPUT}/Makefile
 	echo '	[ ! -d .venv ] || rm -rf .venv' >> ${LAST_INPUT}/Makefile
@@ -100,15 +101,21 @@ function gen_make_file() {
 	echo '	@echo ' >> ${LAST_INPUT}/Makefile
 	echo '' >> ${LAST_INPUT}/Makefile
 	echo '.PHONY: test' >> ${LAST_INPUT}/Makefile
-	echo 'test: ## Run unittests on the source directory' >> ${LAST_INPUT}/Makefile
-	echo '	@python3 $(SERVICE_TESTER)' >> ${LAST_INPUT}/Makefile
+	echo 'test: bootstrap ## Run unittests on the source directory' >> ${LAST_INPUT}/Makefile
+	echo '	@( \' >> ${LAST_INPUT}/Makefile
+    echo '      source .venv/bin/activate; \' >> ${LAST_INPUT}/Makefile
+    echo '      python $(SERVICE_TESTER); \' >> ${LAST_INPUT}/Makefile
+    echo '  )' >> ${LAST_INPUT}/Makefile
 	echo '' >> ${LAST_INPUT}/Makefile
 	echo '.PHONY: lint' >> ${LAST_INPUT}/Makefile
-	echo 'lint: ## Run lint checks on the source directory' >> ${LAST_INPUT}/Makefile
-	echo '	pylint $(SERVICE_HANDLER)' >> ${LAST_INPUT}/Makefile
+	echo 'lint: bootstrap ## Run lint checks on the source directory' >> ${LAST_INPUT}/Makefile
+	echo '	@( \' >> ${LAST_INPUT}/Makefile
+    echo '      source .venv/bin/activate; \' >> ${LAST_INPUT}/Makefile
+    echo '      pylint $(SOURCES); \' >> ${LAST_INPUT}/Makefile
+    echo '  )' >> ${LAST_INPUT}/Makefile
 	echo '' >> ${LAST_INPUT}/Makefile
-	echo 'zip: bootstrap' >> ${LAST_INPUT}/Makefile
-	echo '	zip $(SERVICE_NAME).zip $(SERVICE_HANDLER)' >> ${LAST_INPUT}/Makefile
+	echo 'zip: test lint' >> ${LAST_INPUT}/Makefile
+    echo '	zip $(SERVICE_NAME).zip $(SOURCES) $(DEPS)' >> ${LAST_INPUT}/Makefile
 	echo '' >> ${LAST_INPUT}/Makefile
 	echo 'bootstrap: venv ## Bootstrap the virtual environment' >> ${LAST_INPUT}/Makefile
 	echo '	@( \' >> ${LAST_INPUT}/Makefile
@@ -122,8 +129,12 @@ function gen_make_file() {
 	echo '	docker build -t $(SERVICE_NAME) .' >> ${LAST_INPUT}/Makefile
 	echo '	docker run -p 9000:8080 $(SERVICE_NAME)' >> ${LAST_INPUT}/Makefile
 	echo '' >> ${LAST_INPUT}/Makefile
-	echo 'deploy: lint test zip ## Deploy the microservice to AWS lambda' >> ${LAST_INPUT}/Makefile
-	echo '	aws lambda update-function-code --function-name $(SERVICE_NAME) --zip-file fileb://$(SERVICE_NAME).zip --profile=$(SERVICE_CREDS)' >> ${LAST_INPUT}/Makefile
+	echo 'deploy: zip ## Deploy the microservice to AWS lambda' >> ${LAST_INPUT}/Makefile
+    echo 'ifeq ($(shell git branch --show-current), main)' >> ${LAST_INPUT}/Makefile
+	echo -e '\taws lambda update-function-code --function-name $(SERVICE_NAME) --zip-file fileb://$(SERVICE_NAME).zip --profile=$(SERVICE_CREDS)' >> ${LAST_INPUT}/Makefile
+    echo 'else' >> ${LAST_INPUT}/Makefile
+    echo -e '\t$(error Not deploying. Expected branch to be `main` was $(shell git branch --show-current) instead)' >> ${LAST_INPUT}/Makefile
+    echo 'endif' >> ${LAST_INPUT}/Makefile
 }
 
 function main() {
