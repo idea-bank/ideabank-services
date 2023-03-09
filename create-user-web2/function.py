@@ -96,9 +96,13 @@ class InputDecoder:
     """
     def __init__(self, event_data: dict):
         LOGGER.info('Received input payload, ready to extract and decode')
-        self._input = json.loads(event_data)
-        self._display_name = None
-        self._credential_string = None
+        try:
+            self._input = json.loads(event_data)
+            self._display_name = None
+            self._credential_string = None
+        except json.decoder.JSONDecodeError as err:
+            LOGGER.error('Could not decode the event data as JSON')
+            raise MalformedDataException() from err
 
     def extract(self):
         """
@@ -169,6 +173,15 @@ class IdeaBankUser:
         """
         return self.TABLE_NAME
 
+    @property
+    def resource(self):
+        """
+            getter for the DynamoDB client resource
+            :returns: DynamoDB resoure
+            :rtype: str
+        """
+        return self._resource
+
     def create_user(self, new_user: NewUser) -> None:
         """
             Create the user user in the IdeaBankUser table
@@ -180,7 +193,7 @@ class IdeaBankUser:
         """
         try:
             LOGGER.info('Attempting to create a record for the new user...')
-            self._resource.put_item(
+            self.resource.put_item(
                 TableName=self.table,
                 Item={
                     'UserID': {
@@ -285,7 +298,7 @@ def bad_gateway_response(error: Exception):
     LOGGER.error('Service could not interact with DynamoDB')
     return {
             'isBase64Encoded': False,
-            'statusCode': 502,
+            'statusCode': 503,
             'headers': headers(),
             'body': json.dumps({
                 'error': {
