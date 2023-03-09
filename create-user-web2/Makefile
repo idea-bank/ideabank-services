@@ -22,7 +22,10 @@ clean-pyc: ## Remove package artifacts and cached byte code
 clean-zip: ## Remove package zip archive
 	find . -name $(SERVICE_NAME).zip -exec rm -f {} +
 
-clean: clean-pyc clean-venv clean-zip ## Clean up develepment environment
+clean-cov: ## Remove coverage artifacts
+	find . -name .coverage -exec rm -f {} +
+
+clean: clean-pyc clean-venv clean-zip clean-cov ## Clean up develepment environment
 
 activate: ## Activate the virtual environment for bootstrapping (does NOT activate for you).
 	@echo 
@@ -37,7 +40,8 @@ activate: ## Activate the virtual environment for bootstrapping (does NOT activa
 test: bootstrap ## Run unittests on the source directory
 	@( \
 		source .venv/bin/activate; \
-		python3 $(SERVICE_TESTER); \
+		coverage run $(SERVICE_TESTER); \
+		coverage report -m; \
 	)
 
 .PHONY: lint
