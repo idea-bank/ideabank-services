@@ -14,12 +14,14 @@ Each service has the following files
 
 ### New services
 
-1) Run the new-service.sh script
-2) Provide the name of the service when prompted
+1) Use [this](https://github.com/idea-bank/aws-lambda-basic-handler) [cookiecutter](https://github.com/cookiecutter/cookiecutter) to generate the project
+2) Follow the prompts to complete the process
 
-```
-	$ ./new-service.sh
-	Service Name: <Enter service name here
+```bash
+$ cookiecutter https://github.com/idea-bank/aws-lambda-basic-handler
+service_name [A name for your service]: <a-name-for-your-service>
+service_author [Your Name]: <enter your name>
+service_description [Describe your new service]: <description for your service>
 ```
 
 The service will not be deployable until backend infrastructure is allocated for it. Afterward, the service can continually be deployed using the provided Makefile
