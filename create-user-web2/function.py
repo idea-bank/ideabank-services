@@ -154,7 +154,7 @@ class IdeaBankUser:
     """
         Class that interfaces with DynamDB IdeaBankUsers Table
     """
-    TABLE_NAME="idea_bank_users"
+    TABLE_NAME="idea_bank_users_"
 
     def __init__(self):
         self._resource = boto3.client('dynamodb')
