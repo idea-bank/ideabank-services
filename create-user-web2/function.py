@@ -154,15 +154,10 @@ class IdeaBankUser:
     """
         Class that interfaces with DynamDB IdeaBankUsers Table
     """
-    TABLE_NAME="IdeaBankUsers"
+    TABLE_NAME="idea_bank_users_"
 
     def __init__(self):
-        if os.getenv('ENV') == 'prod':
-            LOGGER.warning('Using production settings')
-            self._resource = boto3.client('dynamodb')
-        else:
-            LOGGER.warning('Using local setings')
-            self._resource = boto3.client('dynamodb', endpoint_url='http://localhost:8000')
+        self._resource = boto3.client('dynamodb')
 
     @property
     def table(self):
@@ -171,7 +166,7 @@ class IdeaBankUser:
             :returns: DynamoDb tablename
             :rtype: str
         """
-        return self.TABLE_NAME
+        return self.TABLE_NAME + os.getenv('ENV')
 
     @property
     def resource(self):
