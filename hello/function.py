@@ -6,6 +6,7 @@
 
 import sys
 import json
+import os
 
 def handler(event, context):
     """A simple function that returns system/event/context info with CORS headers"""
@@ -17,7 +18,6 @@ def handler(event, context):
             },
             'body': json.dumps({
                 'sysinfo': sys.version,
-                'event': event,
-                'context': str(context)
+                'context': os.getenv('ENV')
             })
         }
