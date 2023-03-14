@@ -1,16 +1,18 @@
 # Makefile for ideabank hello service
-
+#
 SERVICE_NAME=hello
-SERVICE_HANDLER=function.py
+SOURCES=function.py
+DEPS=.venv/lib/python3.9/site-packages/*
 SERVICE_TESTER=test_function.py
 SERVICE_CREDS=$(AWS_SERVICE)
+BRANCH=$(shell git branch --show-current)
 
 help:
 	@echo "Makefile for ideabank $(SERVICE_NAME) service. Available targets:"
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'	
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
 venv: ## Setup a virtual environment
-	[ -d .venv ] || python3 -m venv .venv --prompt=ideabank-$(SERVICE_NAME)
+	[ -d .venv ] || python3.9 -m venv .venv --prompt=ideabank-$(SERVICE_NAME)
 
 clean-venv: ## Destroy the virtual environment if it exists
 	[ ! -d .venv ] || rm -rf .venv
@@ -21,7 +23,10 @@ clean-pyc: ## Remove package artifacts and cached byte code
 clean-zip: ## Remove package zip archive
 	find . -name $(SERVICE_NAME).zip -exec rm -f {} +
 
-clean: clean-venv clean-zip ## Clean up develepment environment
+clean-cov: ## Remove coverage artifacts
+	find . -name .coverage -exec rm -f {} +
+
+clean: clean-pyc clean-venv clean-zip clean-cov ## Clean up develepment environment
 
 activate: ## Activate the virtual environment for bootstrapping (does NOT activate for you).
 	@echo 
@@ -33,21 +38,29 @@ activate: ## Activate the virtual environment for bootstrapping (does NOT activa
 	@echo 
 
 .PHONY: test
-test: ## Run unittests on the source directory
-	@python3 $(SERVICE_TESTER)
+test: bootstrap ## Run unittests on the source directory
+	@( \
+		source .venv/bin/activate; \
+		coverage run $(SERVICE_TESTER); \
+		coverage report -m; \
+	)
 
 .PHONY: lint
-lint: ## Run lint checks on the source directory
-	pylint $(SERVICE_HANDLER)
+lint: bootstrap ## Run lint checks on the source directory
+	@( \
+		source .venv/bin/activate; \
+		pylint $(SOURCES); \
+	)
 
-zip: bootstrap
-	zip $(SERVICE_NAME).zip $(SERVICE_HANDLER)
+zip: test lint
+	zip $(SERVICE_NAME).zip $(SOURCES) $(DEPS)
 
 bootstrap: venv ## Bootstrap the virtual environment
 	@( \
 		source .venv/bin/activate; \
 		pip3 install --upgrade pip; \
 		pip3 install --require-virtualenv -r requirements.txt; \
+		pip3 install --require-virtualenv -r dev_requirements.txt; \
 	)
 	@$(MAKE) activate
 
@@ -55,5 +68,42 @@ docker: lint test ## Test the microservice in a local docker environment
 	docker build -t $(SERVICE_NAME) .
 	docker run -p 9000:8080 $(SERVICE_NAME)
 
-deploy: lint test zip ## Deploy the microservice to AWS lambda
-	aws lambda update-function-code --function-name $(SERVICE_NAME) --zip-file fileb://$(SERVICE_NAME).zip --profile=$(SERVICE_CREDS)
+deploy: zip ## Deploy the microservice to AWS lambda
+	@( \
+		if [ $(BRANCH) == "main" ]; then \
+			aws lambda list-functions --profile=ServiceAdmin | grep $(SERVICE_NAME)-prod; \
+			if [ $? -eq 0 ]; then \
+				aws lambda update-function-code \
+					--function-name $(SERVICE_NAME)-prod \
+					--zip-file fileb://$(SERVICE_NAME).zip \
+					--profile=$(SERVICE_CREDS); \
+			else \
+				aws lambda create-function \
+					--function-name=$(SERVICE_NAME)-prod \
+					--handler=function.handler \
+					--zip-file fileb://$(SERVICE_NAME).zip \
+					--role=arn:aws:iam::968475016336:role/ideabank-dynamodb-rw-service \
+					--runtime=python3.9 \
+					--profile=$(SERVICE_CREDS); \
+			fi \
+		elif [ $(BRANCH) == "dev" ]; then \
+			aws lambda list-functions --profile=ServiceAdmin | grep $(SERVICE_NAME)-dev; \
+			if [ $? -eq 0 ]; then \
+				aws lambda update-function-code \
+					--function-name $(SERVICE_NAME)-dev \
+					--zip-file fileb://$(SERVICE_NAME).zip \
+					--profile=$(SERVICE_CREDS); \
+			else \
+				aws lambda create-function \
+					--function-name=$(SERVICE_NAME)-dev \
+					--handler=function.handler \
+					--zip-file fileb://$(SERVICE_NAME).zip \
+					--role=arn:aws:iam::968475016336:role/ideabank-dynamodb-rw-service \
+					--runtime=python3.9 \
+					--profile=$(SERVICE_CREDS); \
+			fi \
+		else \
+			echo Not deploying, can only deploy on main or dev branches; \
+			exit 1; \
+		fi \
+	)
