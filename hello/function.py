@@ -8,7 +8,7 @@ import sys
 import json
 import os
 
-def handler(event, context):
+def handler(event, context): #pylint:disable=unused-argument
     """A simple function that returns system/event/context info with CORS headers"""
     return {
             'statusCode': 200,
