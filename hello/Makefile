@@ -71,7 +71,7 @@ docker: lint test ## Test the microservice in a local docker environment
 deploy: zip ## Deploy the microservice to AWS lambda
 	@( \
 		if [ $(BRANCH) == "main" ]; then \
-			aws lambda list-functions --profile=ServiceAdmin | grep $(SERVICE_NAME)-prod; \
+			aws lambda list-functions --profile=$(SERVICE_CREDS) | grep $(SERVICE_NAME)-prod; \
 			if [ $? -eq 0 ]; then \
 				aws lambda update-function-code \
 					--function-name $(SERVICE_NAME)-prod \
@@ -84,10 +84,11 @@ deploy: zip ## Deploy the microservice to AWS lambda
 					--zip-file fileb://$(SERVICE_NAME).zip \
 					--role=arn:aws:iam::968475016336:role/ideabank-dynamodb-rw-service \
 					--runtime=python3.9 \
+					--environment=Variables={"ENV"="prod"} \
 					--profile=$(SERVICE_CREDS); \
 			fi \
 		elif [ $(BRANCH) == "dev" ]; then \
-			aws lambda list-functions --profile=ServiceAdmin | grep $(SERVICE_NAME)-dev; \
+			aws lambda list-functions --profile=$(SERVICE_CREDS) | grep $(SERVICE_NAME)-dev; \
 			if [ $? -eq 0 ]; then \
 				aws lambda update-function-code \
 					--function-name $(SERVICE_NAME)-dev \
@@ -100,6 +101,7 @@ deploy: zip ## Deploy the microservice to AWS lambda
 					--zip-file fileb://$(SERVICE_NAME).zip \
 					--role=arn:aws:iam::968475016336:role/ideabank-dynamodb-rw-service \
 					--runtime=python3.9 \
+					--environment=Variables={"ENV"="dev"} \
 					--profile=$(SERVICE_CREDS); \
 			fi \
 		else \
