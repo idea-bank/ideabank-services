@@ -71,9 +71,37 @@ docker: lint test ## Test the microservice in a local docker environment
 deploy: zip ## Deploy the microservice to AWS lambda
 	@( \
 		if [ $(BRANCH) == "main" ]; then \
-			aws lambda update-function-code --function-name $(SERVICE_NAME)-prod --zip-file fileb://$(SERVICE_NAME).zip --profile=$(SERVICE_CREDS); \
+			aws lambda list-functions --profile=ServiceAdmin | grep $(SERVICE_NAME)-prod; \
+			if [ $? -eq 0 ]; then \
+				aws lambda update-function-code \
+					--function-name $(SERVICE_NAME)-prod \
+					--zip-file fileb://$(SERVICE_NAME).zip \
+					--profile=$(SERVICE_CREDS); \
+			else \
+				aws lambda create-function \
+					--function-name=$(SERVICE_NAME)-prod \
+					--handler=function.handler \
+					--zip-file fileb://$(SERVICE_NAME).zip \
+					--role=arn:aws:iam::968475016336:role/ideabank-dynamodb-rw-service \
+					--runtime=python3.9 \
+					--profile=$(SERVICE_CREDS); \
+			fi \
 		elif [ $(BRANCH) == "dev" ]; then \
-			aws lambda update-function-code --function-name $(SERVICE_NAME)-dev --zip-file fileb://$(SERVICE_NAME).zip --profile=$(SERVICE_CREDS); \
+			aws lambda list-functions --profile=ServiceAdmin | grep $(SERVICE_NAME)-dev; \
+			if [ $? -eq 0 ]; then \
+				aws lambda update-function-code \
+					--function-name $(SERVICE_NAME)-dev \
+					--zip-file fileb://$(SERVICE_NAME).zip \
+					--profile=$(SERVICE_CREDS); \
+			else \
+				aws lambda create-function \
+					--function-name=$(SERVICE_NAME)-dev \
+					--handler=function.handler \
+					--zip-file fileb://$(SERVICE_NAME).zip \
+					--role=arn:aws:iam::968475016336:role/ideabank-dynamodb-rw-service \
+					--runtime=python3.9 \
+					--profile=$(SERVICE_CREDS); \
+			fi \
 		else \
 			echo Not deploying, can only deploy on main or dev branches; \
 			exit 1; \
