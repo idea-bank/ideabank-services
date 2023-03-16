@@ -16,11 +16,14 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Find services
+      - name: scan services
         run: |
           for dir in $(ls) 
           do
-            echo $dir
+            cd $dir
+            if [ -e function.py ]; then
+              make lint
+              make test
+            fi
+            cd ..
           done
-
-        
