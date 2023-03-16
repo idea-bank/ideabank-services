@@ -21,6 +21,7 @@ Each service has the following files
 $ cookiecutter https://github.com/idea-bank/aws-lambda-basic-handler
 service_name [A name for your service]: <a-name-for-your-service>
 service_author [Your Name]: <enter your name>
+service_execution_policy [...]: <execution ARN>
 service_description [Describe your new service]: <description for your service>
 ```
 
@@ -28,6 +29,10 @@ The service will not be deployable until backend infrastructure is allocated for
 
 ## The services
 
-### Hello
+### `hello`
 
 A simple microservice that echoes back the event and context information as JSON.
+
+### `create-user-web2`
+
+A microservice that creates ideabank users through traditional web2 conventions
