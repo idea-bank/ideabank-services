@@ -22,7 +22,7 @@ jobs:
           do
             cd $dir
             if [ -e function.py ]; then
-              python -m pip install --upgrade-pip
+              python -m pip install --upgrade pip
               python -m pip install -r requirements.txt
               python -m pip install -r dev_requirements.txt
               pylint *.py
