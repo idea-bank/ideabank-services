@@ -22,6 +22,8 @@ jobs:
           do
             cd $dir
             if [ -e function.py ]; then
+              make bootstrap
+              source .venv/bin/activate
               make lint
               make test
             fi
