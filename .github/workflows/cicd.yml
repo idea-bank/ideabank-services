@@ -1,0 +1,35 @@
+name: ci
+
+on: [push]
+
+env:
+  AWS_DEFAULT_REGION: us-west-2
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: scan services
+        run: |
+          for dir in $(ls -d */) 
+          do
+            cd $dir
+            if [ -e function.py ]; then
+              python -m pip install --upgrade pip
+              python -m pip install -r requirements.txt
+              python -m pip install -r dev_requirements.txt
+              pylint *.py
+              python test_function.py
+            fi
+            cd ..
+          done

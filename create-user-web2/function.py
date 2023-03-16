@@ -166,7 +166,7 @@ class IdeaBankUser:
             :returns: DynamoDb tablename
             :rtype: str
         """
-        return self.TABLE_NAME + os.getenv('ENV')
+        return self.TABLE_NAME + os.getenv('ENV', '')
 
     @property
     def resource(self):
