@@ -22,9 +22,9 @@ jobs:
           do
             cd $dir
             if [ -e function.py ]; then
-              pip3 install --upgrade-pip
-              pip3 install -r requirements.txt
-              pip3 install -r dev_requirements.txt
+              python -m pip install --upgrade-pip
+              python -m pip install -r requirements.txt
+              python -m pip install -r dev_requirements.txt
               pylint *.py
               python test_function.py
             fi
