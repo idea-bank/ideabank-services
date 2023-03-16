@@ -22,10 +22,11 @@ jobs:
           do
             cd $dir
             if [ -e function.py ]; then
-              make bootstrap
-              source .venv/bin/activate
-              make lint
-              make test
+              pip3 install --upgrade-pip
+              pip3 install -r requirements.txt
+              pip3 install -r dev_requirements.txt
+              pylint *.py
+              python test_function.py
             fi
             cd ..
           done
