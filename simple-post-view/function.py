@@ -19,7 +19,6 @@ LOG_FORMAT = logging.Formatter('[%(asctime)s|%(name)s|%(levelname)s] - %(message
 LOG_HANDLER.setFormatter(LOG_FORMAT)
 LOGGER.addHandler(LOG_HANDLER)
 
-
 def handler(event, context):
     """
         Service to query high-level post details from the database
@@ -27,13 +26,14 @@ def handler(event, context):
     LOGGER.info("Start service: simple-post-view")
     LOGGER.debug("Event info: %s", json.dumps(event, indent=4))
 
-    _input = event['body']
-    if not 'IdeaPostID' in _input: raise NotValidParameters('IdeaPostID')
-    if not 'IdeaAuthorID' in _input: raise NotValidParameters('IdeaAuthorID')
-
     try:
+        _input = event['body']
+
+        if not 'IdeaPostID' in _input: raise NotValidParameters('IdeaPostID')
+        if not 'IdeaAuthorID' in _input: raise NotValidParameters('IdeaAuthorID')
+
+
         posts = IdeaPostTable()
-        posts.load()
         
         LOGGER.info("Attempting to get post by IdeaPostID and IdeaAuthorID...")
         post = posts.get_post(_input['IdeaPostID'], _input['IdeaAuthorID'])
@@ -47,6 +47,7 @@ def handler(event, context):
             },
             "body": json.dumps(post)
         }
+    
     except NotValidParameters as error:
         LOGGER.error("Request did not have valid parameters: %s", str(error))
         return {

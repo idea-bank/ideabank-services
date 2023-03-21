@@ -15,7 +15,6 @@ class SimplePostViewTests(unittest.TestCase):
     def __init__(self, *args, **kwargs):
         super(SimplePostViewTests, self).__init__(*args, **kwargs)
         self.posts = IdeaPostTable()
-        self.posts.load()
 
     def get_mock_data(self):
         contents = None
@@ -29,16 +28,17 @@ class SimplePostViewTests(unittest.TestCase):
             self.posts.add_post(post)
 
     def test_get_nonexistant_post(self):
-        response = handler({'IdeaPostID': '100', 'IdeaAuthorID': '100'}, {})
+        response = handler({'body': {'IdeaPostID': '100', 'IdeaAuthorID': '100'}}, {})
         self.assertEqual(json.loads(response['body']), {})
         
     def test_get_actual_post(self):
         post_mock_data = self.get_mock_data()
         
         post = post_mock_data[0]
-        response = handler(post, {})
-        self.assertEqual(json.loads(response['body'])['IdeaPostID'], post['IdeaPostID'])
-        self.assertEqual(json.loads(response['body'])['IdeaAuthorID'], post['IdeaAuthorID'])
+        response = handler({'body': post}, {})
+        self.assertIn('body',response)
+        self.assertEqual(json.loads(response['body'])['IdeaPostID'], {'S': post['IdeaPostID']})
+        self.assertEqual(json.loads(response['body'])['IdeaAuthorID'], {'S': post['IdeaAuthorID']})
 
 if __name__ == '__main__':
     unittest.main()

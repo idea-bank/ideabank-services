@@ -1,3 +1,4 @@
+import json
 import logging
 import boto3
 from boto3.dynamodb.conditions import Key
@@ -19,34 +20,34 @@ class IdeaPostTable:
     """
         Encapsulates an Amazon DynamoDB table of post data.
     """
+    TABLE_NAME = "IdeaPost"
+
     def __init__(self):
         LOGGER.info("Started initializing IdeaDB Handler")
         
         try:
             LOGGER.debug("Loading boto3 resource for dynamodb...")
-            self.dyn_resource = boto3.resource('dynamodb', endpoint_url=ENDPOINT_URL)
-            self.table = None
+            self.dynamodb_client = boto3.client('dynamodb', endpoint_url=ENDPOINT_URL)
+
         except Exception as err: 
             LOGGER.error("Error initializing boto3 resource for dynamodb with error: %s", str(err))
             raise DatabaseException(err)
 
-    def load(self):
-        try:
-            LOGGER.debug("Loading IdeaPost Table...")
-            self.table = self.dyn_resource.Table('IdeaPost')
-            self.table.load()
-        except Exception as err: 
-            LOGGER.error("Error loading IdeaPost Table with error: %s", str(err))
-            raise DatabaseException(err)
-    
     def get_post(self, IdeaPostID, IdeaAuthorID):
         try:
             LOGGER.debug("Attempting to get post with IdeaPostID: %s and IdeaAuthorID: %s", IdeaPostID, IdeaAuthorID)
-            response = self.table.get_item(Key={'IdeaPostID': IdeaPostID, 'IdeaAuthorID': IdeaAuthorID})
+            response = self.dynamodb_client.get_item(
+                TableName=self.TABLE_NAME, 
+                Key={
+                    'IdeaPostID': {'S': IdeaPostID}, 
+                    'IdeaAuthorID': {'S': IdeaAuthorID}
+                }
+            )
+        
         except Exception as err: 
-            LOGGER.error("Failed to get post with IdeaPostID: %s and IdeaAuthorID: %s with error: %s", IdeaPostID, IdeaAuthorID, str(error))
-
+            LOGGER.error("Failed to get post with IdeaPostID: %s and IdeaAuthorID: %s with error: %s", IdeaPostID, IdeaAuthorID, str(err))
             raise DatabaseException(err)
+        
         else:
             if not 'Item' in response: 
                 LOGGER.debug("Item with IdeaPostID: %s and IdeaAuthorID: %s was NOT FOUND!", IdeaPostID, IdeaAuthorID)
@@ -57,7 +58,7 @@ class IdeaPostTable:
     def add_post(self, data):
         try:
             LOGGER.debug("Adding post with data: %s", json.dumps(data, indent=4))
-            response = self.table.put_item(Item=data)
+            response = self.dynamodb_client.put_item(TableName=self.TABLE_NAME, Item=data)
         except Exception as err: 
             LOGGER.error("Failed to get post with IdeaPostID: %s and IdeaAuthorID: %s with error: %s", IdeaPostID, IdeaAuthorID, str(err))
             raise DatabaseException(err)
