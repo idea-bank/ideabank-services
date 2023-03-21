@@ -38,24 +38,36 @@ def handler(event, context):
         LOGGER.info("Attempting to get post by IdeaPostID and IdeaAuthorID...")
         post = posts.get_post(_input['IdeaPostID'], _input['IdeaAuthorID'])
         
-        
         return {
-            'status': 200,
-            'body': json.dumps(post)
+            "isBase64Encoded": False,
+            "statusCode": 200,
+            "headers": {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': '*'
+            },
+            "body": json.dumps(post)
         }
     except NotValidParameters as error:
         LOGGER.error("Request did not have valid parameters: %s", str(error))
-
         return {
-            'status': 400,
-            'body': str(error)
+            "isBase64Encoded": False,
+            "statusCode": 400,
+            "headers": {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': '*'
+            },
+            "body": str(error)
         }
     except DatabaseException as error:
         LOGGER.error("There was database error: %s", str(error))
-
         return {
-            'status': 500,
-            'body': str(error)
+            "isBase64Encoded": False,
+            "statusCode": 500,
+            "headers": {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': '*'
+            },
+            "body": str(error)
         }
 
 ###################### EXCEPTIONS ######################
