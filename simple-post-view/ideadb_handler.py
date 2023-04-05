@@ -1,7 +1,9 @@
 import json
 import logging
+import time
 import boto3
 from boto3.dynamodb.conditions import Key
+from contextlib import closing
 
 LOGGER = logging.getLogger(__name__)
 LOGGER.setLevel(logging.DEBUG)
@@ -22,27 +24,18 @@ class IdeaPostTable:
     """
     TABLE_NAME = "IdeaPost"
 
-    def __init__(self):
-        LOGGER.info("Started initializing IdeaDB Handler")
-        
-        try:
-            LOGGER.debug("Loading boto3 resource for dynamodb...")
-            self.dynamodb_client = boto3.client('dynamodb', endpoint_url=ENDPOINT_URL)
-
-        except Exception as err: 
-            LOGGER.error("Error initializing boto3 resource for dynamodb with error: %s", str(err))
-            raise DatabaseException(err)
-
-    def get_post(self, IdeaPostID, IdeaAuthorID):
+    def get_post(self, IdeaPostID, IdeaAuthorID, fields):
         try:
             LOGGER.debug("Attempting to get post with IdeaPostID: %s and IdeaAuthorID: %s", IdeaPostID, IdeaAuthorID)
-            response = self.dynamodb_client.get_item(
-                TableName=self.TABLE_NAME, 
-                Key={
-                    'IdeaPostID': {'S': IdeaPostID}, 
-                    'IdeaAuthorID': {'S': IdeaAuthorID}
-                }
-            )
+            with closing(boto3.client('dynamodb', endpoint_url=ENDPOINT_URL)) as client:
+                response = client.get_item(
+                    TableName=self.TABLE_NAME, 
+                    Key={
+                        'IdeaPostID': {'S': IdeaPostID}, 
+                        'IdeaAuthorID': {'S': IdeaAuthorID}
+                    },
+                    ProjectionExpression=','.join(fields)
+                )
         
         except Exception as err: 
             LOGGER.error("Failed to get post with IdeaPostID: %s and IdeaAuthorID: %s with error: %s", IdeaPostID, IdeaAuthorID, str(err))
@@ -58,7 +51,10 @@ class IdeaPostTable:
     def add_post(self, data):
         try:
             LOGGER.debug("Adding post with data: %s", json.dumps(data, indent=4))
-            response = self.dynamodb_client.put_item(TableName=self.TABLE_NAME, Item=data)
+            data['created_at'] = {'N': str(int(time.time()*1000))}
+
+            with closing(boto3.client('dynamodb', endpoint_url=ENDPOINT_URL)) as client:
+                response = client.put_item(TableName=self.TABLE_NAME, Item=data)
         except Exception as err: 
             LOGGER.error("Failed to get post with IdeaPostID: %s and IdeaAuthorID: %s with error: %s", IdeaPostID, IdeaAuthorID, str(err))
             raise DatabaseException(err)

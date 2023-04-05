@@ -1,7 +1,7 @@
 """
-    :module_name: function
-    :module_summary: service to deliver high-level post information view
-    :module_author: Utsav Sampat
+    :module_name: function
+    :module_summary: service to deliver high-level post information view
+    :module_author: Utsav Sampat
 """
 
 import logging
@@ -19,6 +19,12 @@ LOG_FORMAT = logging.Formatter('[%(asctime)s|%(name)s|%(levelname)s] - %(message
 LOG_HANDLER.setFormatter(LOG_FORMAT)
 LOGGER.addHandler(LOG_HANDLER)
 
+SIMPLE_VIEW_FIELDS = [
+    'title',
+    'created_at',
+    'media_links'
+]
+
 def handler(event, context):
     """
         Service to query high-level post details from the database
@@ -32,11 +38,10 @@ def handler(event, context):
         if not 'IdeaPostID' in _input: raise NotValidParameters('IdeaPostID')
         if not 'IdeaAuthorID' in _input: raise NotValidParameters('IdeaAuthorID')
 
-
         posts = IdeaPostTable()
         
         LOGGER.info("Attempting to get post by IdeaPostID and IdeaAuthorID...")
-        post = posts.get_post(_input['IdeaPostID'], _input['IdeaAuthorID'])
+        post = posts.get_post(_input['IdeaPostID'], _input['IdeaAuthorID'], fields=SIMPLE_VIEW_FIELDS)
         
         return {
             "isBase64Encoded": False,
