@@ -83,7 +83,7 @@ deploy: zip ## Deploy the microservice to AWS lambda
 					--function-name=$(SERVICE_NAME)-prod \
 					--handler=function.handler \
 					--zip-file fileb://$(SERVICE_NAME).zip \
-					--role=arn:aws:iam::563842661877:role/SimpleService \
+					--role=arn:aws:iam::272377214389:role/SimpleService \
 					--runtime=python3.9 \
 					--environment=Variables={"ENV"="prod"} \
 					--profile=$(AWS_PROD); \
