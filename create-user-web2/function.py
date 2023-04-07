@@ -154,7 +154,7 @@ class IdeaBankUser:
     """
         Class that interfaces with DynamDB IdeaBankUsers Table
     """
-    TABLE_NAME="idea_bank_users_"
+    TABLE_NAME = "IdeaBankUsers"
 
     def __init__(self):
         self._resource = boto3.client('dynamodb')
@@ -166,7 +166,7 @@ class IdeaBankUser:
             :returns: DynamoDb tablename
             :rtype: str
         """
-        return self.TABLE_NAME + os.getenv('ENV', '')
+        return self.TABLE_NAME
 
     @property
     def resource(self):
