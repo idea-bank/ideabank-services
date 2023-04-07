@@ -114,7 +114,7 @@ class TestIdeaBankUser(unittest.TestCase):
 
     def test_that_table_property_is_constant(self):
         """check table name is accurate"""
-        self.assertEqual(self._table.table, "idea_bank_users_")
+        self.assertEqual(self._table.table, "IdeaBankUsers")
 
     @patch.object(IdeaBankUser, 'resource')
     def test_create_user_puts_new_item_in_database(self, mock_db_client):
