@@ -4,8 +4,9 @@ SERVICE_NAME=create-user-web2
 SOURCES=function.py
 DEPS=.venv/lib/python3.9/site-packages/*
 SERVICE_TESTER=test_function.py
-SERVICE_CREDS=$(AWS_SERVICE)
 BRANCH=$(shell git branch --show-current)
+AWS_PROD=$(AWS_SERVICE_PROD)
+AWS_DEV=$(AWS_SERVICE_DEV)
 
 help:
 	@echo "Makefile for ideabank $(SERVICE_NAME) service. Available targets:"
@@ -71,38 +72,38 @@ docker: lint test ## Test the microservice in a local docker environment
 deploy: zip ## Deploy the microservice to AWS lambda
 	@( \
 		if [ $(BRANCH) == "main" ]; then \
-			aws lambda list-functions --profile=$(SERVICE_CREDS) | grep $(SERVICE_NAME)-prod; \
-			if [ $? -eq 0 ]; then \
+			aws lambda list-functions --profile=$(AWS_PROD) | grep $(SERVICE_NAME)-prod; \
+			if [ $$? -eq 0 ]; then \
 				aws lambda update-function-code \
 					--function-name $(SERVICE_NAME)-prod \
 					--zip-file fileb://$(SERVICE_NAME).zip \
-					--profile=$(SERVICE_CREDS); \
+					--profile=$(AWS_PROD); \
 			else \
 				aws lambda create-function \
 					--function-name=$(SERVICE_NAME)-prod \
 					--handler=function.handler \
 					--zip-file fileb://$(SERVICE_NAME).zip \
-					--role=arn:aws:iam::968475016336:role/ideabank-dynamodb-rw-service \
+					--role=arn:arn:aws:iam::272377214389:role/Service+DynamoDB-RW \
 					--runtime=python3.9 \
 					--environment=Variables={"ENV"="prod"} \
-					--profile=$(SERVICE_CREDS); \
+					--profile=$(AWS_PROD); \
 			fi \
 		elif [ $(BRANCH) == "dev" ]; then \
-			aws lambda list-functions --profile=$(SERVICE_CREDS) | grep $(SERVICE_NAME)-dev; \
-			if [ $? -eq 0 ]; then \
+			aws lambda list-functions --profile=$(AWS_DEV) | grep $(SERVICE_NAME)-dev; \
+			if [ $$? -eq 0 ]; then \
 				aws lambda update-function-code \
 					--function-name $(SERVICE_NAME)-dev \
 					--zip-file fileb://$(SERVICE_NAME).zip \
-					--profile=$(SERVICE_CREDS); \
+					--profile=$(AWS_DEV); \
 			else \
 				aws lambda create-function \
 					--function-name=$(SERVICE_NAME)-dev \
 					--handler=function.handler \
 					--zip-file fileb://$(SERVICE_NAME).zip \
-					--role=arn:aws:iam::968475016336:role/ideabank-dynamodb-rw-service \
+					--role=arn:aws:iam::563842661877:role/Service+DynamoDB-read+write \
 					--runtime=python3.9 \
 					--environment=Variables={"ENV"="dev"} \
-					--profile=$(SERVICE_CREDS); \
+					--profile=$(AWS_DEV); \
 			fi \
 		else \
 			echo Not deploying, can only deploy on main or dev branches; \

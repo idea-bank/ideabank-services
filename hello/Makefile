@@ -53,7 +53,7 @@ lint: bootstrap ## Run lint checks on the source directory
 		pylint $(SOURCES); \
 	)
 
-zip: test lint
+pack: test lint
 	zip $(SERVICE_NAME).zip $(SOURCES) $(DEPS)
 
 bootstrap: venv ## Bootstrap the virtual environment
@@ -69,11 +69,11 @@ docker: lint test ## Test the microservice in a local docker environment
 	docker build -t $(SERVICE_NAME) .
 	docker run -p 9000:8080 $(SERVICE_NAME)
 
-deploy: zip ## Deploy the microservice to AWS lambda
+deploy: pack ## Deploy the microservice to AWS lambda
 	@( \
 		if [ $(BRANCH) == "main" ]; then \
 			aws lambda list-functions --profile=$(AWS_PROD) | grep $(SERVICE_NAME)-prod; \
-			if [ $? -eq 0 ]; then \
+			if [ $$? -eq 0 ]; then \
 				aws lambda update-function-code \
 					--function-name $(SERVICE_NAME)-prod \
 					--zip-file fileb://$(SERVICE_NAME).zip \
@@ -90,7 +90,7 @@ deploy: zip ## Deploy the microservice to AWS lambda
 			fi \
 		elif [ $(BRANCH) == "dev" ]; then \
 			aws lambda list-functions --profile=$(AWS_DEV) | grep $(SERVICE_NAME)-dev; \
-			if [ $? -eq 0 ]; then \
+			if [ $$? -eq 0 ]; then \
 				aws lambda update-function-code \
 					--function-name $(SERVICE_NAME)-dev \
 					--zip-file fileb://$(SERVICE_NAME).zip \
