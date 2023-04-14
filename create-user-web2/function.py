@@ -62,14 +62,21 @@ def handler(event, context):  # pylint:disable=unused-argument
     try:
         name, email, raw_pass = extract_from_body(event['body'])
         table = IdeaBankUsersTable()
-        table.put_into_table(IdeaBankUser.new(
+        LOGGER.info("Creating new user account")
+        user = IdeaBankUser.new(
                 **{
                     IdeaBankUser.DISPLAY_NAME_KEY: name,
                     AuthKey.NEW_RAW_USER_KEY: email,
                     AuthKey.NEW_RAW_PASS_KEY: raw_pass
-                    }
+                    })
+        LOGGER.debug(
+                "New account has ID: %s and display name: %s",
+                user.uuid,
+                user.display_name
                 )
-            )
+        LOGGER.info("Creating new record for accound: %s", user.uuid)
+        table.put_into_table(user)
+        LOGGER.info("Successfully created new account record")
         return user_creation_confirmation()
     except KeyError as err:
         LOGGER.error("Missing expected information: %s", str(err))
