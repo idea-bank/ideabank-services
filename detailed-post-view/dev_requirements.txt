@@ -1,5 +1,0 @@
-# dev requirements
-
-boto3
-pylint
-coverage
