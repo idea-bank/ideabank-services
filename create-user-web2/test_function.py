@@ -10,7 +10,7 @@ import json
 import unittest
 from unittest.mock import patch
 
-from ideabank_datalink.toolkit.users_table import IdeaBankUsersTable
+from ideabank_datalink.toolkit.accounts_table import IdeaBankAccountsTable
 from botocore.exceptions import ClientError
 
 from function import handler, extract_from_body
@@ -64,27 +64,27 @@ class TestPayloadExtraction(unittest.TestCase):
 class TestHandler(unittest.TestCase):
     """Tests for lambda handler"""
 
-    @patch.object(IdeaBankUsersTable, 'table')
+    @patch.object(IdeaBankAccountsTable, 'table')
     def test_successful_user_creation(self, mockdb):
         response = handler(PayloadTestData.EVENT_OK, {})
         self.assertEqual(response['statusCode'], 201)
 
-    @patch.object(IdeaBankUsersTable, 'table')
+    @patch.object(IdeaBankAccountsTable, 'table')
     def test_unsuccesfull_user_creation_because_of_bad_request_1(self, mockdb):
         response = handler(PayloadTestData.EVENT_TOO_SHORT, {})
         self.assertEqual(response['statusCode'], 400)
 
-    @patch.object(IdeaBankUsersTable, 'table')
+    @patch.object(IdeaBankAccountsTable, 'table')
     def test_unsuccesfull_user_creation_because_of_bad_request_2(self, mockdb):
         response = handler(PayloadTestData.EVENT_NOT_COMPLETE, {})
         self.assertEqual(response['statusCode'], 400)
 
-    @patch.object(IdeaBankUsersTable, 'table')
+    @patch.object(IdeaBankAccountsTable, 'table')
     def test_unsuccesfull_user_creation_because_of_bad_request_3(self, mockdb):
         response = handler(PayloadTestData.EVENT_NOT_VALID_JSON, {})
         self.assertEqual(response['statusCode'], 400)
 
-    @patch.object(IdeaBankUsersTable, 'table')
+    @patch.object(IdeaBankAccountsTable, 'table')
     def test_unsuccesfull_user_creation_because_of_datalink_failure(self, mockdb):
         mockdb.put_item.side_effect = ClientError(
                 {

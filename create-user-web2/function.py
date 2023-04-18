@@ -10,8 +10,8 @@ import base64
 import binascii
 import json
 
-from ideabank_datalink.model.users import IdeaBankUser, AuthKey
-from ideabank_datalink.toolkit.users_table import IdeaBankUsersTable
+from ideabank_datalink.model.accounts import IdeaBankAccount, AuthKey
+from ideabank_datalink.toolkit.accounts_table import IdeaBankAccountsTable
 from ideabank_datalink.exceptions import DataLinkTableInteractionException
 
 LOGGER = logging.getLogger(__name__)
@@ -61,11 +61,11 @@ def handler(event, context):  # pylint:disable=unused-argument
     """
     try:
         name, email, raw_pass = extract_from_body(event['body'])
-        table = IdeaBankUsersTable()
+        table = IdeaBankAccountsTable()
         LOGGER.info("Creating new user account")
-        user = IdeaBankUser.new(
+        user = IdeaBankAccount.new(
                 **{
-                    IdeaBankUser.DISPLAY_NAME_KEY: name,
+                    IdeaBankAccount.DISPLAY_NAME_KEY: name,
                     AuthKey.NEW_RAW_USER_KEY: email,
                     AuthKey.NEW_RAW_PASS_KEY: raw_pass
                     })
