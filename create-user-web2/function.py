@@ -10,7 +10,7 @@ import base64
 import binascii
 import json
 
-from ideabank_datalink.model.accounts import IdeaBankAccount, AuthKey
+from ideabank_datalink.model.account import IdeaBankAccount
 from ideabank_datalink.toolkit.accounts_table import IdeaBankAccountsTable
 from ideabank_datalink.exceptions import DataLinkTableInteractionException
 
@@ -65,16 +65,14 @@ def handler(event, context):  # pylint:disable=unused-argument
         LOGGER.info("Creating new user account")
         user = IdeaBankAccount.new(
                 **{
-                    IdeaBankAccount.DISPLAY_NAME_KEY: name,
-                    AuthKey.NEW_RAW_USER_KEY: email,
-                    AuthKey.NEW_RAW_PASS_KEY: raw_pass
+                    IdeaBankAccount.PARTITION_KEY: name,
+                    IdeaBankAccount.AUTHORIZER_ATTRIBUTE_KEY: raw_pass
                     })
         LOGGER.debug(
-                "New account has ID: %s and display name: %s",
-                user.uuid,
-                user.display_name
+                "New account created: %s",
+                user.item_key,
                 )
-        LOGGER.info("Creating new record for accound: %s", user.uuid)
+        LOGGER.info("Creating new record for account: %s", user.item_key)
         table.put_into_table(user)
         LOGGER.info("Successfully created new account record")
         return user_creation_confirmation()
