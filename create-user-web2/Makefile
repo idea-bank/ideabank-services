@@ -2,7 +2,7 @@
 #
 SERVICE_NAME=create-user-web2
 SOURCES=function.py
-DEPS=.venv/lib/python3.9/site-packages/*
+DEPS=.venv/lib/python3.9/site-packages/
 SERVICE_TESTER=test_function.py
 BRANCH=$(shell git branch --show-current)
 AWS_PROD=$(AWS_SERVICE_PROD)
@@ -11,6 +11,7 @@ AWS_DEV=$(AWS_SERVICE_DEV)
 help:
 	@echo "Makefile for ideabank $(SERVICE_NAME) service. Available targets:"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
+
 
 venv: ## Setup a virtual environment
 	[ -d .venv ] || python3.9 -m venv .venv --prompt=ideabank-$(SERVICE_NAME)
@@ -27,6 +28,7 @@ clean-zip: ## Remove package zip archive
 clean-cov: ## Remove coverage artifacts
 	find . -name .coverage -exec rm -f {} +
 
+.PHONY: clean
 clean: clean-pyc clean-venv clean-zip clean-cov ## Clean up develepment environment
 
 activate: ## Activate the virtual environment for bootstrapping (does NOT activate for you).
@@ -53,8 +55,18 @@ lint: bootstrap ## Run lint checks on the source directory
 		pylint $(SOURCES); \
 	)
 
-zip: test lint
-	zip $(SERVICE_NAME).zip $(SOURCES) $(DEPS)
+zip: test lint clean
+	[ -d .venv ] || python3.9 -m venv .venv --prompt=ideabank-$(SERVICE_NAME)
+	@( \
+		source .venv/bin/activate; \
+		pip3 install --upgrade pip; \
+		pip3 install --require-virtualenv -r requirements.txt; \
+		deactivate; \
+		cd $(DEPS); \
+		zip -r ../../../../$(SERVICE_NAME).zip .; \
+		cd ../../../../; \
+		zip -g $(SERVICE_NAME).zip $(SOURCES); \
+	)
 
 bootstrap: venv ## Bootstrap the virtual environment
 	@( \
