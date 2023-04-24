@@ -12,7 +12,10 @@ import json
 
 from ideabank_datalink.model.account import IdeaBankAccount
 from ideabank_datalink.toolkit.accounts_table import IdeaBankAccountsTable
-from ideabank_datalink.exceptions import DataLinkTableInteractionException
+from ideabank_datalink.exceptions import (
+        DataLinkTableInteractionException,
+        DataLinkTableScanFailure
+        )
 
 LOGGER = logging.getLogger(__name__)
 
@@ -55,6 +58,32 @@ def extract_from_body(payload: str) -> (str, str, str):
             )
 
 
+# Awaiting library enhancment before deprecating
+def username_taken(table, user):
+    """Checks if a username is available
+    Arguments:
+        table: table to Checks
+        user: username requested
+    Returns:
+        True if username already in use
+        False if username is available
+    """
+    LOGGER.info("Checking if `%s` is an available username", user.item_key)
+    try:
+        table.get_from_table(user.as_key())
+        LOGGER.info(
+                "`%s` has already been claimed. Refusing to create the account",
+                user.item_key
+                )
+        return True
+    except DataLinkTableScanFailure:
+        LOGGER.info(
+                "`%s` has not yet been claimed. Continuing with account creation",
+                user.item_key
+                )
+        return False
+
+
 def handler(event, context):  # pylint:disable=unused-argument
     """
         Handler function for the create web2 user microservice
@@ -73,6 +102,10 @@ def handler(event, context):  # pylint:disable=unused-argument
                 user.item_key,
                 )
         LOGGER.info("Creating new record for account: %s", user.item_key)
+        if username_taken(table, user):
+            raise DataLinkTableInteractionException(
+                    f'Cannot create new account with `{user.item_key}`. It is already in use.'
+                    )
         table.put_into_table(user)
         LOGGER.info("Successfully created new account record")
         return user_creation_confirmation()
