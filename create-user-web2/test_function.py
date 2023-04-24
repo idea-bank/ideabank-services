@@ -13,7 +13,7 @@ from unittest.mock import patch
 from ideabank_datalink.toolkit.accounts_table import IdeaBankAccountsTable
 from botocore.exceptions import ClientError
 
-from function import handler, extract_from_body
+from function import handler, extract_from_body, username_taken
 
 
 class PayloadTestData:
@@ -65,7 +65,8 @@ class TestHandler(unittest.TestCase):
     """Tests for lambda handler"""
 
     @patch.object(IdeaBankAccountsTable, 'table')
-    def test_successful_user_creation(self, mockdb):
+    @patch('function.username_taken', return_value=False)
+    def test_successful_user_creation(self, mockduplicates, mockdb):
         response = handler(PayloadTestData.EVENT_OK, {})
         self.assertEqual(response['statusCode'], 201)
 
@@ -85,7 +86,12 @@ class TestHandler(unittest.TestCase):
         self.assertEqual(response['statusCode'], 400)
 
     @patch.object(IdeaBankAccountsTable, 'table')
-    def test_unsuccesfull_user_creation_because_of_datalink_failure(self, mockdb):
+    @patch('function.username_taken', return_value=False)
+    def test_unsuccesfull_user_creation_because_of_datalink_failure(
+            self,
+            mockduplicates,
+            mockdb
+            ):
         mockdb.put_item.side_effect = ClientError(
                 {
                     'Error': {
@@ -96,6 +102,16 @@ class TestHandler(unittest.TestCase):
                                                   )
         response = handler(PayloadTestData.EVENT_OK, {})
         self.assertEqual(response['statusCode'], 503)
+
+    @patch.object(IdeaBankAccountsTable, 'table')
+    @patch('function.username_taken', return_value=True)
+    def test_unsuccesfull_user_creation_because_of_duplicate_name(
+            self,
+            mockduplicates,
+            mockdb
+            ):
+        response = handler(PayloadTestData.EVENT_OK, {})
+        self.assertEqual(response['statusCode'], 503)  # TODO: Update with appropriate code
 
 
 if __name__ == '__main__':
