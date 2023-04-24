@@ -89,7 +89,7 @@ def handler(event, context):  # pylint:disable=unused-argument
         Handler function for the create web2 user microservice
     """
     try:
-        name, email, raw_pass = extract_from_body(event['body'])
+        name, _, raw_pass = extract_from_body(event['body'])
         table = IdeaBankAccountsTable()
         LOGGER.info("Creating new user account")
         user = IdeaBankAccount.new(
