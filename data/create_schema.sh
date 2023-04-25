@@ -5,7 +5,7 @@ aws dynamodb create-table \
     --key-schema AttributeName=DisplayName,KeyType=HASH \
     --provisioned-throughput ReadCapacityUnits=1,WriteCapacityUnits=1 \
     --table-class STANDARD \
-    --endpoint-url http://localhost:8000
+    --endpoint-url=http://localhost:8000
 
 #aws dynamodb create-table \
 #    --table-name Comment \
@@ -32,7 +32,7 @@ aws dynamodb create-table \
     --attribute-definitions \
       AttributeName=NodeTitle,AttributeType=S \
       AttributeName=NodeAuthor,AttributeType=S \
-    --key-schema AttributeName=NodeTitle,KeyType=HASH AttributeName=NodeAuthor,KeyType=Range \
+    --key-schema AttributeName=NodeTitle,KeyType=HASH AttributeName=NodeAuthor,KeyType=RANGE \
     --provisioned-throughput ReadCapacityUnits=1,WriteCapacityUnits=1 \
     --table-class STANDARD \
-    --endpoint-url http://localhost:8000
+    --endpoint-url=http://localhost:8000
