@@ -30,8 +30,9 @@ aws dynamodb create-table \
 aws dynamodb create-table \
     --table-name IdeaBankNodes \
     --attribute-definitions \
-      AttributeName=NodePath,AttributeType=S \
-    --key-schema AttributeName=NodePath,KeyType=HASH \
+      AttributeName=NodeTitle,AttributeType=S \
+      AttributeName=NodeAuthor,AttributeType=S \
+    --key-schema AttributeName=NodeTitle,KeyType=HASH AttributeName=NodeAuthor,KeyType=Range \
     --provisioned-throughput ReadCapacityUnits=1,WriteCapacityUnits=1 \
     --table-class STANDARD \
     --endpoint-url http://localhost:8000
