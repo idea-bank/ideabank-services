@@ -4,8 +4,9 @@
     :module_author: Nathan Mendoza (nathancm@uci.edu)
 """
 
+# pylint: skip-file
+
 import unittest
 
 if __name__ == '__main__':
     unittest.main()
-
