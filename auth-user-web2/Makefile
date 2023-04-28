@@ -80,7 +80,7 @@ docker: lint test ## Test the microservice in a local docker environment
 	docker build -t $(SERVICE_NAME) .
 	docker run -p 9000:8080 $(SERVICE_NAME)
 
-deploy: pack ## Deploy the microservice to AWS lambda
+deploy: zip ## Deploy the microservice to AWS lambda
 	@( \
 		if [ $(BRANCH) == "main" ]; then \
 			aws lambda list-functions --profile=$(SERVICE_CREDS) | grep $(SERVICE_NAME)-prod; \
