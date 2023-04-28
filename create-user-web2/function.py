@@ -92,7 +92,7 @@ def handler(event, context):  # pylint:disable=unused-argument
         name, _, raw_pass = extract_from_body(event['body'])
         table = IdeaBankAccountsTable()
         LOGGER.info("Creating new user account")
-        user = IdeaBankAccount.new(
+        user = IdeaBankAccount.create_new(
                 **{
                     IdeaBankAccount.PARTITION_KEY: name,
                     IdeaBankAccount.AUTHORIZER_ATTRIBUTE_KEY: raw_pass
