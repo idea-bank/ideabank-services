@@ -4,7 +4,8 @@ SERVICE_NAME=auth-user-web2
 SOURCES=function.py
 DEPS=.venv/lib/python3.9/site-packages/
 SERVICE_TESTER=test_function.py
-SERVICE_CREDS=$(AWS_SERVICE)
+AWS_PROD=$(AWS_SERVICE_PROD)
+AWS_DEV=$(AWS_SERVICE_DEV)
 DEV_EXEC_ROLE=arn:aws:iam::563842661877:role/Service+DynamoDB-read+write
 PROD_EXEC_ROLE=arn:aws:iam::272377214389:role/Service+DynamoDB-RW
 BRANCH=$(shell git branch --show-current)
@@ -83,12 +84,12 @@ docker: lint test ## Test the microservice in a local docker environment
 deploy: zip ## Deploy the microservice to AWS lambda
 	@( \
 		if [ $(BRANCH) == "main" ]; then \
-			aws lambda list-functions --profile=$(SERVICE_CREDS) | grep $(SERVICE_NAME)-prod; \
+			aws lambda list-functions --profile=$(AWS_PROD) | grep $(SERVICE_NAME)-prod; \
 			if [ $$? -eq 0 ]; then \
 				aws lambda update-function-code \
 					--function-name $(SERVICE_NAME)-prod \
 					--zip-file fileb://$(SERVICE_NAME).zip \
-					--profile=$(SERVICE_CREDS); \
+					--profile=$(AWS_PROD); \
 			else \
 				aws lambda create-function \
 					--function-name=$(SERVICE_NAME)-prod \
@@ -97,15 +98,15 @@ deploy: zip ## Deploy the microservice to AWS lambda
 					--role=$(PROD_EXEC_ROLE) \
 					--runtime=python3.9 \
 					--environment=Variables={"ENV"="prod"} \
-					--profile=$(SERVICE_CREDS); \
+					--profile=$(AWS_PROD); \
 			fi \
 		elif [ $(BRANCH) == "dev" ]; then \
-			aws lambda list-functions --profile=$(SERVICE_CREDS) | grep $(SERVICE_NAME)-dev; \
+			aws lambda list-functions --profile=$(AWS_DEV) | grep $(SERVICE_NAME)-dev; \
 			if [ $$? -eq 0 ]; then \
 				aws lambda update-function-code \
 					--function-name $(SERVICE_NAME)-dev \
 					--zip-file fileb://$(SERVICE_NAME).zip \
-					--profile=$(SERVICE_CREDS); \
+					--profile=$(AWS_DEV); \
 			else \
 				aws lambda create-function \
 					--function-name=$(SERVICE_NAME)-dev \
@@ -114,7 +115,7 @@ deploy: zip ## Deploy the microservice to AWS lambda
 					--role=$(DEV_EXEC_ROLE) \
 					--runtime=python3.9 \
 					--environment=Variables={"ENV"="dev"} \
-					--profile=$(SERVICE_CREDS); \
+					--profile=$(AWS_DEV); \
 			fi \
 		else \
 			echo Not deploying, can only deploy on main or dev branches; \
