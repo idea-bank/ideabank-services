@@ -100,7 +100,7 @@ def _decode_auth_string(auth_string: str) -> (str, str):
     """
     try:
         LOGGER.info('Decoding the provided auth string')
-        raw_creds = base64.b64decode(auth_string.encode('utf-8')).decode('utf-8')
+        raw_creds = base64.b64decode(auth_string.encode('utf-8')).decode('utf-8').split(':')
         return (raw_creds[0], raw_creds[1])
     except (ValueError, binascii.Error, IndexError) as err:
         LOGGER.error("Could not decode auth string: %s", str(err))
@@ -172,7 +172,7 @@ def validate_claims(creds: dict) -> bool:
 def handler(event, context):  # pylint:disable=unused-argument
     """Handler function for the auth web2 user microservice"""
     try:
-        creds, key_type = extract_from_body(event['body'])
+        key_type, creds = extract_from_body(event['body'])
         if key_type == AuthKeyType.USERPASSPAIR.value:
             # This is a username:password string. Verify and create claims
             return make_response(
