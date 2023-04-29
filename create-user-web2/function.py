@@ -28,16 +28,19 @@ else:
     LOGGER.setLevel(logging.DEBUG)
     LOG_HANDLER.setLevel(logging.DEBUG)
 
-PAYLOAD_DISPLAY_NAME_KEY = 'displayName'
-PAYLOAD_CREDENTIALS_KEY = 'credentials'
+PAYLOAD_NEW_ACCOUNT_KEY = 'NewAccount'
 
 
-def extract_from_body(payload: str) -> (str, str, str):
+class DuplicateAccountError(Exception):
+    """Exception raised when attempting to create a duplicate account"""
+
+
+def extract_from_body(payload: str) -> (str, str):
     """Interpret the payload as a JSON document and extract required info
     Arguments:
         payload: [str] -- JSON document as a string to extract from
     Returns:
-        user info: [tuple] -- contains username, email, and password
+        user info: [tuple] -- contains username and password
     Raises:
         json.JSONDecodeError -- if the payload cannot be decoded
         KeyError -- if the expected information is not found
@@ -49,10 +52,8 @@ def extract_from_body(payload: str) -> (str, str, str):
     doc = json.loads(payload)
     LOGGER.info("HTTP payload decoded successfully")
     LOGGER.info("Extracting information from payload")
-    display_name = doc[PAYLOAD_DISPLAY_NAME_KEY]
-    credentials = base64.b64decode(doc[PAYLOAD_CREDENTIALS_KEY].encode('utf-8')).decode('utf-8')
+    credentials = base64.b64decode(doc[PAYLOAD_NEW_ACCOUNT_KEY].encode('utf-8')).decode('utf-8')
     return (
-            display_name,
             credentials.split(':', 1)[0],
             credentials.split(':', 1)[1]
             )
@@ -89,12 +90,12 @@ def handler(event, context):  # pylint:disable=unused-argument
         Handler function for the create web2 user microservice
     """
     try:
-        name, _, raw_pass = extract_from_body(event['body'])
+        username, raw_pass = extract_from_body(event['body'])
         table = IdeaBankAccountsTable()
         LOGGER.info("Creating new user account")
         user = IdeaBankAccount.create_new(
                 **{
-                    IdeaBankAccount.PARTITION_KEY: name,
+                    IdeaBankAccount.PARTITION_KEY: username,
                     IdeaBankAccount.AUTHORIZER_ATTRIBUTE_KEY: raw_pass
                     })
         LOGGER.debug(
@@ -103,21 +104,24 @@ def handler(event, context):  # pylint:disable=unused-argument
                 )
         LOGGER.info("Creating new record for account: %s", user.item_key)
         if username_taken(table, user):
-            raise DataLinkTableInteractionException(
+            raise DuplicateAccountError(
                     f'Cannot create new account with `{user.item_key}`. It is already in use.'
                     )
         table.put_into_table(user)
         LOGGER.info("Successfully created new account record")
-        return user_creation_confirmation()
+        return make_response(201, {'success': {'message': f'Acount created for `{username}`'}})
     except KeyError as err:
         LOGGER.error("Missing expected information: %s", str(err))
-        return bad_request_response(str(err))
+        return make_response(400, {'error': {'message': str(err)}})
     except (json.JSONDecodeError, ValueError, binascii.Error, IndexError) as err:
         LOGGER.error("Could not interpret payload: %s", str(err))
-        return bad_request_response(str(err))
+        return make_response(400, {'error': {'message': str(err)}})
     except DataLinkTableInteractionException as err:
         LOGGER.error("Could not interact with DynamoDB: %s", str(err))
-        return bad_gateway_response(str(err))
+        return make_response(503, {'error': {'message': str(err)}})
+    except DuplicateAccountError as err:
+        LOGGER.error("Cannot create account: %s", str(err))
+        return make_response(401, {'error': {'message': str(err)}})
 
 
 def headers() -> dict:
@@ -132,52 +136,18 @@ def headers() -> dict:
     }
 
 
-def user_creation_confirmation():
+def make_response(status: int, body: dict) -> dict:
+    """Creates a lambda proxy compliant response
+    Arguments:
+        status: [int] the HTTP status code of the response
+        body: [dict] data structure to include in reponse body
+    Returns:
+        [dict] lambda proxy compliant response
     """
-        Successful response
-    """
-    LOGGER.info('Service succeeded')
+    LOGGER.info("Service reponse code: %d", status)
     return {
             'isBase64Encoded': False,
-            'statusCode': 201,
+            'statusCode': status,
             'headers': headers(),
-            'body': json.dumps({
-                'success': {
-                    'message': 'CREATED NEW USER'
-                    }
-                })
-            }
-
-
-def bad_request_response(err_msg: str):
-    """
-        Bad request response
-    """
-    LOGGER.error('Service could not process request')
-    return {
-            'isBase64Encoded': False,
-            'statusCode': 400,
-            'headers': headers(),
-            'body': json.dumps({
-                'error': {
-                    'message': err_msg
-                    }
-                })
-            }
-
-
-def bad_gateway_response(err_msg: str):
-    """
-        Timeout response
-    """
-    LOGGER.error('Service could not interact with DynamoDB')
-    return {
-            'isBase64Encoded': False,
-            'statusCode': 503,
-            'headers': headers(),
-            'body': json.dumps({
-                'error': {
-                    'message': err_msg
-                    }
-                })
+            'body': json.dumps(body)
             }
