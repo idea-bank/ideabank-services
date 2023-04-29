@@ -18,12 +18,10 @@ from function import handler, extract_from_body, username_taken
 
 class PayloadTestData:
     EVENT_OK = {
-        'body': '{\n\t"displayName": "somethingcatchy",' +
-                '\n\t"credentials": ' +
-                '"c29tZXRoaW5nQHRoaXNwbGFjZS5uZXQ6Y3JlYXRpdmVseXNlcmN1cmU="\n}'
+            'body': json.dumps({'NewAccount': 'dXNlcm5hbWU6cGFzc3dvcmQ='})
     }
     EVENT_TOO_SHORT = {
-        'body': '{\n\t"displayName": 5,\n\t"credentials": "d2hhdCBhcmUgdGhvc2U/"\n}'
+            'body': json.dumps({"NewAccount": "d2hhdCBhcmUgdGhvc2U/"})
         }
     EVENT_NOT_VALID_JSON = {
             'body': '{\n\t"displayName": "somethingcatchy", ["what", "is", "this?"]}'
@@ -38,12 +36,11 @@ class TestPayloadExtraction(unittest.TestCase):
 
     def test_successful_data_extraction(self):
         payload = extract_from_body(PayloadTestData.EVENT_OK['body'])
-        self.assertEqual(3, len(payload))
+        self.assertEqual(2, len(payload))
         self.assertTupleEqual(
                 (
-                    "somethingcatchy",
-                    "something@thisplace.net",
-                    "creativelysercure"
+                    "username",
+                    "password"
                     ),
                 payload
                 )
@@ -111,7 +108,7 @@ class TestHandler(unittest.TestCase):
             mockdb
             ):
         response = handler(PayloadTestData.EVENT_OK, {})
-        self.assertEqual(response['statusCode'], 503)  # TODO: Update with appropriate code
+        self.assertEqual(response['statusCode'], 401)
 
 
 if __name__ == '__main__':
