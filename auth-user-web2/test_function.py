@@ -115,30 +115,27 @@ class TestValidateCredentials(unittest.TestCase):
 class TestVerifyClaims(unittest.TestCase):
 
     def test_claims_not_verified_because_no_token_is_present(self):
-        self.assertFalse(
+        with self.assertRaises(function.NotAuthorizedError):
             function.validate_claims(
                     {
                         'fakejwt': 'faketoken',
                         'username': 'user'
                         }
                     )
-            )
 
     @patch('jwt.decode', side_effect=jwt.exceptions.ExpiredSignatureError)
     def test_claims_not_verified_because_token_is_expired(self, mockjwt):
-        self.assertFalse(
-                function.validate_claims(
-                    AuthorizationPayloads.VERIFY_TOKEN_REQUEST[function.PAYLOAD_CREDENTIALS_KEY]
-                    )
+        with self.assertRaises(function.NotAuthorizedError):
+            function.validate_claims(
+                AuthorizationPayloads.VERIFY_TOKEN_REQUEST[function.PAYLOAD_CREDENTIALS_KEY]
                 )
         mockjwt.assert_called_once()
 
     @patch('jwt.decode', side_effect=jwt.exceptions.DecodeError)
     def test_claims_not_verified_because_token_is_malformed(self, mockjwt):
-        self.assertFalse(
-                function.validate_claims(
-                    AuthorizationPayloads.VERIFY_TOKEN_REQUEST[function.PAYLOAD_CREDENTIALS_KEY]
-                    )
+        with self.assertRaises(function.NotAuthorizedError):
+            function.validate_claims(
+                AuthorizationPayloads.VERIFY_TOKEN_REQUEST[function.PAYLOAD_CREDENTIALS_KEY]
                 )
         mockjwt.assert_called_once()
 
@@ -229,6 +226,16 @@ class TestHandler(unittest.TestCase):
                             function.PAYLOAD_CREDENTIALS_KEY: 'lol'
                             }
                         )
+                    },
+                {}
+                )
+        assert response['statusCode'] == 401
+
+    @patch('function.validate_claims', return_value=False)
+    def test_unauthorized_response_with_incorrect_token_owner(self, mockjwt):
+        response = function.handler(
+                {
+                    'body': json.dumps(AuthorizationPayloads.VERIFY_TOKEN_REQUEST)
                     },
                 {}
                 )

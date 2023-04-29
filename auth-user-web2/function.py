@@ -146,14 +146,16 @@ def validate_claims(creds: dict) -> bool:
     Arguments:
         creds: [dict] containing a JWT and the user it claims to be for
     Returns:
-        [bool]: True if claims can be validated, False otherwise
+        [bool]: True if token ownership can be validated, False otherwise
+    Raises:
+        NotAuthorizedError if missing token or token claims cannot be validated
     """
     try:
         token = creds.get('jwt')
         token_for = creds.get('username')
         if not token or not token_for:
             LOGGER.info("No token provided to validate")
-            return False
+            raise NotAuthorizedError("No token presented")
         claims = jwt.decode(
                 token,
                 os.getenv('APP_AUTH_KEY'),
@@ -163,10 +165,10 @@ def validate_claims(creds: dict) -> bool:
         return claims['username'] == token_for
     except (jwt.exceptions.ImmatureSignatureError, jwt.exceptions.ExpiredSignatureError) as err:
         LOGGER.error("Claim immature or expired: %s", str(err))
-        return False
+        raise NotAuthorizedError(f"Invalid claim: {str(err)}") from err
     except jwt.exceptions.DecodeError as err:
         LOGGER.error("Provided token could not be decoded: %s", str(err))
-        return False
+        raise NotAuthorizedError(f"Failed to decode claims: {str(err)}") from err
 
 
 def handler(event, context):  # pylint:disable=unused-argument
@@ -186,6 +188,7 @@ def handler(event, context):  # pylint:disable=unused-argument
                         status=200,
                         body={'success': {'message': 'Token is valid'}}
                         )
+            raise NotAuthorizedError("Token ownership cannot be verified.")
         # We don't know what this is. Forbid it
         raise NotAuthorizedError(f"Unknown key type: {key_type}")
     except NotAuthorizedError as err:
