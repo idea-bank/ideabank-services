@@ -69,7 +69,7 @@ def handler(event, context):  # pylint:disable=unused-argument
                 )
     except DataLinkBlobShareFailure as err:
         return make_response(
-                status=503,
+                status=504,
                 body={'error': {'message': str(err)}}
                 )
 
