@@ -1,3 +1,8 @@
+
+##########################
+# !!! Deprecated !!!    #
+#########################
+
 aws dynamodb create-table \
     --table-name IdeaBankAccounts \
     --attribute-definitions \
