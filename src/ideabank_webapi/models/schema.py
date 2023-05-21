@@ -80,7 +80,11 @@ class Concept(IdeaBankSchema):  # pylint:disable=too-few-public-methods
             default=datetime.datetime.utcnow,
             onupdate=datetime.datetime.utcnow
             )
-    identifier = Column(String, Computed("author || '/' || title"))
+    identifier = Column(
+            String,
+            Computed("author || '/' || title", persisted=True),
+            unique=True
+            )
 
 
 class ConceptLink(IdeaBankSchema):  # pylint:disable=too-few-public-methods
