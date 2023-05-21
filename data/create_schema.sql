@@ -6,7 +6,6 @@ CREATE TABLE accounts (
     display_name VARCHAR(64) PRIMARY KEY,
     preferred_name VARCHAR(255),
     biography TEXT,
-    account_id CHAR(36) UNIQUE,
     password_hash CHAR(64),
     salt_value CHAR(64),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
