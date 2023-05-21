@@ -5,6 +5,7 @@
 """
 
 from .schema import (
+        IdeaBankSchema,
         Accounts,
         Concept,
         ConceptLink
