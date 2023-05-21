@@ -1,2 +1,0 @@
-python-dotenv
-ideabank-datalink @ git+https://github.com/idea-bank/ideabank-datalink.git
