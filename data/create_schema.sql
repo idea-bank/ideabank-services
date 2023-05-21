@@ -6,6 +6,7 @@ CREATE TABLE accounts (
     display_name VARCHAR(64) PRIMARY KEY,
     preferred_name VARCHAR(255),
     biography TEXT,
+    account_id CHAR(36) UNIQUE,
     password_hash CHAR(64),
     salt_value CHAR(64),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -38,20 +39,3 @@ CREATE TABLE concept_links (
         ON UPDATE CASCADE
         ON DELETE CASCADE
 );
-
-CREATE OR REPLACE FUNCTION update_updated_at()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = now();
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
-CREATE OR REPLACE TRIGGER update_account_updated_at
-    BEFORE UPDATE ON accounts
-    FOR EACH ROW EXECUTE PROCEDURE update_updated_at();
-
-
-CREATE OR REPLACE TRIGGER update_concept_updated_at
-    BEFORE UPDATE ON concepts
-    FOR EACH ROW EXECUTE PROCEDURE update_updated_at();
