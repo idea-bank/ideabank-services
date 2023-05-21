@@ -35,7 +35,7 @@ activate: ## Activate the virtual environment for bootstrapping (does NOT activa
 test: bootstrap ## Run unittests on the source directory
 	@( \
 		source .venv/bin/activate; \
-		pytest --cov=ideabank_webapi; \
+		pytest -s --cov=ideabank_webapi; \
 		coverage report -m; \
 	)
 

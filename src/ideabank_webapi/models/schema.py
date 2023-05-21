@@ -6,8 +6,8 @@
 
 import datetime
 
-from sqlalchemy.orm import DeclarativeBase, column_property
-from sqlalchemy import Column, String, DateTime, JSON
+from sqlalchemy.orm import DeclarativeBase
+from sqlalchemy import Column, String, DateTime, JSON, ForeignKey, Computed
 
 
 class IdeaBankSchema(DeclarativeBase):  # pylint:disable=too-few-public-methods
@@ -63,7 +63,15 @@ class Concept(IdeaBankSchema):  # pylint:disable=too-few-public-methods
     """
     __tablename__ = 'concepts'
     title = Column(String(128), primary_key=True)
-    author = Column(String(64), primary_key=True)
+    author = Column(
+            ForeignKey(
+                Accounts.display_name,
+                ondelete="SET DEFAULT",
+                onupdate="CASCADE"
+                ),
+            primary_key=True,
+            default='[Anonymous]'
+            )
     description = Column(String)
     diagram = Column(JSON)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
@@ -72,7 +80,7 @@ class Concept(IdeaBankSchema):  # pylint:disable=too-few-public-methods
             default=datetime.datetime.utcnow,
             onupdate=datetime.datetime.utcnow
             )
-    identifier = column_property(author + "/" + title)
+    identifier = Column(String, Computed("author || '/' || title"))
 
 
 class ConceptLink(IdeaBankSchema):  # pylint:disable=too-few-public-methods
@@ -82,5 +90,19 @@ class ConceptLink(IdeaBankSchema):  # pylint:disable=too-few-public-methods
         descendant: the unique identifying string of the descendant concept
     """
     __tablename__ = 'concept_links'
-    ancestor = Column(String(255), primary_key=True)
-    descendant = Column(String(255), primary_key=True)
+    ancestor = Column(
+            ForeignKey(
+                Concept.identifier,
+                onupdate="CASCADE",
+                ondelete="CASCADE"
+                ),
+            primary_key=True
+            )
+    descendant = Column(
+            ForeignKey(
+                Concept.identifier,
+                onupdate="CASCADE",
+                ondelete="CASCADE"
+                ),
+            primary_key=True
+            )
