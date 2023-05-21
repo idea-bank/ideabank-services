@@ -1,0 +1,30 @@
+name: Package testing
+
+on: [push]
+  
+env:
+  AWS_DEFAULT_REGION: us-west-2
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11"]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r dev_requirements.txt
+          python -m pip install .
+      - name: Test with pytest
+        run: |
+          pytest --cov=ideabank_webapi --verbose test/
