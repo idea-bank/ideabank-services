@@ -7,12 +7,12 @@
 from contextlib import contextmanager
 from typing import Union, Optional
 
-from ..config import ServiceConfig
-
 from sqlalchemy import create_engine, URL, Result
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql.expression import Select, Update, Delete
+
+from ..config import ServiceConfig
 
 
 class QueryService:

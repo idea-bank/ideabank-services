@@ -8,8 +8,7 @@ import re
 import base64
 import binascii
 
-from pydantic import BaseModel, validator
-from pydantic import HttpUrl
+from pydantic import BaseModel, validator, HttpUrl  # pylint:disable=no-name-in-module
 
 
 class CredentialSet(BaseModel):  # pylint:disable=too-few-public-methods
@@ -24,10 +23,12 @@ class CredentialSet(BaseModel):  # pylint:disable=too-few-public-methods
 
     @staticmethod
     def display_name_format():
+        """A regular expression for validating display name formats"""
         return re.compile(r"^[\w]{3,64}$")
 
     @staticmethod
     def password_format():
+        """A regular expression for validating password formats"""
         return re.compile(r"^[\w]{8,32}$")
 
     @validator('display_name')
@@ -47,7 +48,7 @@ class CredentialSet(BaseModel):  # pylint:disable=too-few-public-methods
                     ) from err
 
     @validator('password')
-    def validate_password(cls, value):
+    def validate_password(cls, value):  # pylint:disable=no-self-argument
         """Verifies password was base64 encoded and secure"""
         try:
             decoded = base64.b64decode(value).decode('utf-8')
