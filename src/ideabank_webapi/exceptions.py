@@ -17,7 +17,7 @@ class NoQueryToRunError(IdeaBankDataServiceException):
     """Exception raised when attempting to execute no query"""
 
 
-class NoeSessionToQueryOnError(IdeaBankDataServiceException):
+class NoSessionToQueryOnError(IdeaBankDataServiceException):
     """Exception raised when attempting to run queries without a session"""
 
 
