@@ -33,7 +33,7 @@ class S3Crud:
             key: unique string that indexes the data. Can be path like
             data: raw data to be uploaded to the bucket
         """
-        self._s3_session.put_object(
+        self._s3_client.put_object(
                 Bucket=ServiceConfig.FileBucket.BUCKET_NAME,
                 Key=key,
                 Body=data,
@@ -48,7 +48,7 @@ class S3Crud:
         Returns:
             [str]: a url to access the object
         """
-        return self._s3_session.generate_presigned_url(
+        return self._s3_client.generate_presigned_url(
                 ClientMethod='get_object',
                 Params={
                     'Bucket': ServiceConfig.FileBucket.BUCKET_NAME,
