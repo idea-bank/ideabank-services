@@ -22,12 +22,12 @@ class CredentialSet(BaseModel):  # pylint:disable=too-few-public-methods
     display_name: str
     password: str
 
-    @property
-    def display_name_format(self):
+    @staticmethod
+    def display_name_format():
         return re.compile(r"^[\w]{3,64}$")
 
-    @property
-    def password_format(self):
+    @staticmethod
+    def password_format():
         return re.compile(r"^[\w]{8,32}$")
 
     @validator('display_name')
