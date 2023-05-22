@@ -4,5 +4,13 @@
     :module author: Nathan Mendoza (nathancm@uci.edu)
 """
 
+from enum import Enum
+
 from .querydb import QueryService
 from .s3crud import S3Crud
+
+
+class RegisteredService(Enum):
+    """Enumeration of registered services"""
+    RAW_DB: QueryService.__name__
+    RAW_S3: S3Crud.__name__
