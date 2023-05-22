@@ -25,5 +25,9 @@ class IdeaBankEndpointHandlerException(BaseIdeaBankAPIException):
     """Base exception for endpoint handlers"""
 
 
+class HandlerNotIdleException(IdeaBankEndpointHandlerException):
+    """Exception raised when handler attempts to receive a request when not idle"""
+
+
 class IdeaBankDataModelingException(BaseIdeaBankAPIException):
     """Base exception for data modeling errors"""
