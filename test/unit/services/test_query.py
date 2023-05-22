@@ -6,16 +6,13 @@ from unittest.mock import patch
 from ideabank_webapi.services import QueryService
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import select, text
+from sqlalchemy import select, text, create_engine
 
 
-@patch.object(QueryService, 'CONNINFO', 'sqlite:///:memory:')
+@patch.object(QueryService, 'ENGINE', create_engine('sqlite:///:memory:', echo=True))
 class TestQueryService:
     def setup_method(self):
         self.qs = QueryService()
-
-    def test_connection_string_mocked(self):
-        assert self.qs.CONNINFO == 'sqlite:///:memory:'
 
     def test_new_service_instance_has_no_results_and_no_queued_queries(self):
         assert self.qs.results is None
