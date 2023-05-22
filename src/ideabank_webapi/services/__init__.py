@@ -12,5 +12,5 @@ from .s3crud import S3Crud
 
 class RegisteredService(Enum):
     """Enumeration of registered services"""
-    RAW_DB: QueryService.__name__
-    RAW_S3: S3Crud.__name__
+    RAW_DB = QueryService.__name__
+    RAW_S3 = S3Crud.__name__
