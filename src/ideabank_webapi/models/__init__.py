@@ -10,3 +10,9 @@ from .schema import (
         Concept,
         ConceptLink
         )
+
+from .artifacts import (
+        CredentialSet,
+        AuthorizationToken,
+        ProfileView
+        )
