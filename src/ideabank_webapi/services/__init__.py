@@ -5,3 +5,4 @@
 """
 
 from .querydb import QueryService
+from .s3crud import S3Crud
