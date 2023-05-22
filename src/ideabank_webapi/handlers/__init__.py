@@ -78,19 +78,17 @@ class BaseEndpointHandler(ABC):
             name: [RegisteredService] enum member of known services
             provider: instance of [name] that provides the service
         """
-        self._services.update((name, provider))
+        self._services.update({name: provider})
 
     @property
     @abstractmethod
     def payload_class(self):
         """Class that models the payload of this handler"""
-        raise NotImplementedError
 
     @property
     @abstractmethod
     def result_class(self):
         """Class that models the results of this handler"""
-        raise NotImplementedError
 
     def receive(self, incoming_data: BasePayload) -> None:
         """Handles the incoming data as a request to this handlers endpoint
@@ -125,7 +123,6 @@ class BaseEndpointHandler(ABC):
         Raises:
             [BaseIdeaBankDataServiceException] for any service related issues
         """
-        raise NotImplementedError
 
     @abstractmethod
     def _build_success_response(self, body: Any):
@@ -135,7 +132,6 @@ class BaseEndpointHandler(ABC):
         Returns:
             None
         """
-        raise NotImplementedError
 
     @abstractmethod
     def _build_error_response(self, body: Any):
@@ -145,4 +141,3 @@ class BaseEndpointHandler(ABC):
         Returns:
             None
         """
-        raise NotImplementedError
