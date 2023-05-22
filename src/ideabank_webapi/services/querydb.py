@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.sql.expression import Select, Update, Delete
 
 from ..config import ServiceConfig
+from ..exceptions import NoQueryToRunError, NoSessionToQueryOnError
 
 
 class QueryService:
@@ -51,11 +52,21 @@ class QueryService:
         Returns:
             None
         Raises:
-            IndexError if no next query is queued
+             if no next query is queued
         """
-        if self._session:
-            stmt = self._query_buffer.pop(0)
-            self._query_results = self._session.execute(stmt)
+        if not self._session:
+            raise NoSessionToQueryOnError(
+                    "The session for this service is not defined."
+                    " Define one using a with statement"
+                    )
+        if len(self._query_buffer) == 0:
+            raise NoQueryToRunError(
+                    "There is no queued query waiting to run."
+                    " Enqueue one by calling QueryService.add_query()"
+                    )
+
+        stmt = self._query_buffer.pop(0)
+        self._query_results = self._session.execute(stmt)
 
     @property
     def results(self) -> Optional[Result]:
