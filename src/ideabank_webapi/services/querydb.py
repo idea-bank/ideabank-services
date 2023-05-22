@@ -22,12 +22,7 @@ class QueryService:
         query_buffer: the list of queued queries to execute
         results: results of the last executed query
     """
-    ENGINE = None
-
-    def __init__(self):
-        if not self.ENGINE:
-            self.ENGINE = create_engine(
-                    URL.create(
+    CONNINFO = URL.create(
                         drivername="postgresql+psycopg",
                         username=ServiceConfig.DataBase.DBUSER,
                         password=ServiceConfig.DataBase.DBPASS,
@@ -35,7 +30,9 @@ class QueryService:
                         port=ServiceConfig.DataBase.DBPORT,
                         database=ServiceConfig.DataBase.DBNAME
                         )
-                    )
+    ENGINE = create_engine(CONNINFO)
+
+    def __init__(self):
         self._query_buffer = []
         self._query_results = None
 
