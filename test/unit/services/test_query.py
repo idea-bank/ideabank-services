@@ -3,6 +3,7 @@
 import pytest
 from unittest.mock import patch
 
+from ideabank_webapi.exceptions import NoQueryToRunError, NoSessionToQueryOnError
 from ideabank_webapi.services import QueryService
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy import select, text, create_engine
@@ -24,9 +25,14 @@ class TestQueryService:
         assert self.qs._session is None
 
     def test_execution_with_no_queued_queries_throws_error(self):
-        with pytest.raises(IndexError):
+        with pytest.raises(NoQueryToRunError):
             with self.qs as t:
                 t.exec_next()
+
+    def test_attempting_to_run_queries_without_session_throws_error(self):
+        with pytest.raises(NoSessionToQueryOnError):
+            self.qs.add_query(select(1))
+            self.qs.exec_next()
 
     def test_query_queue_size_increases_when_query_added(self):
         for i in range(1, 11):
