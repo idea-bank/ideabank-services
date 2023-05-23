@@ -103,7 +103,7 @@ class BaseEndpointHandler(ABC):
                     )
         self._services = EndpointHandlerStatus.PROCESSING
         try:
-            data = self._fetch_requested_data(incoming_data)
+            data = self._do_data_ops(incoming_data)
             self._result = self._build_success_response(data)
             self._status = EndpointHandlerStatus.COMPLETE
         except IdeaBankEndpointHandlerException as err:
@@ -114,7 +114,7 @@ class BaseEndpointHandler(ABC):
             self._status = EndpointHandlerStatus.ERROR
 
     @abstractmethod
-    def _fetch_requested_data(self, request: BasePayload) -> dict:
+    def _do_data_ops(self, request: BasePayload) -> dict:
         """Fetch the data requested in the payload from handler services
         Arguments:
             [BasePayload] data request

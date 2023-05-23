@@ -32,7 +32,7 @@ def test_handler():
         @property
         def result_class(self): return BaseResult
 
-        def _fetch_requested_data(self, request):
+        def _do_data_ops(self, request):
             return {'number': 1}
 
         def _build_success_response(self, body):
@@ -85,7 +85,7 @@ def test_handler_state_is_error_when_failed(test_handler, error_type):
     th = test_handler()
     with patch.object(
             type(th),
-            '_fetch_requested_data',
+            '_do_data_ops',
             side_effect=error_type
             ) as err:
         th.receive(th.payload_class(
