@@ -29,5 +29,12 @@ class HandlerNotIdleException(IdeaBankEndpointHandlerException):
     """Exception raised when handler attempts to receive a request when not idle"""
 
 
+class NoRegisteredProviderError(IdeaBankEndpointHandlerException):
+    """Exception raised when a service provider is requested, but not registered"""
+
+
+class ProviderMisconfiguredError(IdeaBankEndpointHandlerException):
+    """Exception raised when a service provider is not the expected type"""
+
 class IdeaBankDataModelingException(BaseIdeaBankAPIException):
     """Base exception for data modeling errors"""
