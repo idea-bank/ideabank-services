@@ -14,7 +14,9 @@ from ..services import RegisteredService
 from ..exceptions import (
         IdeaBankEndpointHandlerException,
         IdeaBankDataServiceException,
-        HandlerNotIdleException
+        HandlerNotIdleException,
+        NoRegisteredProviderError,
+        ProviderMisconfiguredError
         )
 
 
@@ -79,6 +81,29 @@ class BaseEndpointHandler(ABC):
             provider: instance of [name] that provides the service
         """
         self._services.update({name: provider})
+
+    def get_service(self, name: RegisteredService) -> Any:
+        """Obtain the service provider instance registed under name
+        Arguments:
+            name: [RegisteredService] enum member of knwon services
+        Returns:
+            API service provider
+        Raises:
+            NoRegisteredProviderError: when no provider is registered under name
+            ProviderMisconfiguredError: when the expected provider is incorrect
+        """
+        try:
+            provider = self._services[name]
+            if not isinstance(provider, name.value):
+                raise ProviderMisconfiguredError(
+                        f"Expected instance of {name.value.__name__}, "
+                        f"got instance of {provider.__class__.__name__}"
+                        )
+            return provider
+        except KeyError as err:
+            raise NoRegisteredProviderError(
+                    f"No service registered under {name}"
+                    ) from err
 
     @property
     @abstractmethod

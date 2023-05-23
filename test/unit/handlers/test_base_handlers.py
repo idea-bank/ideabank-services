@@ -12,13 +12,16 @@ from ideabank_webapi.handlers import (
         )
 from ideabank_webapi.services import (
         QueryService,
+        S3Crud,
         RegisteredService
         )
 
 from ideabank_webapi.exceptions import (
         IdeaBankDataServiceException,
         IdeaBankEndpointHandlerException,
-        HandlerNotIdleException
+        HandlerNotIdleException,
+        NoRegisteredProviderError,
+        ProviderMisconfiguredError
         )
 
 
@@ -117,3 +120,23 @@ def test_non_idle_handler_cannot_receive(test_handler):
             query_parameters={},
             body={}
         ))
+
+
+def test_use_of_service_provider(test_handler):
+    th = test_handler()
+    th.use_service(RegisteredService.RAW_DB, QueryService())
+    provider = th.get_service(RegisteredService.RAW_DB)
+    assert isinstance(provider, QueryService)
+
+
+@pytest.mark.xfail(raises=NoRegisteredProviderError)
+def test_use_of_missing_service_provider(test_handler):
+    th = test_handler()
+    th.get_service(RegisteredService.RAW_DB)
+
+
+@pytest.mark.xfail(raises=ProviderMisconfiguredError)
+def test_use_of_misconfigured_service_provider(test_handler):
+    th = test_handler()
+    th.use_service(RegisteredService.RAW_DB, S3Crud())
+    th.get_service(RegisteredService.RAW_DB)
