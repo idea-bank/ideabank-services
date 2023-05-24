@@ -8,7 +8,7 @@ from typing import Any, Optional, Dict, List, Union
 from abc import ABC, abstractmethod
 from enum import Enum
 
-from pydantic import BaseModel  # pylint:disable=no-name-in-module
+from pydantic import BaseModel, validator  # pylint:disable=no-name-in-module
 
 from ..services import RegisteredService
 from ..exceptions import (
@@ -20,18 +20,15 @@ from ..exceptions import (
         )
 
 
-class BaseResult(BaseModel):  # pylint:disable=too-few-public-methods
+class EndpointResponse(BaseModel):  # pylint:disable=too-few-public-methods
     """Base structure of a reponse form an endpoint handler"""
     code: int
-    msg: Optional[str]
-    body: Any
 
 
-class BasePayload(BaseModel):  # pylint:disable=too-few-public-methods
+class EndpointRequest(BaseModel):  # pylint:disable=too-few-public-methods
     """Base structure of a payload expected by an endpoint handler"""
-    path_variables: Dict[str, Any]
-    query_parameters: Dict[str, Any]
-    body: Dict[str, Union[Dict[str, Any], List[Any], Any]]
+    method: str
+    resource: str
 
 
 class EndpointHandlerStatus(Enum):
@@ -66,7 +63,7 @@ class BaseEndpointHandler(ABC):
         return self._status
 
     @property
-    def result(self) -> Optional[BaseResult]:
+    def result(self) -> Optional[EndpointResponse]:
         """Returns the results of this handler. May be None if not completed
         Returns:
             [Optional[BaseResult]]
@@ -115,7 +112,7 @@ class BaseEndpointHandler(ABC):
     def result_class(self):
         """Class that models the results of this handler"""
 
-    def receive(self, incoming_data: BasePayload) -> None:
+    def receive(self, incoming_data: EndpointRequest) -> None:
         """Handles the incoming data as a request to this handlers endpoint
         Arguments:
             incoming_data: [BasePayload] the payload to pass to this handler
@@ -126,7 +123,7 @@ class BaseEndpointHandler(ABC):
             raise HandlerNotIdleException(
                     f"Expected handler to be idle, but was {self.status}"
                     )
-        self._services = EndpointHandlerStatus.PROCESSING
+        self._status = EndpointHandlerStatus.PROCESSING
         try:
             data = self._do_data_ops(incoming_data)
             self._result = self._build_success_response(data)
@@ -139,8 +136,8 @@ class BaseEndpointHandler(ABC):
             self._status = EndpointHandlerStatus.ERROR
 
     @abstractmethod
-    def _do_data_ops(self, request: BasePayload) -> dict:
-        """Fetch the data requested in the payload from handler services
+    def _do_data_ops(self, request: EndpointRequest) -> EndpointResponse:
+        """Complete the data requested operation in the payload from handler services
         Arguments:
             [BasePayload] data request
         Returns:

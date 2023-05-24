@@ -5,8 +5,8 @@ import pytest
 from fastapi import status
 
 from ideabank_webapi.handlers import (
-        BaseResult,
-        BasePayload,
+        EndpointResponse,
+        EndpointRequest,
         BaseEndpointHandler,
         EndpointHandlerStatus
         )
@@ -30,23 +30,23 @@ def test_handler():
     class TestHandler(BaseEndpointHandler):
 
         @property
-        def payload_class(self): return BasePayload
+        def payload_class(self): return EndpointRequest
 
         @property
-        def result_class(self): return BaseResult
+        def result_class(self): return EndpointResponse
 
         def _do_data_ops(self, request):
             return {'number': 1}
 
         def _build_success_response(self, body):
-            return BaseResult(
+            return EndpointResponse(
                     code=status.HTTP_200_OK,
                     msg='Data retrieved successfully',
                     body=body
                     )
 
         def _build_error_response(self, body):
-            return BaseResult(
+            return EndpointResponse(
                     code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     msg='An error occurred',
                     body=body
@@ -61,22 +61,19 @@ def test_cannot_instantiate_base_handler():
 
 def test_handler_subclass_has_payload_and_result_classes_set(test_handler):
     th = test_handler()
-    assert th.payload_class == BasePayload
-    assert th.result_class == BaseResult
+    assert th.payload_class == EndpointRequest
+    assert th.result_class == EndpointResponse
 
 
 def test_handler_state_is_complete_when_successful(test_handler):
     th = test_handler()
     th.receive(th.payload_class(
-        path_variables={},
-        query_parameters={},
-        body={}
+        method='GET',
+        resource='/test/resource'
         ))
     assert th.status == EndpointHandlerStatus.COMPLETE
-    assert th.result == BaseResult(
+    assert th.result == EndpointResponse(
             code=status.HTTP_200_OK,
-            msg='Data retrieved successfully',
-            body={'number': 1}
             )
 
 
@@ -92,15 +89,12 @@ def test_handler_state_is_error_when_failed(test_handler, error_type):
             side_effect=error_type
             ) as err:
         th.receive(th.payload_class(
-            path_variables={},
-            query_parameters={},
-            body={}
+            method='GET',
+            resource='/test/resource'
             ))
         assert th.status == EndpointHandlerStatus.ERROR
         assert th.result == th.result_class(
                 code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                msg='An error occurred',
-                body=''
                 )
         err.assert_called_once()
 
@@ -116,9 +110,8 @@ def test_non_idle_handler_cannot_receive(test_handler):
     th._status = EndpointHandlerStatus.PROCESSING
     with pytest.raises(HandlerNotIdleException):
         th.receive(th.payload_class(
-            path_variables={},
-            query_parameters={},
-            body={}
+            method='GET',
+            resource='/test/resource'
         ))
 
 
