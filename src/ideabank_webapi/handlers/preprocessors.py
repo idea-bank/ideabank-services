@@ -1,5 +1,5 @@
 """
-    :module name: guards
+    :module name: preprocessors
     :module summary: extensions of the base handler that add extra steps to the receive method
     :module author: Nathan Mendoza (nathancm@uci.edu)
 """
