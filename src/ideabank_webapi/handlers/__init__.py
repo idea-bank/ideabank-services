@@ -126,13 +126,13 @@ class BaseEndpointHandler(ABC):
         self._status = EndpointHandlerStatus.PROCESSING
         try:
             data = self._do_data_ops(incoming_data)
-            self._result = self._build_success_response(data)
+            self._build_success_response(data)
             self._status = EndpointHandlerStatus.COMPLETE
         except IdeaBankEndpointHandlerException as err:
-            self._result = self._build_error_response(str(err))
+            self._build_error_response(str(err))
             self._status = EndpointHandlerStatus.ERROR
         except IdeaBankDataServiceException as err:
-            self._result = self._build_error_response(str(err))
+            self._build_error_response(str(err))
             self._status = EndpointHandlerStatus.ERROR
 
     @abstractmethod
