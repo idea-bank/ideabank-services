@@ -60,14 +60,14 @@ class AuthorizationRequired(BaseEndpointHandler):
                     "Invalid token presented."
                     ) from err
 
-    def _build_error_response(self, msg: Optional[str]) -> None:
+    def _build_error_response(self, body: Optional[str]) -> None:
         """Set the result of this handler to be unauthorized
         Arguments:
             msg: [str] optional message to include in the access denied response
         """
         self._result = AccessDenied(
                 code=status.HTTP_401_UNAUTHORIZED,
-                msg=msg if msg else None,
+                msg=body
                 )
 
     def receive(self, incoming_data: AuthorizedRequest) -> None:
