@@ -12,6 +12,7 @@ from ideabank_webapi.handlers.preprocessors import (
         AuthorizedRequest
     )
 from ideabank_webapi.models.artifacts import AuthorizationToken
+from ideabank_webapi.exceptions import IdeaBankEndpointHandlerException
 
 
 import pytest
@@ -36,6 +37,11 @@ def test_auth_handler():
         def _build_success_response(self, body):
             self._result = EndpointResponse(
                     code=status.HTTP_200_OK
+                    )
+
+        def _build_error_response(self, body):
+            self._result = EndpointResponse(
+                    code=status.HTTP_500_INTERNAL_SERVER_ERROR
                     )
 
     return TestAuthorizedHandler
@@ -92,3 +98,25 @@ def test_handler_fails_when_token_is_invalid(mock_jwt, test_auth_handler):
             msg="Invalid token presented."
             )
     assert th.status == EndpointHandlerStatus.ERROR
+
+
+@patch('jwt.decode', return_value={'username': 'user'})
+def test_concrete_handler_errors_are_reported_after_authorization(mock_jwt, test_auth_handler):
+    th = test_auth_handler()
+    with patch.object(
+            type(th),
+            '_do_data_ops',
+            side_effect=IdeaBankEndpointHandlerException
+            ):
+        th.receive(AuthorizedRequest(
+            method='GET',
+            resource='/resource/requiring/authorization',
+            auth_token=AuthorizationToken(
+                token='token',
+                presenter='user'
+                )
+            ))
+        assert th.status == EndpointHandlerStatus.ERROR
+        assert th.result == EndpointResponse(
+                    code=status.HTTP_500_INTERNAL_SERVER_ERROR
+                    )
