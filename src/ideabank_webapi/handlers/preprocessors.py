@@ -53,14 +53,14 @@ class AuthorizationRequired(BaseEndpointHandler):
                 )
             if claims['username'] != authorization.presenter:
                 raise NotAuthorizedError(
-                        "Cannnot verify ownership of token."
+                        "Cannot verify ownership of token."
                         )
         except jwt.exceptions.InvalidTokenError as err:
             raise NotAuthorizedError(
                     "Invalid token presented."
                     ) from err
 
-    def _deny_access(self, msg: Optional[str]) -> None:
+    def _build_error_response(self, msg: Optional[str]) -> None:
         """Set the result of this handler to be unauthorized
         Arguments:
             msg: [str] optional message to include in the access denied response
@@ -81,5 +81,5 @@ class AuthorizationRequired(BaseEndpointHandler):
             self._check_if_authorized(incoming_data.auth_token)
             super().receive(incoming_data)
         except NotAuthorizedError as err:
-            self._deny_access(str(err))
+            self._build_error_response(str(err))
             self._status = EndpointHandlerStatus.ERROR
