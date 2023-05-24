@@ -4,11 +4,11 @@
     :module author: Nathan Mendoza (nathancm@uci.edu)
 """
 
-from typing import Any, Optional, Dict, List, Union
+from typing import Any, Optional
 from abc import ABC, abstractmethod
 from enum import Enum
 
-from pydantic import BaseModel, validator  # pylint:disable=no-name-in-module
+from pydantic import BaseModel  # pylint:disable=no-name-in-module
 
 from ..services import RegisteredService
 from ..exceptions import (

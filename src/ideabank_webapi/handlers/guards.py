@@ -1,6 +1,6 @@
 """
     :module name: guards
-    :module summary: extensions of the base endpoint handler that add extra steps to the receive method
+    :module summary: extensions of the base handler that add extra steps to the receive method
     :module author: Nathan Mendoza (nathancm@uci.edu)
 """
 
@@ -21,10 +21,12 @@ from ..models.artifacts import AuthorizationToken
 
 
 class AuthorizedRequest(EndpointRequest):  # pylint:disable=too-few-public-methods
+    """Models a request that includes an authorization token"""
     auth_token: AuthorizationToken
 
 
-class AccessDenied(EndpointResponse):  # pyling:disable=too-few-public-methods
+class AccessDenied(EndpointResponse):  # pylint:disable=too-few-public-methods
+    """Models an access denied response with an optional explanation"""
     msg: Optional[str]
 
 
@@ -53,17 +55,17 @@ class AuthorizationRequired(BaseEndpointHandler):
                 raise NotAuthorizedError(
                         "Cannnot verify ownership of token."
                         )
-        except jwt.exceptions.InvalidTokenError:
+        except jwt.exceptions.InvalidTokenError as err:
             raise NotAuthorizedError(
                     "Invalid token presented."
-                    )
+                    ) from err
 
     def _deny_access(self, msg: Optional[str]) -> None:
         """Set the result of this handler to be unauthorized
         Arguments:
             msg: [str] optional message to include in the access denied response
         """
-        self._results = AccessDenied(
+        self._result = AccessDenied(
                 code=status.HTTP_401_UNAUTHORIZED,
                 msg=msg if msg else None,
                 )
@@ -77,7 +79,7 @@ class AuthorizationRequired(BaseEndpointHandler):
         """
         try:
             self._check_if_authorized(incoming_data.auth_token)
-            BaseEndpointHandler.receive(incoming_data)
+            super().receive(incoming_data)
         except NotAuthorizedError as err:
             self._deny_access(str(err))
             self._status = EndpointHandlerStatus.ERROR
