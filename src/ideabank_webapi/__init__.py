@@ -27,15 +27,20 @@ LOGGER.addHandler(LOG_HANDLER)
 
 @app.get("/")
 def read_root():
+    """Default endpoint"""
     time.sleep(3)
-    LOGGER.info(f"Request being handled by Thread#{threading.get_native_id()}")
+    LOGGER.info(
+            "Request being handled by Thread#%s",
+            str(threading.get_native_id())
+        )
     LOGGER.info("Respond to root resource")
     return {"Hello": "World"}
 
 
 @app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
+def read_item(item_id: int, q_param: Union[str, None] = None):
+    """Endpoint with path and query parameter"""
     LOGGER.info("Respond to items resource")
-    if not q:
+    if not q_param:
         LOGGER.warning("query parameter q not defined")
-    return {"item_id": item_id, "q": q}
+    return {"item_id": item_id, "q_param": q_param}
