@@ -13,7 +13,6 @@ from pydantic import BaseModel, validator, HttpUrl  # pylint:disable=no-name-in-
 
 class CredentialSet(BaseModel):  # pylint:disable=too-few-public-methods
     """Represents a set of credentials used for account creation/authentication
-    !!! This should be received through base64 encoding !!!
     Attributes:
         display_name: display name of the user
         password: password of the user
@@ -33,35 +32,23 @@ class CredentialSet(BaseModel):  # pylint:disable=too-few-public-methods
 
     @validator('display_name')
     def validate_display_name(cls, value):  # pylint:disable=no-self-argument
-        """Verifies dissplay name was base64 encoded and meets format"""
-        try:
-            decoded = base64.b64decode(value).decode('utf-8')
-            if re.match(cls.display_name_format(), decoded):
-                return decoded
-            raise TypeError(
-                    "Display name must be between 3 and 64 character "
-                    "and consists of letters, numbers and underscores"
-                    )
-        except (ValueError, binascii.Error) as err:
-            raise TypeError(
-                    "Dispay name cannot be decoded from base64"
-                    ) from err
+        """Verifies dissplay name meets format"""
+        if re.match(cls.display_name_format(), value):
+            return value
+        raise TypeError(
+                "Display name must be between 3 and 64 character "
+                "and consists of letters, numbers and underscores"
+                )
 
     @validator('password')
     def validate_password(cls, value):  # pylint:disable=no-self-argument
-        """Verifies password was base64 encoded and secure"""
-        try:
-            decoded = base64.b64decode(value).decode('utf-8')
-            if re.match(cls.password_format(), decoded):
-                return decoded
-            raise TypeError(
-                    "Password must be at least 8 characters and "
-                    "consist of letters AND numbers"
-                    )
-        except (ValueError, binascii.Error) as err:
-            raise TypeError(
-                    "Password cannot be decoded from base64"
-                   ) from err
+        """Verifies password is of appropriate length"""
+        if re.match(cls.password_format(), value):
+            return value
+        raise TypeError(
+                "Password must be at least 8 characters and "
+                "consist of letters AND numbers"
+                )
 
 
 class AuthorizationToken(BaseModel):  # pylint:disable=too-few-public-methods

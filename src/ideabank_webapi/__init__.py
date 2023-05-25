@@ -9,7 +9,11 @@ import logging
 import time
 import threading
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
+
+from .handlers.creators import AccountCreationHandler, AccountCreationRequest
+from .models.artifacts import CredentialSet
+from .services import RegisteredService, AccountsDataService
 
 app = FastAPI()
 
@@ -44,3 +48,20 @@ def read_item(item_id: int, q_param: Union[str, None] = None):
     if not q_param:
         LOGGER.warning("query parameter q not defined")
     return {"item_id": item_id, "q_param": q_param}
+
+
+@app.post("/accounts/create",)
+def create_account(
+        new_account: CredentialSet,
+        response: Response
+        ):
+    """Create a new account with the given display name and password if available"""
+    handler = AccountCreationHandler()
+    handler.use_service(RegisteredService.ACCOUNTS_DS, AccountsDataService())
+    handler.receive(AccountCreationRequest(
+        method='POST',
+        resource='/accounts/create',
+        new_account=new_account
+        ))
+    response.status_code = handler.result.code
+    return handler.result
