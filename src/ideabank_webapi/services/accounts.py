@@ -4,12 +4,16 @@
     :module author: Nathan Mendoza (nathancm@uci.edu)
 """
 
+import logging
+
 from sqlalchemy import select, insert
 from sqlalchemy.sql.expression import Select, Insert
 
 from .querydb import QueryService
 from .s3crud import S3Crud
 from ..models.schema import Accounts
+
+LOGGER = logging.getLogger(__name__)
 
 
 class AccountsDataService(QueryService, S3Crud):
@@ -25,6 +29,7 @@ class AccountsDataService(QueryService, S3Crud):
         Returns:
             [Insert] a SQLAlchemy Insert statement to create the account
         """
+        LOGGER.info("Built query to create a new account")
         return insert(Accounts) \
             .values(
                     display_name=username,
@@ -41,6 +46,7 @@ class AccountsDataService(QueryService, S3Crud):
         Returns:
             [Select] a SQLAlchemy Select statement
         """
+        LOGGER.info("Built query to obtain authentication information")
         return select(
                 Accounts.password_hash,
                 Accounts.salt_value
