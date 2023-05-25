@@ -1,15 +1,12 @@
 """Tests for api artifact models"""
 
-from itertools import permutations
-
 import pytest
 
 from pydantic import ValidationError
 
 from ideabank_webapi.models import (
         CredentialSet,
-        AuthorizationToken,
-        ProfileView
+        AccountRecord
         )
 
 
@@ -34,3 +31,32 @@ def test_invalid_credential_set(username, password):
             }
     with pytest.raises(ValidationError):
         CredentialSet(**payload)
+
+
+def test_valid_account_record():
+    payload = {
+            'display_name': 'username',
+            'password_hash': 64 * 'a',
+            'salt_value': 64 * 'b'
+            }
+    record = AccountRecord(**payload)
+    assert record.display_name == 'username'
+    assert record.password_hash == 64 * 'a'
+    assert record.salt_value == 64 * 'b'
+
+
+@pytest.mark.parametrize("username, hash, salt", [
+    ('username1', 60 * 'a', 64 * 'b'),  # hash too short
+    ('username2', 70 * 'a', 64 * 'b'),  # hash too long
+    ('username3', 64 * 'a', 60 * 'b'),  # salt too short
+    ('username4', 64 * 'a', 70 * 'b'),  # salt too long
+    ('username5', 64 * 'z', 64 * 'b'),  # hash not hex
+    ('username6', 64 * 'a', 64 * 'y')   # salt not hex
+    ])
+def test_invalid_account_record(username, hash, salt):
+    with pytest.raises(ValidationError):
+        AccountRecord(
+                display_name=username,
+                password_hash=hash,
+                salt_value=salt
+                )
