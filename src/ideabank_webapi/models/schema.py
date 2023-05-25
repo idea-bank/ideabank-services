@@ -4,10 +4,13 @@
     :module author: Nathan Mendoza (nathancm@uci.edu)
 """
 
+import logging
 import datetime
 
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import Column, String, DateTime, JSON, ForeignKey, Computed
+
+LOGGER = logging.getLogger(__name__)
 
 
 class IdeaBankSchema(DeclarativeBase):  # pylint:disable=too-few-public-methods
@@ -16,12 +19,20 @@ class IdeaBankSchema(DeclarativeBase):  # pylint:disable=too-few-public-methods
 
 def _derive_preferred_name(context):
     """Gets the default preferred name base on current display name"""
+    LOGGER.info(
+            "Generating a default preferred name field for %s",
+            context.get_current_parameters['display_name']
+            )
     return context.get_current_parameters()['display_name']
 
 
 def _default_bio_placeholder(context):
     """Gets the default bio based on current display name"""
     current_username = context.get_current_parameters()['display_name']
+    LOGGER.info(
+            "Generating a default profile field for %s",
+            current_username
+            )
     return f'{current_username} hasn\'t added a bio.'
 
 
