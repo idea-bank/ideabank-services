@@ -14,6 +14,7 @@ from .schema import (
 from .artifacts import (
         IdeaBankArtifact,
         CredentialSet,
+        AccountRecord,
         AuthorizationToken,
         ProfileView
         )
@@ -21,5 +22,5 @@ from .artifacts import (
 from .artifacts import (
         EndpointResponse,
         EndpointSuccessResponse,
-        EndpointSuccessResponse
+        EndpointErrorResponse
         )

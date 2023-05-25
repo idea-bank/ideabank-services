@@ -69,6 +69,36 @@ class CredentialSet(IdeaBankArtifact):  # pylint:disable=too-few-public-methods
                 )
 
 
+class AccountRecord(BaseModel):  # pylint:disable=too-few-public-methods
+    """Models a secure version of credentials that can be saved to the db"""
+    display_name: str
+    password_hash: str
+    salt_value: str
+
+    @validator('password_hash')
+    def is_valid_hash(cls, value):  # pylint:disable=no-self-argument
+        """Verifies hash digest format"""
+        if re.match(cls.hex_string(), value):
+            return value
+        raise TypeError(
+                "Hash value is not a hexadecimal of length 64"
+                )
+
+    @validator('salt_value')
+    def is_valid_hex(cls, value):  # pylint:disable=no-self-argument
+        """Verifies salte value formath"""
+        if re.match(cls.hex_string(), value):
+            return value
+        raise TypeError(
+                "Hash value is not a hexadecimal of length 64"
+                )
+
+    @staticmethod
+    def hex_string() -> re.Pattern:
+        """A regular expression matching against a valid hex string of lenth 64"""
+        return re.compile(r'[0-9A-Fa-g]{64}')
+
+
 class AuthorizationToken(IdeaBankArtifact):  # pylint:disable=too-few-public-methods
     """Represent the presentation of a authorization token
     Attributes:
