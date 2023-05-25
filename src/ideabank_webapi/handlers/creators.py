@@ -37,6 +37,7 @@ class AccountCreationHandler(BaseEndpointHandler):
     """Endpoint handler dealing with account creation"""
 
     class AccountRecord(BaseModel):  # pylint:disable=too-few-public-methods
+        """Models a secure version of credentials that can be saved to the db"""
         display_name: str
         password_hash: str
         salt_value: str
@@ -56,14 +57,14 @@ class AccountCreationHandler(BaseEndpointHandler):
                 username=request.new_account.display_name,
                 raw_pass=request.new_account.password
                 )
-        with self.get_service(RegisteredService.ACCOUNTS_DS) as ds:
-            ds.add_query(ds.create_account(
+        with self.get_service(RegisteredService.ACCOUNTS_DS) as service:
+            service.add_query(service.create_account(
                     username=secured_request.display_name,
                     hashed_password=secured_request.password_hash,
                     salt_value=secured_request.salt_value
                 ))
-            ds.exec_next()
-            return ds.results.one()
+            service.exec_next()
+            return service.results.one().display_name
 
     def _secure_payload(self, username, raw_pass):
         salt = secrets.token_hex()

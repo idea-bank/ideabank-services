@@ -5,8 +5,6 @@
 """
 
 import re
-import base64
-import binascii
 
 from pydantic import BaseModel, validator, HttpUrl  # pylint:disable=no-name-in-module
 
