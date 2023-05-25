@@ -11,23 +11,15 @@ from fastapi import status
 
 from . import (
         BaseEndpointHandler,
-        EndpointRequest,
-        EndpointResponse,
         EndpointHandlerStatus
     )
 from ..config import ServiceConfig
 from ..exceptions import NotAuthorizedError
-from ..models.artifacts import AuthorizationToken
-
-
-class AuthorizedRequest(EndpointRequest):  # pylint:disable=too-few-public-methods
-    """Models a request that includes an authorization token"""
-    auth_token: AuthorizationToken
-
-
-class AccessDenied(EndpointResponse):  # pylint:disable=too-few-public-methods
-    """Models an access denied response with an optional explanation"""
-    msg: Optional[str]
+from ..models import (
+        AuthorizationToken,
+        EndpointErrorResponse,
+        AuthorizedPayload
+    )
 
 
 class AuthorizationRequired(BaseEndpointHandler):
@@ -65,17 +57,17 @@ class AuthorizationRequired(BaseEndpointHandler):
         Arguments:
             msg: [str] optional message to include in the access denied response
         """
-        self._result = AccessDenied(
+        self._result = EndpointErrorResponse(
                 code=status.HTTP_401_UNAUTHORIZED,
                 msg=body
                 )
 
-    def receive(self, incoming_data: AuthorizedRequest) -> None:
+    def receive(self, incoming_data: AuthorizedPayload) -> None:
         """Handles the incoming data as a request to this handlers endpoint
         Arguments:
             incoming_data: [BasePayload] the payload to pass to this handler
         Returns:
-            [None] use results() to obtain handler results
+            [None] use result to obtain handler results
         """
         try:
             self._check_if_authorized(incoming_data.auth_token)
