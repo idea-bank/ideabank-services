@@ -1,7 +1,12 @@
+"""
+    :module name: responses
+    :module summary: classes that model the responses delivered by this API
+    :module author: Nathan Mendoza (nathancm@uci.edu)
+"""
 
 from typing import Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel  # pylint:disable=no-name-in-module
 
 
 class EndpointResponse(BaseModel):  # pylint:disable=too-few-public-methods

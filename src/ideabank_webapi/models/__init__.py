@@ -19,8 +19,13 @@ from .artifacts import (
         ProfileView
         )
 
-from .artifacts import (
+from .responses import (
         EndpointResponse,
         EndpointSuccessResponse,
         EndpointErrorResponse
+        )
+
+from .payloads import (
+        EndpointPayload,
+        AuthorizedPayload
         )
