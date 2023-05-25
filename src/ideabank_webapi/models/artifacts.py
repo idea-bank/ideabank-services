@@ -5,28 +5,12 @@
 """
 
 import re
-from typing import Optional
 
 from pydantic import BaseModel, validator, HttpUrl  # pylint:disable=no-name-in-module
 
 
 class IdeaBankArtifact(BaseModel):  # pylint:disable=too-few-public-methods
     """Base class for all data entity representable by this API"""
-
-
-class EndpointResponse(BaseModel):  # pylint:disable=too-few-public-methods
-    """Base class for all response model produced by this API"""
-    code: int
-
-
-class EndpointSuccessResponse(EndpointResponse):  # pylint:disable=too-few-public-methods
-    """Base class for all successful response models produced by this API"""
-    msg: Optional[str]
-
-
-class EndpointErrorResponse(EndpointResponse):  # pylint:disable=too-few-public-methods
-    """Base class for all error response models produced by this API"""
-    err_msg: Optional[str]
 
 
 class CredentialSet(IdeaBankArtifact):  # pylint:disable=too-few-public-methods
