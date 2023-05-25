@@ -4,9 +4,12 @@
     :module author: Nathan Mendoza (nathancm@uci.edu)
 """
 
+import logging
 import re
 
 from pydantic import BaseModel, validator, HttpUrl  # pylint:disable=no-name-in-module
+
+LOGGER = logging.getLogger(__name__)
 
 
 class IdeaBankArtifact(BaseModel):  # pylint:disable=too-few-public-methods
@@ -36,7 +39,9 @@ class CredentialSet(IdeaBankArtifact):  # pylint:disable=too-few-public-methods
     def validate_display_name(cls, value):  # pylint:disable=no-self-argument
         """Verifies dissplay name meets format"""
         if re.match(cls.display_name_format(), value):
+            LOGGER.debug("Display name format is valid")
             return value
+        LOGGER.debug("Display name format is invalid")
         raise TypeError(
                 "Display name must be between 3 and 64 character "
                 "and consists of letters, numbers and underscores"
@@ -46,7 +51,9 @@ class CredentialSet(IdeaBankArtifact):  # pylint:disable=too-few-public-methods
     def validate_password(cls, value):  # pylint:disable=no-self-argument
         """Verifies password is of appropriate length"""
         if re.match(cls.password_format(), value):
+            LOGGER.debug("Password length is appropriate")
             return value
+        LOGGER.debug("Password length is inappropriate")
         raise TypeError(
                 "Password must be at least 8 characters and "
                 "consist of letters AND numbers"
@@ -63,7 +70,9 @@ class AccountRecord(BaseModel):  # pylint:disable=too-few-public-methods
     def is_valid_hash(cls, value):  # pylint:disable=no-self-argument
         """Verifies hash digest format"""
         if re.match(cls.hex_string(), value):
+            LOGGER.debug("Password hash is valid")
             return value
+        LOGGER.debug("Password hash is not valid")
         raise TypeError(
                 "Hash value is not a hexadecimal of length 64"
                 )
@@ -72,7 +81,9 @@ class AccountRecord(BaseModel):  # pylint:disable=too-few-public-methods
     def is_valid_hex(cls, value):  # pylint:disable=no-self-argument
         """Verifies salte value formath"""
         if re.match(cls.hex_string(), value):
+            LOGGER.debug("Salt value is valid.")
             return value
+        LOGGER.debug("Salt value is invalid.")
         raise TypeError(
                 "Hash value is not a hexadecimal of length 64"
                 )
