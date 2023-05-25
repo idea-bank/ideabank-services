@@ -19,7 +19,8 @@ from ideabank_webapi.exceptions import (
         IdeaBankEndpointHandlerException,
         HandlerNotIdleException,
         NoRegisteredProviderError,
-        ProviderMisconfiguredError
+        ProviderMisconfiguredError,
+        PrematureResultRetrievalException
         )
 from ideabank_webapi.models import EndpointResponse, EndpointPayload
 
@@ -107,3 +108,9 @@ def test_use_of_misconfigured_service_provider(test_handler):
     th = test_handler()
     th.use_service(RegisteredService.RAW_DB, S3Crud())
     th.get_service(RegisteredService.RAW_DB)
+
+
+@pytest.mark.xfail(raises=PrematureResultRetrievalException)
+def test_getting_results_before_ready_throws_error(test_handler):
+    th = test_handler()
+    th.result
