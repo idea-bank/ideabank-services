@@ -8,7 +8,7 @@ from typing import Any, Union, Sequence, Mapping
 from abc import ABC, abstractmethod
 from enum import Enum
 
-from ..models import EndpointResponse, IdeaBankArtifact
+from ..models import EndpointResponse, IdeaBankArtifact, EndpointPayload
 from ..services import RegisteredService
 from ..exceptions import (
         IdeaBankEndpointHandlerException,
@@ -97,7 +97,7 @@ class BaseEndpointHandler(ABC):
                     f"No service registered under {name}"
                     ) from err
 
-    def receive(self, incoming_data: Any) -> None:
+    def receive(self, incoming_data: Union[IdeaBankArtifact, EndpointPayload]) -> None:
         """Handles the incoming data as a request to this handlers endpoint
         Arguments:
             incoming_data: [BasePayload] the payload to pass to this handler
