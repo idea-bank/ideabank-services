@@ -5,8 +5,6 @@ import pytest
 from fastapi import status
 
 from ideabank_webapi.handlers import (
-        EndpointResponse,
-        EndpointRequest,
         BaseEndpointHandler,
         EndpointHandlerStatus
         )
@@ -23,17 +21,12 @@ from ideabank_webapi.exceptions import (
         NoRegisteredProviderError,
         ProviderMisconfiguredError
         )
+from ideabank_webapi.models import EndpointResponse, EndpointPayload
 
 
 @pytest.fixture
 def test_handler():
     class TestHandler(BaseEndpointHandler):
-
-        @property
-        def payload_class(self): return EndpointRequest
-
-        @property
-        def result_class(self): return EndpointResponse
 
         def _do_data_ops(self, request):
             return {'number': 1}
@@ -55,18 +48,9 @@ def test_cannot_instantiate_base_handler():
     BaseEndpointHandler()
 
 
-def test_handler_subclass_has_payload_and_result_classes_set(test_handler):
-    th = test_handler()
-    assert th.payload_class == EndpointRequest
-    assert th.result_class == EndpointResponse
-
-
 def test_handler_state_is_complete_when_successful(test_handler):
     th = test_handler()
-    th.receive(th.payload_class(
-        method='GET',
-        resource='/test/resource'
-        ))
+    th.receive(EndpointPayload())
     assert th.status == EndpointHandlerStatus.COMPLETE
     assert th.result == EndpointResponse(
             code=status.HTTP_200_OK,
@@ -84,12 +68,9 @@ def test_handler_state_is_error_when_failed(test_handler, error_type):
             '_do_data_ops',
             side_effect=error_type
             ) as err:
-        th.receive(th.payload_class(
-            method='GET',
-            resource='/test/resource'
-            ))
+        th.receive(EndpointPayload())
         assert th.status == EndpointHandlerStatus.ERROR
-        assert th.result == th.result_class(
+        assert th.result == EndpointResponse(
                 code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 )
         err.assert_called_once()
@@ -105,10 +86,7 @@ def test_non_idle_handler_cannot_receive(test_handler):
     th = test_handler()
     th._status = EndpointHandlerStatus.PROCESSING
     with pytest.raises(HandlerNotIdleException):
-        th.receive(th.payload_class(
-            method='GET',
-            resource='/test/resource'
-        ))
+        th.receive(EndpointPayload())
 
 
 def test_use_of_service_provider(test_handler):
