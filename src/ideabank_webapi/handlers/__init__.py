@@ -4,31 +4,20 @@
     :module author: Nathan Mendoza (nathancm@uci.edu)
 """
 
-from typing import Any, Optional
+from typing import Any, Union, Sequence, Mapping
 from abc import ABC, abstractmethod
 from enum import Enum
 
-from pydantic import BaseModel  # pylint:disable=no-name-in-module
-
+from ..models import EndpointResponse, IdeaBankArtifact
 from ..services import RegisteredService
 from ..exceptions import (
         IdeaBankEndpointHandlerException,
         IdeaBankDataServiceException,
         HandlerNotIdleException,
         NoRegisteredProviderError,
-        ProviderMisconfiguredError
+        ProviderMisconfiguredError,
+        PrematureResultRetrievalException
         )
-
-
-class EndpointResponse(BaseModel):  # pylint:disable=too-few-public-methods
-    """Base structure of a reponse form an endpoint handler"""
-    code: int
-
-
-class EndpointRequest(BaseModel):  # pylint:disable=too-few-public-methods
-    """Base structure of a payload expected by an endpoint handler"""
-    method: str
-    resource: str
 
 
 class EndpointHandlerStatus(Enum):
@@ -63,11 +52,17 @@ class BaseEndpointHandler(ABC):
         return self._status
 
     @property
-    def result(self) -> Optional[EndpointResponse]:
+    def result(self) -> EndpointResponse:
         """Returns the results of this handler. May be None if not completed
         Returns:
-            [Optional[BaseResult]]
+            EndpointResponse
+        Raises:
+            PrematureResultRetrievalException if handler is not complete/error
         """
+        if self.status not in [EndpointHandlerStatus.COMPLETE, EndpointHandlerStatus.ERROR]:
+            raise PrematureResultRetrievalException(
+                    "Attempted to read handler results before they were ready"
+                    )
         return self._result
 
     def use_service(self, name: RegisteredService, provider: Any) -> None:
@@ -102,17 +97,7 @@ class BaseEndpointHandler(ABC):
                     f"No service registered under {name}"
                     ) from err
 
-    @property
-    @abstractmethod
-    def payload_class(self):
-        """Class that models the payload of this handler"""
-
-    @property
-    @abstractmethod
-    def result_class(self):
-        """Class that models the results of this handler"""
-
-    def receive(self, incoming_data: EndpointRequest) -> None:
+    def receive(self, incoming_data: Any) -> None:
         """Handles the incoming data as a request to this handlers endpoint
         Arguments:
             incoming_data: [BasePayload] the payload to pass to this handler
@@ -136,12 +121,15 @@ class BaseEndpointHandler(ABC):
             self._status = EndpointHandlerStatus.ERROR
 
     @abstractmethod
-    def _do_data_ops(self, request: EndpointRequest) -> EndpointResponse:
+    def _do_data_ops(
+            self,
+            request: Any
+            ) -> Union[Sequence[IdeaBankArtifact], Mapping[str, IdeaBankArtifact]]:
         """Complete the data requested operation in the payload from handler services
         Arguments:
             [BasePayload] data request
         Returns:
-            [dict] mapping of requested data
+            Union[Sequence[IdeaBankArtifact], Mapping[str, IdeaBankArtifact]]
         Raises:
             [BaseIdeaBankDataServiceException] for any service related issues
         """
