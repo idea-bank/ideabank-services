@@ -11,7 +11,7 @@ import threading
 
 from fastapi import FastAPI, Response
 
-from .handlers.creators import AccountCreationHandler, AccountCreationRequest
+from .handlers.creators import AccountCreationHandler
 from .models.artifacts import CredentialSet
 from .services import RegisteredService, AccountsDataService
 
@@ -58,10 +58,6 @@ def create_account(
     """Create a new account with the given display name and password if available"""
     handler = AccountCreationHandler()
     handler.use_service(RegisteredService.ACCOUNTS_DS, AccountsDataService())
-    handler.receive(AccountCreationRequest(
-        method='POST',
-        resource='/accounts/create',
-        new_account=new_account
-        ))
+    handler.receive(new_account)
     response.status_code = handler.result.code
     return handler.result
