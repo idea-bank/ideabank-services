@@ -12,7 +12,14 @@ from .schema import (
         )
 
 from .artifacts import (
+        IdeaBankArtifact,
         CredentialSet,
         AuthorizationToken,
         ProfileView
+        )
+
+from .artifacts import (
+        EndpointResponse,
+        EndpointSuccessResponse,
+        EndpointSuccessResponse
         )
