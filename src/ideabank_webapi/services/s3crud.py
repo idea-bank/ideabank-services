@@ -4,10 +4,14 @@
     :module author: Nathan Mendoza (nathancm@uci.edu)
 """
 
+import logging
+
 import boto3
 import botocore
 
 from ..config import ServiceConfig
+
+LOGGER = logging.getLogger(__name__)
 
 
 class S3Crud:
@@ -15,7 +19,7 @@ class S3Crud:
     Attributes:
         s3_client: connection to an s3 compatible stores
     """
-    SHARE_TIME = 3600
+    LINK_TLL = 300
 
     def __init__(self):
         self._s3_client = boto3.session.Session().client(
@@ -33,6 +37,7 @@ class S3Crud:
             key: unique string that indexes the data. Can be path like
             data: raw data to be uploaded to the bucket
         """
+        LOGGER.debug("Putting binary data to %s", key)
         self._s3_client.put_object(
                 Bucket=ServiceConfig.FileBucket.BUCKET_NAME,
                 Key=key,
@@ -48,11 +53,12 @@ class S3Crud:
         Returns:
             [str]: a url to access the object
         """
+        LOGGER.debug("Generating share link for object at %s", key)
         return self._s3_client.generate_presigned_url(
                 ClientMethod='get_object',
                 Params={
                     'Bucket': ServiceConfig.FileBucket.BUCKET_NAME,
                     'Key': key
                     },
-                ExpiresIn=self.SHARE_TIME
+                ExpiresIn=self.LINK_TLL
                 )
