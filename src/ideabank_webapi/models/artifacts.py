@@ -80,7 +80,7 @@ class AccountRecord(BaseModel):  # pylint:disable=too-few-public-methods
     @staticmethod
     def hex_string() -> re.Pattern:
         """A regular expression matching against a valid hex string of lenth 64"""
-        return re.compile(r'[0-9A-Fa-g]{64}')
+        return re.compile(r'^[0-9A-Fa-f]{64}$')
 
 
 class AuthorizationToken(IdeaBankArtifact):  # pylint:disable=too-few-public-methods
