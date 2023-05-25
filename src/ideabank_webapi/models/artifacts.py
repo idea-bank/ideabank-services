@@ -9,7 +9,11 @@ import re
 from pydantic import BaseModel, validator, HttpUrl  # pylint:disable=no-name-in-module
 
 
-class CredentialSet(BaseModel):  # pylint:disable=too-few-public-methods
+class IdeaBankArtifact(BaseModel):  # pylint:disable=too-few-public-methods
+    """Base class for all data entity representable by this API"""
+
+
+class CredentialSet(IdeaBankArtifact):  # pylint:disable=too-few-public-methods
     """Represents a set of credentials used for account creation/authentication
     Attributes:
         display_name: display name of the user
@@ -49,7 +53,7 @@ class CredentialSet(BaseModel):  # pylint:disable=too-few-public-methods
                 )
 
 
-class AuthorizationToken(BaseModel):  # pylint:disable=too-few-public-methods
+class AuthorizationToken(IdeaBankArtifact):  # pylint:disable=too-few-public-methods
     """Represent the presentation of a authorization token
     Attributes:
         token: authorization being presented
@@ -59,7 +63,7 @@ class AuthorizationToken(BaseModel):  # pylint:disable=too-few-public-methods
     presenter: str
 
 
-class ProfileView(BaseModel):  # pylint:disable=too-few-public-methods
+class ProfileView(IdeaBankArtifact):  # pylint:disable=too-few-public-methods
     """Represent the publicly visible information of an account
     Attributes:
         preferred_name: name of the account user
