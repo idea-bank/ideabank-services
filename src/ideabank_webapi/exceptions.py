@@ -29,6 +29,10 @@ class HandlerNotIdleException(IdeaBankEndpointHandlerException):
     """Exception raised when handler attempts to receive a request when not idle"""
 
 
+class PrematureResultRetrievalException(IdeaBankEndpointHandlerException):
+    """Exception raised when handler results are read before they are ready"""
+
+
 class NoRegisteredProviderError(IdeaBankEndpointHandlerException):
     """Exception raised when a service provider is requested, but not registered"""
 
