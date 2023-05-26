@@ -83,8 +83,5 @@ class AuthorizationRequired(BaseEndpointHandler):
             self._check_if_authorized(incoming_data.auth_token)
             super().receive(incoming_data)
         except NotAuthorizedError as err:
-            if isinstance(err, NotAuthorizedError):
-                AuthorizationRequired._build_error_response(self, err)
-            else:
-                super()._build_error_response(err)
+            AuthorizationRequired._build_error_response(self, err)
             self._status = EndpointHandlerStatus.ERROR

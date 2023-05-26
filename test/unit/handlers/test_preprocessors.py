@@ -21,13 +21,13 @@ def test_auth_handler():
         def _do_data_ops(self, request):
             return {'number': 1}
 
-        def _build_success_response(self, body):
+        def _build_success_response(self, requested_data):
             self._result = EndpointSuccessResponse(
                     code=status.HTTP_200_OK,
                     msg='Authorized request completed.'
                     )
 
-        def _build_error_response(self, body):
+        def _build_error_response(self, exc):
             self._result = EndpointErrorResponse(
                     code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                     err_msg='Authorized request could not be completed.'
