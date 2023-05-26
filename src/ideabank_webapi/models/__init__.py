@@ -13,16 +13,13 @@ from .schema import (
 
 from .artifacts import (
         IdeaBankArtifact,
+        EndpointResponse,
+        EndpointErrorMessage,
+        EndpointInformationalMessage,
         CredentialSet,
         AccountRecord,
         AuthorizationToken,
         ProfileView
-        )
-
-from .responses import (
-        EndpointResponse,
-        EndpointSuccessResponse,
-        EndpointErrorResponse
         )
 
 from .payloads import (
