@@ -54,3 +54,13 @@ class TestQueryService:
         self.qs.add_query(stmt)
         with self.qs as t:
             t.exec_next()
+
+    @pytest.mark.parametrize("i", range(1, 11))
+    def test_execute_next_reduces_query_buffer_size(self, i):
+        stmt = select(i)
+        self.qs.add_query(stmt)
+        self.qs.add_query(stmt)
+        with self.qs as t:
+            t.exec_next()
+            assert len(self.qs._query_buffer) == 1
+            assert t.results.scalar() == i
