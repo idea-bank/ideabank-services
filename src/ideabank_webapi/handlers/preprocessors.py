@@ -17,7 +17,8 @@ from ..config import ServiceConfig
 from ..exceptions import NotAuthorizedError, BaseIdeaBankAPIException
 from ..models import (
         AuthorizationToken,
-        EndpointErrorResponse,
+        EndpointResponse,
+        EndpointErrorMessage,
         AuthorizedPayload
     )
 
@@ -68,8 +69,9 @@ class AuthorizationRequired(BaseEndpointHandler):
         Arguments:
             exc: [BaseIdeaBankAPIException] exception causing the issue
         """
-        self._result = EndpointErrorResponse(
+        self._result = EndpointResponse(
                 code=status.HTTP_401_UNAUTHORIZED,
+                body=EndpointErrorMessage(err_msg=str(exc))
                 )
 
     def receive(self, incoming_data: AuthorizedPayload) -> None:

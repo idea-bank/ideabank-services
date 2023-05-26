@@ -13,7 +13,7 @@ from fastapi import status
 
 from ..models import (
         EndpointResponse,
-        EndpointErrorResponse,
+        EndpointErrorMessage,
         IdeaBankArtifact,
         EndpointPayload
         )
@@ -189,7 +189,7 @@ class BaseEndpointHandler(ABC):
             None
         """
         LOGGER.error("Exception not handled by subclass")
-        self._result = EndpointErrorResponse(
+        self._result = EndpointResponse(
                 code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                err_msg=(str(exc))
+                body=EndpointErrorMessage(err_msg=str(exc))
                 )

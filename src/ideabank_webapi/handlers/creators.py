@@ -14,7 +14,7 @@ from sqlalchemy.exc import IntegrityError
 from . import BaseEndpointHandler
 from ..services import RegisteredService
 from ..models import CredentialSet, AccountRecord
-from ..models import EndpointSuccessResponse, EndpointErrorResponse
+from ..models import EndpointErrorMessage, EndpointInformationalMessage, EndpointResponse
 from ..exceptions import DuplicateRecordException, BaseIdeaBankAPIException
 
 LOGGER = logging.getLogger(__name__)
@@ -61,17 +61,21 @@ class AccountCreationHandler(BaseEndpointHandler):
 
     def _build_success_response(self, requested_data: str):
         LOGGER.info("Account for %s successfully created", requested_data)
-        self._result = EndpointSuccessResponse(
+        self._result = EndpointResponse(
                 code=status.HTTP_201_CREATED,
-                msg=f'Account created for {requested_data}'
+                body=EndpointInformationalMessage(
+                    msg=f'Account for {requested_data} successfully created'
+                    )
                 )
 
     def _build_error_response(self, exc: BaseIdeaBankAPIException):
         LOGGER.info("Account could not be created")
         if isinstance(exc, DuplicateRecordException):
-            self._result = EndpointErrorResponse(
+            self._result = EndpointResponse(
                     code=status.HTTP_403_FORBIDDEN,
-                    err_msg=f'Display name {str(exc)} is not available'
+                    body=EndpointErrorMessage(
+                        err_msg=f'Account not created: {str(exc)} not available'
+                        )
                     )
         else:
             super()._build_error_response(exc)
