@@ -23,10 +23,12 @@ class AccountCreationHandler(BaseEndpointHandler):
     """Endpoint handler dealing with account creation"""
 
     def _do_data_ops(self, request: CredentialSet):
+        LOGGER.info("Securing new account credentials")
         secured_request = self._secure_payload(
                 username=request.display_name,
                 raw_pass=request.password
                 )
+        LOGGER.info("Creating new account record")
         with self.get_service(RegisteredService.ACCOUNTS_DS) as service:
             service.add_query(service.create_account(
                     username=secured_request.display_name,
@@ -48,12 +50,14 @@ class AccountCreationHandler(BaseEndpointHandler):
                 )
 
     def _build_success_response(self, body: str):
+        LOGGER.info("Account for %s successfully created", body)
         self._result = EndpointSuccessResponse(
                 code=status.HTTP_201_CREATED,
                 msg=f'Account created for {body}'
                 )
 
     def _build_error_response(self, body: str):
+        LOGGER.info("Account for %s could not be created", body)
         self._result = EndpointErrorResponse(
                 code=status.HTTP_403_FORBIDDEN,
                 err_msg=f'Display name `{body}` is not available'
