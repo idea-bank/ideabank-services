@@ -5,7 +5,6 @@
 """
 
 import logging
-from typing import Optional
 
 import jwt
 from fastapi import status
