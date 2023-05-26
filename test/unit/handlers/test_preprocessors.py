@@ -2,8 +2,8 @@
 
 from ideabank_webapi.handlers import EndpointHandlerStatus
 from ideabank_webapi.handlers.preprocessors import AuthorizationRequired
-from ideabank_webapi.models.artifacts import AuthorizationToken
-from ideabank_webapi.models.responses import EndpointSuccessResponse, EndpointErrorResponse
+from ideabank_webapi.models.artifacts import AuthorizationToken, EndpointResponse
+from ideabank_webapi.models.artifacts import EndpointInformationalMessage, EndpointErrorMessage
 from ideabank_webapi.models.payloads import AuthorizedPayload
 from ideabank_webapi.exceptions import IdeaBankEndpointHandlerException
 
@@ -22,15 +22,19 @@ def test_auth_handler():
             return {'number': 1}
 
         def _build_success_response(self, requested_data):
-            self._result = EndpointSuccessResponse(
+            self._result = EndpointResponse(
                     code=status.HTTP_200_OK,
-                    msg='Authorized request completed.'
+                    body=EndpointInformationalMessage(
+                        msg='Authorized request completed.'
+                        )
                     )
 
         def _build_error_response(self, exc):
-            self._result = EndpointErrorResponse(
+            self._result = EndpointResponse(
                     code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    err_msg='Authorized request could not be completed.'
+                    body=EndpointErrorMessage(
+                        err_msg='Authorized request could not be completed.'
+                        )
                     )
 
     return TestAuthorizedHandler
@@ -45,11 +49,11 @@ def test_handler_proceeds_when_authorized(mock_jwt, test_auth_handler):
             presenter='user'
             ))
         )
-    assert th.result == EndpointSuccessResponse(
-            code=status.HTTP_200_OK,
+    assert th.status == EndpointHandlerStatus.COMPLETE
+    assert th.result.code == status.HTTP_200_OK
+    assert th.result.body == EndpointInformationalMessage(
             msg='Authorized request completed.'
             )
-    assert th.status == EndpointHandlerStatus.COMPLETE
 
 
 @patch('jwt.decode', return_value={'username': 'imposter'})
@@ -61,11 +65,11 @@ def test_handler_fails_when_ownership_is_falsified(mock_jwt, test_auth_handler):
             presenter='user'
             ))
         )
-    assert th.result == EndpointErrorResponse(
-            code=status.HTTP_401_UNAUTHORIZED,
-            msg="Cannot verify ownership of token."
-            )
     assert th.status == EndpointHandlerStatus.ERROR
+    assert th.result.code == status.HTTP_401_UNAUTHORIZED
+    assert th.result.body == EndpointErrorMessage(
+            err_msg='Cannot verify ownership of token.'
+            )
 
 
 @patch('jwt.decode', side_effect=jwt.exceptions.InvalidTokenError)
@@ -77,11 +81,11 @@ def test_handler_fails_when_token_is_invalid(mock_jwt, test_auth_handler):
             presenter='user'
             ))
         )
-    assert th.result == EndpointErrorResponse(
-            code=status.HTTP_401_UNAUTHORIZED,
-            msg="Invalid token presented."
-            )
     assert th.status == EndpointHandlerStatus.ERROR
+    assert th.result.code == status.HTTP_401_UNAUTHORIZED
+    assert th.result.body == EndpointErrorMessage(
+            err_msg='Invalid token presented.'
+            )
 
 
 @patch('jwt.decode', return_value={'username': 'user'})
@@ -99,7 +103,7 @@ def test_concrete_handler_errors_are_reported_after_authorization(mock_jwt, test
                 )
             ))
         assert th.status == EndpointHandlerStatus.ERROR
-        assert th.result == EndpointErrorResponse(
-                    code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                    err_msg='Authorized request could not be completed.'
-                    )
+        assert th.result.code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert th.result.body == EndpointErrorMessage(
+                err_msg='Authorized request could not be completed.'
+                )

@@ -23,7 +23,12 @@ from ideabank_webapi.exceptions import (
         ProviderMisconfiguredError,
         PrematureResultRetrievalException
         )
-from ideabank_webapi.models import EndpointResponse, EndpointPayload, EndpointErrorResponse
+from ideabank_webapi.models import (
+        EndpointResponse,
+        EndpointPayload,
+        EndpointErrorMessage,
+        EndpointInformationalMessage
+        )
 
 
 class RecoverableServiceException(IdeaBankDataServiceException):
@@ -44,15 +49,17 @@ def test_handler():
         def _build_success_response(self, requested_data):
             self._result = EndpointResponse(
                     code=status.HTTP_200_OK,
-                    msg=json.dumps(requested_data)
+                    body=EndpointInformationalMessage(
+                            msg=json.dumps(requested_data)
+                        )
                     )
 
         def _build_error_response(self, exc):
             print(type(exc), isinstance(exc, RecoverableServiceException))
             if isinstance(exc, RecoverableServiceException):
-                self._result = EndpointErrorResponse(
+                self._result = EndpointResponse(
                         code=status.HTTP_400_BAD_REQUEST,
-                        err_msg=''
+                        body=EndpointErrorMessage(err_msg='')
                         )
             else:
                 super()._build_error_response(exc)
@@ -69,9 +76,9 @@ def test_handler_state_is_complete_when_successful(test_handler):
     th = test_handler()
     th.receive(EndpointPayload())
     assert th.status == EndpointHandlerStatus.COMPLETE
-    assert th.result == EndpointResponse(
-            code=status.HTTP_200_OK,
-            msg=json.dumps(th._do_data_ops(EndpointPayload()))
+    assert th.result.code == status.HTTP_200_OK
+    assert th.result.body == EndpointInformationalMessage(
+            msg=json.dumps(th._do_data_ops(None))
             )
 
 
@@ -88,9 +95,11 @@ def test_handler_state_is_error_when_failed(test_handler, error_type, error_code
             ) as err:
         th.receive(EndpointPayload())
         assert th.status == EndpointHandlerStatus.ERROR
-        assert th.result == EndpointErrorResponse(
+        assert th.result == EndpointResponse(
                 code=error_code,
-                err_msg=''
+                body=EndpointErrorMessage(
+                    err_msg=''
+                    )
                 )
         err.assert_called_once()
 
