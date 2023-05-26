@@ -4,6 +4,7 @@
     :module author: Nathan Mendoza (nathancm@uci.edu)
 """
 
+import logging
 from typing import Any, Union, Sequence, Mapping
 from abc import ABC, abstractmethod
 from enum import Enum
@@ -18,6 +19,8 @@ from ..exceptions import (
         ProviderMisconfiguredError,
         PrematureResultRetrievalException
         )
+
+LOGGER = logging.getLogger(__name__)
 
 
 class EndpointHandlerStatus(Enum):
@@ -49,6 +52,7 @@ class BaseEndpointHandler(ABC):
         Returns:
             EndpointHandlerStatus enum member
         """
+        LOGGER.debug("Handler status report: %s", str(self._status))
         return self._status
 
     @property
@@ -60,6 +64,7 @@ class BaseEndpointHandler(ABC):
             PrematureResultRetrievalException if handler is not complete/error
         """
         if self.status not in [EndpointHandlerStatus.COMPLETE, EndpointHandlerStatus.ERROR]:
+            LOGGER.error("Handler is not finished. Result is unavailable")
             raise PrematureResultRetrievalException(
                     "Attempted to read handler results before they were ready"
                     )
@@ -72,6 +77,7 @@ class BaseEndpointHandler(ABC):
             name: [RegisteredService] enum member of known services
             provider: instance of [name] that provides the service
         """
+        LOGGER.debug("Using service provider for %s", str(name))
         self._services.update({name: provider})
 
     def get_service(self, name: RegisteredService) -> Any:
@@ -87,12 +93,19 @@ class BaseEndpointHandler(ABC):
         try:
             provider = self._services[name]
             if not isinstance(provider, name.value):
+                LOGGER.error(
+                        "Expected %s instance, got %s instance",
+                        name.value.__name__,
+                        provider.__class__.__name__
+                        )
                 raise ProviderMisconfiguredError(
                         f"Expected instance of {name.value.__name__}, "
                         f"got instance of {provider.__class__.__name__}"
                         )
+            LOGGER.debug("Retrieved registered service provider: %s", str(name))
             return provider
         except KeyError as err:
+            LOGGER.error("No service registered under %s", str(name))
             raise NoRegisteredProviderError(
                     f"No service registered under {name}"
                     ) from err
@@ -105,18 +118,25 @@ class BaseEndpointHandler(ABC):
             [None] use results() to obtain handler results
         """
         if self.status != EndpointHandlerStatus.IDLE:
+            LOGGER.error("Handler not ready to receive")
             raise HandlerNotIdleException(
                     f"Expected handler to be idle, but was {self.status}"
                     )
         self._status = EndpointHandlerStatus.PROCESSING
         try:
+            LOGGER.info("Attemping normal workflow %s", self.__class.__name__)
             data = self._do_data_ops(incoming_data)
             self._build_success_response(data)
             self._status = EndpointHandlerStatus.COMPLETE
+            LOGGER.info("Completed normal workflow successfully")
         except IdeaBankEndpointHandlerException as err:
+            LOGGER.exception(err)
+            LOGGER.error("Normal flow unsuccessful, starting error workflow")
             self._build_error_response(str(err))
             self._status = EndpointHandlerStatus.ERROR
         except IdeaBankDataServiceException as err:
+            LOGGER.exception(err)
+            LOGGER.error("Normal flow unsuccessful, starting error workflow")
             self._build_error_response(str(err))
             self._status = EndpointHandlerStatus.ERROR
 
