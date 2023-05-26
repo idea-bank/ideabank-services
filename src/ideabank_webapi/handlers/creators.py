@@ -15,7 +15,7 @@ from . import BaseEndpointHandler
 from ..services import RegisteredService
 from ..models import CredentialSet, AccountRecord
 from ..models import EndpointSuccessResponse, EndpointErrorResponse
-from ..exceptions import DuplicateRecordException
+from ..exceptions import DuplicateRecordException, BaseIdeaBankAPIException
 
 LOGGER = logging.getLogger(__name__)
 
@@ -45,7 +45,7 @@ class AccountCreationHandler(BaseEndpointHandler):
                     request.display_name
                     )
             raise DuplicateRecordException(
-                    f"Requested display name not available: {request.display_name}"
+                    f"{request.display_name}"
                     ) from err
 
     def _secure_payload(self, username, raw_pass):
@@ -59,16 +59,19 @@ class AccountCreationHandler(BaseEndpointHandler):
                 salt_value=salt
                 )
 
-    def _build_success_response(self, body: str):
-        LOGGER.info("Account for %s successfully created", body)
+    def _build_success_response(self, requested_data: str):
+        LOGGER.info("Account for %s successfully created", requested_data)
         self._result = EndpointSuccessResponse(
                 code=status.HTTP_201_CREATED,
-                msg=f'Account created for {body}'
+                msg=f'Account created for {requested_data}'
                 )
 
-    def _build_error_response(self, body: str):
-        LOGGER.info("Account for %s could not be created", body)
-        self._result = EndpointErrorResponse(
-                code=status.HTTP_403_FORBIDDEN,
-                err_msg=f'Display name `{body}` is not available'
-                )
+    def _build_error_response(self, exc: BaseIdeaBankAPIException):
+        LOGGER.info("Account could not be created")
+        if isinstance(exc, DuplicateRecordException):
+            self._result = EndpointErrorResponse(
+                    code=status.HTTP_403_FORBIDDEN,
+                    err_msg=f'Display name {str(exc)} is not available'
+                    )
+        else:
+            super()._build_error_response(exc)

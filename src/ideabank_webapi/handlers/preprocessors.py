@@ -15,7 +15,7 @@ from . import (
         EndpointHandlerStatus
     )
 from ..config import ServiceConfig
-from ..exceptions import NotAuthorizedError
+from ..exceptions import NotAuthorizedError, BaseIdeaBankAPIException
 from ..models import (
         AuthorizationToken,
         EndpointErrorResponse,
@@ -62,14 +62,15 @@ class AuthorizationRequired(BaseEndpointHandler):
                     "Invalid token presented."
                     ) from err
 
-    def _build_error_response(self, body: Optional[str]) -> None:
+    def _build_error_response(
+            self,
+            exc: BaseIdeaBankAPIException) -> None:
         """Set the result of this handler to be unauthorized
         Arguments:
-            msg: [str] optional message to include in the access denied response
+            exc: [BaseIdeaBankAPIException] exception causing the issue
         """
         self._result = EndpointErrorResponse(
                 code=status.HTTP_401_UNAUTHORIZED,
-                msg=body
                 )
 
     def receive(self, incoming_data: AuthorizedPayload) -> None:
@@ -83,5 +84,8 @@ class AuthorizationRequired(BaseEndpointHandler):
             self._check_if_authorized(incoming_data.auth_token)
             super().receive(incoming_data)
         except NotAuthorizedError as err:
-            AuthorizationRequired._build_error_response(self, str(err))
+            if isinstance(err, NotAuthorizedError):
+                AuthorizationRequired._build_error_response(self, err)
+            else:
+                super()._build_error_response(err)
             self._status = EndpointHandlerStatus.ERROR

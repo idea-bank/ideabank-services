@@ -5,13 +5,21 @@
 """
 
 import logging
-from typing import Any, Union, Sequence, Mapping
+from typing import Any, Union, Sequence
 from abc import ABC, abstractmethod
 from enum import Enum
 
-from ..models import EndpointResponse, IdeaBankArtifact, EndpointPayload
+from fastapi import status
+
+from ..models import (
+        EndpointResponse,
+        EndpointErrorResponse,
+        IdeaBankArtifact,
+        EndpointPayload
+        )
 from ..services import RegisteredService
 from ..exceptions import (
+        BaseIdeaBankAPIException,
         IdeaBankEndpointHandlerException,
         IdeaBankDataServiceException,
         HandlerNotIdleException,
@@ -144,30 +152,44 @@ class BaseEndpointHandler(ABC):
     def _do_data_ops(
             self,
             request: Any
-            ) -> Union[Sequence[IdeaBankArtifact], Mapping[str, IdeaBankArtifact]]:
+            ) -> Union[IdeaBankArtifact, Sequence[IdeaBankArtifact], str]:
         """Complete the data requested operation in the payload from handler services
         Arguments:
             [BasePayload] data request
         Returns:
-            Union[Sequence[IdeaBankArtifact], Mapping[str, IdeaBankArtifact]]
+            Union[IdeaBankArtifact, Sequence[IdeaBankArtifact], str]
         Raises:
             [BaseIdeaBankDataServiceException] for any service related issues
         """
 
     @abstractmethod
-    def _build_success_response(self, body: Any):
+    def _build_success_response(
+            self,
+            success_code: int,
+            requested_data: Union[IdeaBankArtifact, Sequence[IdeaBankArtifact], str]
+            ):
         """Create the response body as a result of a successful handler return
         Arguments:
-            [dict] data that might be included in the body
+            success_code: [int] the HTTP status code to use in the response
+            requested_data:
+                Union[IdeaBankArtifact, Sequence[IdeaBankArtifact], str]
+                The data to include in the body of the response
         Returns:
             None
         """
 
     @abstractmethod
-    def _build_error_response(self, body: Any):
+    def _build_error_response(
+            self,
+            exc: BaseIdeaBankAPIException
+            ):
         """Create a response body as a result of a failed handler return
         Arguments:
-            [dict] data that might be included in the body
+            exc: [BaseIdeaBankAPIException] exception causing the issue
         Returns:
             None
         """
+        self._result = EndpointErrorResponse(
+                code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                err_msg=(str(exc))
+                )
