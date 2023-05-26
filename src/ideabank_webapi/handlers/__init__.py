@@ -124,7 +124,7 @@ class BaseEndpointHandler(ABC):
                     )
         self._status = EndpointHandlerStatus.PROCESSING
         try:
-            LOGGER.info("Attemping normal workflow %s", self.__class.__name__)
+            LOGGER.info("Attemping normal workflow %s", self.__class__.__name__)
             data = self._do_data_ops(incoming_data)
             self._build_success_response(data)
             self._status = EndpointHandlerStatus.COMPLETE
