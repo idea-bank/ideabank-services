@@ -93,14 +93,17 @@ class QueryService:
 
     def __enter__(self):
         self._session = Session(self.ENGINE)
-        LOGGER.debug("Start DB session.")
+        LOGGER.info("Start DB session.")
         return self
 
     def __exit__(self, exc_type, exc_val, traceback):
-        LOGGER.debug("Stop DB session.")
+        LOGGER.info("Stop DB session.")
         if exc_val:
+            LOGGER.error("Exception during transaction")
+            LOGGER.exception(traceback)
             self._session.rollback()
         else:
+            LOGGER.info("No issues during transaction")
             self._session.commit()
         self._session.close()
         self._session = None
