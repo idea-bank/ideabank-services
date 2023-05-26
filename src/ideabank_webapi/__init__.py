@@ -4,16 +4,19 @@
     :module_author: Nathan Mendoza (nathancm@uci.edu)
 """
 
-from typing import Union
 import logging
-import time
-import threading
+from typing import Union
 
-from fastapi import FastAPI, Response
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 
 from .handlers.creators import AccountCreationHandler
-from .models.artifacts import CredentialSet
 from .services import RegisteredService, AccountsDataService
+from .models.artifacts import (
+        CredentialSet,
+        EndpointErrorMessage,
+        EndpointInformationalMessage
+)
 
 app = FastAPI()
 
@@ -29,14 +32,16 @@ LOG_HANDLER.setFormatter(LOG_FORMAT)
 LOGGER.addHandler(LOG_HANDLER)
 
 
-@app.post("/accounts/create",)
+@app.post(
+        "/accounts/create",
+        response_model=Union[EndpointInformationalMessage, EndpointErrorMessage])
 def create_account(
         new_account: CredentialSet,
-        response: Response
+        response: JSONResponse
         ):
     """Create a new account with the given display name and password if available"""
     handler = AccountCreationHandler()
     handler.use_service(RegisteredService.ACCOUNTS_DS, AccountsDataService())
     handler.receive(new_account)
     response.status_code = handler.result.code
-    return handler.result
+    return handler.result.body
