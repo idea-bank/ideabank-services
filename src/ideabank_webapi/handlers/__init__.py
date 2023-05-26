@@ -140,12 +140,12 @@ class BaseEndpointHandler(ABC):
         except IdeaBankEndpointHandlerException as err:
             LOGGER.exception(err)
             LOGGER.error("Normal flow unsuccessful, starting error workflow")
-            self._build_error_response(str(err))
+            self._build_error_response(err)
             self._status = EndpointHandlerStatus.ERROR
         except IdeaBankDataServiceException as err:
             LOGGER.exception(err)
             LOGGER.error("Normal flow unsuccessful, starting error workflow")
-            self._build_error_response(str(err))
+            self._build_error_response(err)
             self._status = EndpointHandlerStatus.ERROR
 
     @abstractmethod
@@ -188,6 +188,7 @@ class BaseEndpointHandler(ABC):
         Returns:
             None
         """
+        LOGGER.error("Exception not handled by subclass")
         self._result = EndpointErrorResponse(
                 code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 err_msg=(str(exc))
