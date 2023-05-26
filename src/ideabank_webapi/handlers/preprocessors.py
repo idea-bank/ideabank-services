@@ -4,6 +4,7 @@
     :module author: Nathan Mendoza (nathancm@uci.edu)
 """
 
+import logging
 from typing import Optional
 
 import jwt
@@ -21,6 +22,8 @@ from ..models import (
         AuthorizedPayload
     )
 
+LOGGER = logging.getLogger(__name__)
+
 
 class AuthorizationRequired(BaseEndpointHandler):
     """Endpoint handler guard that adds an authorization check before proceding"""
@@ -34,6 +37,7 @@ class AuthorizationRequired(BaseEndpointHandler):
         Raises:
             NotAuthorizedError if authorization check fails
         """
+        LOGGER.info("Validating the presented authorization token")
         try:
             claims = jwt.decode(
                 authorization.token,
@@ -44,10 +48,16 @@ class AuthorizationRequired(BaseEndpointHandler):
                     }
                 )
             if claims['username'] != authorization.presenter:
+                LOGGER.error(
+                        "Token presenter (%s) is not the owner (%s)",
+                        authorization.presenter,
+                        claims['username']
+                        )
                 raise NotAuthorizedError(
                         "Cannot verify ownership of token."
                         )
         except jwt.exceptions.InvalidTokenError as err:
+            LOGGER.error("Presented token is malformed")
             raise NotAuthorizedError(
                     "Invalid token presented."
                     ) from err
