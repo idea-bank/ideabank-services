@@ -1,5 +1,6 @@
 """Tests for base handler template class"""
 
+import json
 from unittest.mock import patch
 import pytest
 from fastapi import status
@@ -22,7 +23,15 @@ from ideabank_webapi.exceptions import (
         ProviderMisconfiguredError,
         PrematureResultRetrievalException
         )
-from ideabank_webapi.models import EndpointResponse, EndpointPayload
+from ideabank_webapi.models import EndpointResponse, EndpointPayload, EndpointErrorResponse
+
+
+class RecoverableServiceException(IdeaBankDataServiceException):
+    pass
+
+
+class UnrecoverableServiceException(IdeaBankEndpointHandlerException):
+    pass
 
 
 @pytest.fixture
@@ -32,15 +41,22 @@ def test_handler():
         def _do_data_ops(self, request):
             return {'number': 1}
 
-        def _build_success_response(self, body):
+        def _build_success_response(self, requested_data):
             self._result = EndpointResponse(
-                    code=status.HTTP_200_OK
+                    code=status.HTTP_200_OK,
+                    msg=json.dumps(requested_data)
                     )
 
-        def _build_error_response(self, body):
-            self._result = EndpointResponse(
-                    code=status.HTTP_500_INTERNAL_SERVER_ERROR
-                    )
+        def _build_error_response(self, exc):
+            print(type(exc), isinstance(exc, RecoverableServiceException))
+            if isinstance(exc, RecoverableServiceException):
+                self._result = EndpointErrorResponse(
+                        code=status.HTTP_400_BAD_REQUEST,
+                        err_msg=''
+                        )
+            else:
+                super()._build_error_response(exc)
+
     return TestHandler
 
 
@@ -55,14 +71,15 @@ def test_handler_state_is_complete_when_successful(test_handler):
     assert th.status == EndpointHandlerStatus.COMPLETE
     assert th.result == EndpointResponse(
             code=status.HTTP_200_OK,
+            msg=json.dumps(th._do_data_ops(EndpointPayload()))
             )
 
 
-@pytest.mark.parametrize("error_type", [
-    IdeaBankEndpointHandlerException,
-    IdeaBankDataServiceException
+@pytest.mark.parametrize("error_type, error_code", [
+    (RecoverableServiceException, status.HTTP_400_BAD_REQUEST),
+    (UnrecoverableServiceException, status.HTTP_500_INTERNAL_SERVER_ERROR)
     ])
-def test_handler_state_is_error_when_failed(test_handler, error_type):
+def test_handler_state_is_error_when_failed(test_handler, error_type, error_code):
     th = test_handler()
     with patch.object(
             type(th),
@@ -71,8 +88,9 @@ def test_handler_state_is_error_when_failed(test_handler, error_type):
             ) as err:
         th.receive(EndpointPayload())
         assert th.status == EndpointHandlerStatus.ERROR
-        assert th.result == EndpointResponse(
-                code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        assert th.result == EndpointErrorResponse(
+                code=error_code,
+                err_msg=''
                 )
         err.assert_called_once()
 
