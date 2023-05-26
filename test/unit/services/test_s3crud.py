@@ -36,5 +36,5 @@ class TestS3CrudService:
                         'Key': key,
                         'Bucket': ServiceConfig.FileBucket.BUCKET_NAME
                         },
-                    ExpiresIn=self.s3.SHARE_TIME
+                    ExpiresIn=self.s3.LINK_TLL
             )

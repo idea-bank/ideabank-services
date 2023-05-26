@@ -21,7 +21,7 @@ def _derive_preferred_name(context):
     """Gets the default preferred name base on current display name"""
     LOGGER.info(
             "Generating a default preferred name field for %s",
-            context.get_current_parameters['display_name']
+            context.get_current_parameters()['display_name']
             )
     return context.get_current_parameters()['display_name']
 
