@@ -12,12 +12,15 @@ from pydantic import BaseModel, validator, HttpUrl  # pylint:disable=no-name-in-
 
 LOGGER = logging.getLogger(__name__)
 
+# pylint:disable=too-few-public-methods
+# pylint:disable=no-self-argument
 
-class IdeaBankArtifact(BaseModel):  # pylint:disable=too-few-public-methods
+
+class IdeaBankArtifact(BaseModel):
     """Base class for all data entity representable by this API"""
 
 
-class EndpointResponse(BaseModel):  # pylint:disable=too-few-public-methods
+class EndpointResponse(BaseModel):
     """Base class for all response model produced by this API"""
     code: int
     body: Union[Sequence[IdeaBankArtifact], IdeaBankArtifact]
@@ -33,7 +36,7 @@ class EndpointInformationalMessage(IdeaBankArtifact):
     msg: str
 
 
-class CredentialSet(IdeaBankArtifact):  # pylint:disable=too-few-public-methods
+class CredentialSet(IdeaBankArtifact):
     """Represents a set of credentials used for account creation/authentication
     Attributes:
         display_name: display name of the user
@@ -53,7 +56,7 @@ class CredentialSet(IdeaBankArtifact):  # pylint:disable=too-few-public-methods
         return re.compile(r"^[\w]{8,32}$")
 
     @validator('display_name')
-    def validate_display_name(cls, value):  # pylint:disable=no-self-argument
+    def validate_display_name(cls, value):
         """Verifies dissplay name meets format"""
         if re.match(cls.display_name_format(), value):
             LOGGER.debug("Display name format is valid")
@@ -65,7 +68,7 @@ class CredentialSet(IdeaBankArtifact):  # pylint:disable=too-few-public-methods
                 )
 
     @validator('password')
-    def validate_password(cls, value):  # pylint:disable=no-self-argument
+    def validate_password(cls, value):
         """Verifies password is of appropriate length"""
         if re.match(cls.password_format(), value):
             LOGGER.debug("Password length is appropriate")
@@ -77,14 +80,14 @@ class CredentialSet(IdeaBankArtifact):  # pylint:disable=too-few-public-methods
                 )
 
 
-class AccountRecord(BaseModel):  # pylint:disable=too-few-public-methods
+class AccountRecord(BaseModel):
     """Models a secure version of credentials that can be saved to the db"""
     display_name: str
     password_hash: str
     salt_value: str
 
     @validator('password_hash')
-    def is_valid_hash(cls, value):  # pylint:disable=no-self-argument
+    def is_valid_hash(cls, value):
         """Verifies hash digest format"""
         if re.match(cls.hex_string(), value):
             LOGGER.debug("Password hash is valid")
@@ -95,7 +98,7 @@ class AccountRecord(BaseModel):  # pylint:disable=too-few-public-methods
                 )
 
     @validator('salt_value')
-    def is_valid_hex(cls, value):  # pylint:disable=no-self-argument
+    def is_valid_hex(cls, value):
         """Verifies salte value formath"""
         if re.match(cls.hex_string(), value):
             LOGGER.debug("Salt value is valid.")
@@ -111,7 +114,7 @@ class AccountRecord(BaseModel):  # pylint:disable=too-few-public-methods
         return re.compile(r'^[0-9A-Fa-f]{64}$')
 
 
-class AuthorizationToken(IdeaBankArtifact):  # pylint:disable=too-few-public-methods
+class AuthorizationToken(IdeaBankArtifact):
     """Represent the presentation of a authorization token
     Attributes:
         token: authorization being presented
@@ -121,7 +124,7 @@ class AuthorizationToken(IdeaBankArtifact):  # pylint:disable=too-few-public-met
     presenter: str
 
 
-class ProfileView(IdeaBankArtifact):  # pylint:disable=too-few-public-methods
+class ProfileView(IdeaBankArtifact):
     """Represent the publicly visible information of an account
     Attributes:
         preferred_name: name of the account user
