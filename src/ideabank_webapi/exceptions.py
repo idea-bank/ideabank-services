@@ -21,6 +21,10 @@ class NoSessionToQueryOnError(IdeaBankDataServiceException):
     """Exception raised when attempting to run queries without a session"""
 
 
+class DuplicateRecordException(IdeaBankDataServiceException):
+    """Raised when attempted to insert a duplicate data record"""
+
+
 class IdeaBankEndpointHandlerException(BaseIdeaBankAPIException):
     """Base exception for endpoint handlers"""
 

@@ -9,12 +9,13 @@ import secrets
 import hashlib
 
 from fastapi import status
+from sqlalchemy.exc import IntegrityError
 
 from . import BaseEndpointHandler
-
 from ..services import RegisteredService
 from ..models import CredentialSet, AccountRecord
 from ..models import EndpointSuccessResponse, EndpointErrorResponse
+from ..exceptions import DuplicateRecordException
 
 LOGGER = logging.getLogger(__name__)
 
@@ -28,15 +29,24 @@ class AccountCreationHandler(BaseEndpointHandler):
                 username=request.display_name,
                 raw_pass=request.password
                 )
-        LOGGER.info("Creating new account record")
-        with self.get_service(RegisteredService.ACCOUNTS_DS) as service:
-            service.add_query(service.create_account(
-                    username=secured_request.display_name,
-                    hashed_password=secured_request.password_hash,
-                    salt_value=secured_request.salt_value
-                ))
-            service.exec_next()
-            return service.results.one().display_name
+        try:
+            LOGGER.info("Creating new account record")
+            with self.get_service(RegisteredService.ACCOUNTS_DS) as service:
+                service.add_query(service.create_account(
+                        username=secured_request.display_name,
+                        hashed_password=secured_request.password_hash,
+                        salt_value=secured_request.salt_value
+                    ))
+                service.exec_next()
+                return service.results.one().display_name
+        except IntegrityError as err:
+            LOGGER.error(
+                    "Attempted to add duplicate record: %s",
+                    request.display_name
+                    )
+            raise DuplicateRecordException(
+                    f"Requested display name not available: {request.display_name}"
+                    ) from err
 
     def _secure_payload(self, username, raw_pass):
         salt = secrets.token_hex()
