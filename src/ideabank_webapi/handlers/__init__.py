@@ -165,7 +165,6 @@ class BaseEndpointHandler(ABC):
     @abstractmethod
     def _build_success_response(
             self,
-            success_code: int,
             requested_data: Union[IdeaBankArtifact, Sequence[IdeaBankArtifact], str]
             ):
         """Create the response body as a result of a successful handler return
