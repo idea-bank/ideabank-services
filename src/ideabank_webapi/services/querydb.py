@@ -99,11 +99,10 @@ class QueryService:
     def __exit__(self, exc_type, exc_val, traceback):
         LOGGER.info("Stop DB session.")
         if exc_val:
-            LOGGER.error("Exception during transaction")
-            LOGGER.exception(traceback)
+            LOGGER.error("Exception during transaction. ROLLBACK")
             self._session.rollback()
         else:
-            LOGGER.info("No issues during transaction")
+            LOGGER.info("No issues during transaction. COMMIT")
             self._session.commit()
         self._session.close()
         self._session = None
