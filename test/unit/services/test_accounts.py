@@ -22,6 +22,6 @@ def test_account_creation_query_builder(user, passwd, salt):
 ])
 def test_authentication_query_builds(user):
     stmt = AccountsDataService.fetch_authentication_information(user)
-    assert str(stmt) == 'SELECT accounts.password_hash, accounts.salt_value \n' \
+    assert str(stmt) == 'SELECT accounts.display_name, accounts.password_hash, accounts.salt_value \n' \
                         'FROM accounts \n' \
                         'WHERE accounts.display_name = :display_name_1'
