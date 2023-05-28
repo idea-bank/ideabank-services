@@ -11,9 +11,11 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 from .handlers.creators import AccountCreationHandler
+from .handlers.retrievers import AuthenticationHandler
 from .services import RegisteredService, AccountsDataService
 from .models.artifacts import (
         CredentialSet,
+        AuthorizationToken,
         EndpointErrorMessage,
         EndpointInformationalMessage
 )
@@ -43,5 +45,24 @@ def create_account(
     handler = AccountCreationHandler()
     handler.use_service(RegisteredService.ACCOUNTS_DS, AccountsDataService())
     handler.receive(new_account)
+    response.status_code = handler.result.code
+    return handler.result.body
+
+
+@app.post(
+        "/accounts/authenticate",
+        response_model=Union[EndpointErrorMessage, AuthorizationToken]
+        )
+def authenticate(
+        credentials: CredentialSet,
+        response: JSONResponse
+        ):
+    """
+        Verify the provided credentials against stored version.
+        Provides the client with an AuthorizationToken if correct
+    """
+    handler = AuthenticationHandler()
+    handler.use_service(RegisteredService.ACCOUNTS_DS, AccountsDataService())
+    handler.receive(credentials)
     response.status_code = handler.result.code
     return handler.result.body
