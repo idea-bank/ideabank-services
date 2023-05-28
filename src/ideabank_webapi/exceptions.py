@@ -49,5 +49,9 @@ class NotAuthorizedError(IdeaBankEndpointHandlerException):
     """Exception raised when an authorization check fails"""
 
 
+class InvalidCredentialsException(IdeaBankEndpointHandlerException):
+    """Exception raised when credentials verifications fails"""
+
+
 class IdeaBankDataModelingException(BaseIdeaBankAPIException):
     """Base exception for data modeling errors"""
