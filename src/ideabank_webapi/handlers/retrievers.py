@@ -49,12 +49,12 @@ class AuthenticationHandler(BaseEndpointHandler):
                     "Invalid display name or password"
                     ) from err
 
-    def _build_success_response(self, request_data: str):
+    def _build_success_response(self, requested_data: str):
         self._result = EndpointResponse(
                 code=status.HTTP_200_OK,
                 body=AuthorizationToken(
-                    token=self.__generate_token(request_data),
-                    presenter=request_data
+                    token=self.__generate_token(requested_data),
+                    presenter=requested_data
                     )
                 )
 
