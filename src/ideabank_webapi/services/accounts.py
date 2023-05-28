@@ -48,6 +48,7 @@ class AccountsDataService(QueryService, S3Crud):
         """
         LOGGER.info("Built query to obtain authentication information")
         return select(
+                Accounts.display_name,
                 Accounts.password_hash,
                 Accounts.salt_value
                 ) \
