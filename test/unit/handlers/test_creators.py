@@ -27,14 +27,8 @@ class TestAccountCreationHandler:
     def setup_method(self):
         self.handler = AccountCreationHandler()
         self.handler.use_service(RegisteredService.ACCOUNTS_DS, AccountsDataService())
-        print(
-                self.handler.get_service(RegisteredService.ACCOUNTS_DS).ENGINE
-                )
 
     def _init_test_db(self):
-        print(
-                self.handler.get_service(RegisteredService.ACCOUNTS_DS).ENGINE
-                )
         IdeaBankSchema.metadata.create_all(
                 self.handler.get_service(RegisteredService.ACCOUNTS_DS).ENGINE
                 )
