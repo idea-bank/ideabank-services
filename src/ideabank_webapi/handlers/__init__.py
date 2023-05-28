@@ -137,13 +137,7 @@ class BaseEndpointHandler(ABC):
             self._build_success_response(data)
             self._status = EndpointHandlerStatus.COMPLETE
             LOGGER.info("Completed normal workflow successfully")
-        except IdeaBankEndpointHandlerException as err:
-            LOGGER.exception(err)
-            LOGGER.error("Normal flow unsuccessful, starting error workflow")
-            self._build_error_response(err)
-            self._status = EndpointHandlerStatus.ERROR
-        except IdeaBankDataServiceException as err:
-            LOGGER.exception(err)
+        except BaseIdeaBankAPIException as err:
             LOGGER.error("Normal flow unsuccessful, starting error workflow")
             self._build_error_response(err)
             self._status = EndpointHandlerStatus.ERROR
