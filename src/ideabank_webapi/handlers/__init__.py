@@ -20,8 +20,6 @@ from ..models import (
 from ..services import RegisteredService
 from ..exceptions import (
         BaseIdeaBankAPIException,
-        IdeaBankEndpointHandlerException,
-        IdeaBankDataServiceException,
         HandlerNotIdleException,
         NoRegisteredProviderError,
         ProviderMisconfiguredError,
