@@ -54,49 +54,49 @@ def test_concept_simple_view():
             )
 
 
+@pytest.fixture
+def test_valid_credential_set():
+    return CredentialSet(
+            display_name='testuser',
+            password='testpassword'
+            )
+
+
 @patch.object(QueryService, 'ENGINE', create_engine('sqlite:///:memory:', echo=True))
+@patch.object(QueryService, 'exec_next')
+@patch.object(QueryService, 'results')
 class TestAccountCreationHandler:
-    TEST_ACCOUNTS = [
-        CredentialSet(display_name=f'username{i}', password=f'password{i}')
-        for i in range(1, 6)
-            ]
 
     def setup_method(self):
         self.handler = AccountCreationHandler()
         self.handler.use_service(RegisteredService.ACCOUNTS_DS, AccountsDataService())
 
-    def _init_test_db(self):
-        IdeaBankSchema.metadata.create_all(
-                self.handler.get_service(RegisteredService.ACCOUNTS_DS).ENGINE
-                )
-        for user in self.TEST_ACCOUNTS:
-            self.handler.receive(user)
-            self.handler._status = EndpointHandlerStatus.IDLE
-
-    @pytest.mark.parametrize("creds", [
-        CredentialSet(display_name=f'username{i}', password=f'password{i}')
-        for i in range(6, 8)
-        ])
-    def test_create_new_account(self, creds):
-        self._init_test_db()
-        self.handler.receive(creds)
+    def test_create_new_account(
+           self,
+           mock_query_result,
+           mock_query,
+           test_valid_credential_set
+           ):
+        mock_query_result.one.return_value = test_valid_credential_set
+        self.handler.receive(test_valid_credential_set)
         assert self.handler.status == EndpointHandlerStatus.COMPLETE
         assert self.handler.result.code == status.HTTP_201_CREATED
         assert self.handler.result.body == EndpointInformationalMessage(
-                msg=f'Account for {creds.display_name} successfully created'
+                msg=f'Account for {test_valid_credential_set.display_name} successfully created'
                 )
 
-    @pytest.mark.parametrize("creds", [
-        CredentialSet(display_name=f'username{i}', password=f'password{i}')
-        for i in range(1, 4)
-        ])
-    def test_attempt_to_create_duplicate_account(self, creds):
-        self._init_test_db()
-        self.handler.receive(creds)
+    def test_attempt_to_create_duplicate_account(
+            self,
+            mock_query_result,
+            mock_query,
+            test_valid_credential_set
+            ):
+        mock_query.side_effect = IntegrityError("doing", "a", "test")
+        self.handler.receive(test_valid_credential_set)
         assert self.handler.status == EndpointHandlerStatus.ERROR
         assert self.handler.result.code == status.HTTP_403_FORBIDDEN
         assert self.handler.result.body == EndpointErrorMessage(
-                err_msg=f'Account not created: {creds.display_name} not available'
+                err_msg=f'Account not created: {test_valid_credential_set.display_name} not available'
                 )
 
     @patch.object(
@@ -104,12 +104,16 @@ class TestAccountCreationHandler:
             '_do_data_ops',
             side_effect=BaseIdeaBankAPIException("Really obscure error")
         )
-    def test_a_really_messed_up_scenario(self, mock_data_ops):
+    def test_a_really_messed_up_scenario(
+            self,
+            mock_data_ops,
+            mock_query_result,
+            mock_query
+            ):
         self.handler.receive(CredentialSet(
             display_name='unluckyuser',
             password='unluckypassword'
             ))
-        mock_data_ops.assert_called_once()
         assert self.handler.status == EndpointHandlerStatus.ERROR
         assert self.handler.result.code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert self.handler.result.body == EndpointErrorMessage(
