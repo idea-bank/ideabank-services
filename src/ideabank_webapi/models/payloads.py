@@ -22,12 +22,7 @@ class EndpointPayload(BaseModel):
     """Base payload model for data passed to endpoint handlers"""
 
 
-class AuthorizedPayload(EndpointPayload):
-    """Models a payload that includes an authorization token"""
-    auth_token: AuthorizationToken
-
-
-class CreateConcept(AuthorizedPayload):
+class ConceptDataPayload(EndpointPayload):
     """Models a payload that allows creation of of new concept"""
     author: str
     title: str
@@ -43,10 +38,20 @@ class CreateConcept(AuthorizedPayload):
         LOGGER.error('Title format is invalid')
         raise ValueError(
                 'Title must consist of letters, numbers, underscores, and hyphens. '
-                'It must also be between 3 and 255 characters'
+                'It must also be between 3 and 128 characters'
                 )
 
     @staticmethod
     def title_format() -> re.Pattern:
         """Returns a regular expresion to validate titles for concepts"""
-        return re.compile(r'^[\w\-]{3,255}$')
+        return re.compile(r'^[\w\-]{3,128}$')
+
+
+class AuthorizedPayload(EndpointPayload):
+    """Models a payload that includes an authorization token"""
+    auth_token: AuthorizationToken
+
+
+class CreateConcept(AuthorizedPayload, ConceptDataPayload):
+    """Models a concept payload with required authorization information"""
+    

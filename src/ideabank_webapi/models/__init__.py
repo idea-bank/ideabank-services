@@ -25,6 +25,7 @@ from .artifacts import (
 
 from .payloads import (
         EndpointPayload,
+        ConceptDataPayload,
         AuthorizedPayload,
         CreateConcept
         )
