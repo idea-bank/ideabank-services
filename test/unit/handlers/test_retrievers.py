@@ -16,7 +16,6 @@ from ideabank_webapi.models import (
         EndpointInformationalMessage,
         EndpointErrorMessage,
         IdeaBankSchema,
-        Accounts
 )
 from ideabank_webapi.exceptions import BaseIdeaBankAPIException
 
