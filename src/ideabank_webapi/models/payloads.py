@@ -54,4 +54,3 @@ class AuthorizedPayload(EndpointPayload):
 
 class CreateConcept(AuthorizedPayload, ConceptDataPayload):
     """Models a concept payload with required authorization information"""
-    
