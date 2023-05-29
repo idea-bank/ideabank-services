@@ -9,6 +9,7 @@ from enum import Enum
 from .querydb import QueryService
 from .s3crud import S3Crud
 from .accounts import AccountsDataService
+from .concepts import ConceptsDataService
 
 
 class RegisteredService(Enum):
@@ -16,3 +17,4 @@ class RegisteredService(Enum):
     RAW_DB = QueryService
     RAW_S3 = S3Crud
     ACCOUNTS_DS = AccountsDataService
+    CONCEPTS_DS = ConceptsDataService
