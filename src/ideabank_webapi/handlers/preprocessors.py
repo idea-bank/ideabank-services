@@ -69,10 +69,13 @@ class AuthorizationRequired(BaseEndpointHandler):
         Arguments:
             exc: [BaseIdeaBankAPIException] exception causing the issue
         """
-        self._result = EndpointResponse(
-                code=status.HTTP_401_UNAUTHORIZED,
-                body=EndpointErrorMessage(err_msg=str(exc))
-                )
+        if isinstance(exc, NotAuthorizedError):
+            self._result = EndpointResponse(
+                    code=status.HTTP_401_UNAUTHORIZED,
+                    body=EndpointErrorMessage(err_msg=str(exc))
+                    )
+        else:
+            super()._build_error_response(exc)
 
     def receive(self, incoming_data: AuthorizedPayload) -> None:
         """Handles the incoming data as a request to this handlers endpoint

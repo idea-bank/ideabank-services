@@ -110,7 +110,7 @@ class ConceptCreationHandler(AuthorizationRequired):
                 return ConceptSimpleView(
                         identifier=service.results.one().identifier,
                         thumbnail_url=service.share_item(
-                            f'thumbanils/{request.author}/{request.title}'
+                            f'thumbnails/{request.author}/{request.title}'
                             )
                         )
         except IntegrityError as err:
