@@ -49,6 +49,10 @@ class NotAuthorizedError(IdeaBankEndpointHandlerException):
     """Exception raised when an authorization check fails"""
 
 
+class RequestedDataNotFound(IdeaBankEndpointHandlerException):
+    """Exception raised when request query returns non results"""
+
+
 class InvalidCredentialsException(IdeaBankEndpointHandlerException):
     """Exception raised when credentials verifications fails"""
 
