@@ -7,19 +7,21 @@
 import logging
 from typing import Union
 
-from fastapi import FastAPI, status
+from fastapi import FastAPI, status, Header
 from fastapi.responses import JSONResponse
 
-from .handlers.creators import AccountCreationHandler
+from .handlers.creators import AccountCreationHandler, ConceptCreationHandler
 from .handlers.retrievers import AuthenticationHandler, ProfileRetrievalHandler
-from .services import RegisteredService, AccountsDataService
+from .services import RegisteredService, AccountsDataService, ConceptsDataService
 from .models.artifacts import (
         CredentialSet,
         AuthorizationToken,
         ProfileView,
+        ConceptSimpleView,
         EndpointErrorMessage,
         EndpointInformationalMessage
 )
+from .models.payloads import ConceptDataPayload, CreateConcept
 
 app = FastAPI()
 
@@ -37,9 +39,11 @@ LOGGER.addHandler(LOG_HANDLER)
 
 @app.post(
         "/accounts/create",
-        response_model=EndpointInformationalMessage,
         status_code=status.HTTP_201_CREATED,
         responses={
+            status.HTTP_201_CREATED: {
+                'model': EndpointInformationalMessage
+                },
             status.HTTP_403_FORBIDDEN: {
                 'model': EndpointErrorMessage
                 }
@@ -59,8 +63,10 @@ def create_account(
 
 @app.post(
         "/accounts/authenticate",
-        response_model=AuthorizationToken,
         responses={
+            status.HTTP_200_OK: {
+                'model': AuthorizationToken
+                },
             status.HTTP_401_UNAUTHORIZED: {
                 'model': EndpointErrorMessage
                 }
@@ -83,8 +89,10 @@ def authenticate(
 
 @app.get(
         "/accounts/{display_name}/profile",
-        response_model=ProfileView,
         responses={
+            status.HTTP_200_OK: {
+                'model': ProfileView
+                },
             status.HTTP_404_NOT_FOUND: {
                 'model': EndpointErrorMessage
                 }
@@ -98,5 +106,41 @@ def fetch_profile(
     handler = ProfileRetrievalHandler()
     handler.use_service(RegisteredService.ACCOUNTS_DS, AccountsDataService())
     handler.receive(display_name)
+    response.status_code = handler.result.code
+    return handler.result.body
+
+
+@app.post(
+        "/concepts",
+        status_code=status.HTTP_201_CREATED,
+        responses={
+            status.HTTP_201_CREATED: {
+                'model': ConceptSimpleView
+                },
+            status.HTTP_403_FORBIDDEN: {
+                'model': EndpointErrorMessage
+                },
+            status.HTTP_401_UNAUTHORIZED: {
+                'model': EndpointErrorMessage
+                }
+            }
+        )
+def create_concept(
+        concept_data: ConceptDataPayload,
+        response: JSONResponse,
+        authorization: str = Header(default="")
+        ):
+    """Creates a new concept with the given data if valid/available AND authroization is OK"""
+    handler = ConceptCreationHandler()
+    handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
+    handler.receive(
+            CreateConcept(
+                auth_token=AuthorizationToken(
+                    token=authorization,
+                    presenter=concept_data.author
+                    ),
+                **concept_data.dict()
+                )
+            )
     response.status_code = handler.result.code
     return handler.result.body
