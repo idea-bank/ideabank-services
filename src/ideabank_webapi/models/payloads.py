@@ -47,19 +47,6 @@ class CreateConcept(AuthorizedPayload):
                 'It must also be between 3 and 255 characters'
                 )
 
-    @validator('diagram')
-    def validate_diagram_is_json_serializable(cls, value):
-        """Ensures a diagram is valid JSON"""
-        try:
-            json.dumps(value)
-            LOGGER.info('Diagram is valid JSON')
-            return value
-        except TypeError as err:
-            LOGGER.info('Diagram is not valid JSON')
-            raise ValueError(
-                    'Diagram could not be serialized to JSON'
-                    ) from err
-
     @staticmethod
     def title_format() -> re.Pattern:
         """Returns a regular expresion to validate titles for concepts"""
