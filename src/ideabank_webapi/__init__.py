@@ -11,11 +11,12 @@ from fastapi import FastAPI
 from fastapi.responses import JSONResponse
 
 from .handlers.creators import AccountCreationHandler
-from .handlers.retrievers import AuthenticationHandler
+from .handlers.retrievers import AuthenticationHandler, ProfileRetrievalHandler
 from .services import RegisteredService, AccountsDataService
 from .models.artifacts import (
         CredentialSet,
         AuthorizationToken,
+        ProfileView,
         EndpointErrorMessage,
         EndpointInformationalMessage
 )
@@ -64,5 +65,21 @@ def authenticate(
     handler = AuthenticationHandler()
     handler.use_service(RegisteredService.ACCOUNTS_DS, AccountsDataService())
     handler.receive(credentials)
+    response.status_code = handler.result.code
+    return handler.result.body
+
+
+@app.get(
+        "/accounts/{display_name}/profile",
+        response_model=Union[EndpointErrorMessage, ProfileView]
+        )
+def fetch_profile(
+        display_name: str,
+        response: JSONResponse
+        ):
+    """Fetches the profile view of the request display name if it exists"""
+    handler = ProfileRetrievalHandler()
+    handler.use_service(RegisteredService.ACCOUNTS_DS, AccountsDataService())
+    handler.receive(display_name)
     response.status_code = handler.result.code
     return handler.result.body
