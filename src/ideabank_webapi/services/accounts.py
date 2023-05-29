@@ -19,6 +19,10 @@ LOGGER = logging.getLogger(__name__)
 class AccountsDataService(QueryService, S3Crud):
     """Provider for account information."""
 
+    def __init__(self):
+        QueryService.__init__(self)
+        S3Crud.__init__(self)
+
     @staticmethod
     def create_account(username, hashed_password, salt_value) -> Insert:
         """Builds an insertion statement to create a new user account
@@ -51,5 +55,20 @@ class AccountsDataService(QueryService, S3Crud):
                 Accounts.display_name,
                 Accounts.password_hash,
                 Accounts.salt_value
+                ) \
+            .where(Accounts.display_name == display_name)
+
+    @staticmethod
+    def fetch_account_profile(display_name) -> Select:
+        """Builds a selection statement to query a user's profile elements
+        Arguments:
+            display_name: [str] the display name of the account to query for
+        Returns:
+            [Select] a SQLAlchemy Select statement
+        """
+        LOGGER.info("Built query to obtain account profile")
+        return select(
+                Accounts.preferred_name,
+                Accounts.biography,
                 ) \
             .where(Accounts.display_name == display_name)
