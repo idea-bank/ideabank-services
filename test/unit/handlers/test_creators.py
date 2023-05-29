@@ -19,7 +19,6 @@ from ideabank_webapi.models import (
         ConceptSimpleView,
         ConceptDataPayload,
         CreateConcept,
-        IdeaBankSchema
 )
 from ideabank_webapi.exceptions import BaseIdeaBankAPIException, NotAuthorizedError
 
