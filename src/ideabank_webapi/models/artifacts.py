@@ -134,3 +134,13 @@ class ProfileView(IdeaBankArtifact):
     preferred_name: str
     biography: str
     avatar_url: HttpUrl
+
+
+class ConceptSimpleView(IdeaBankArtifact):
+    """Represents a simple view of an idea bank concept
+    Attributes:
+        identifier: the {author}/{title} formatted string identifying a concept
+        thumbnail_url: link to view the concept thumbnail
+    """
+    identifier: str
+    thumbnail_url: HttpUrl

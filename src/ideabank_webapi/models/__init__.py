@@ -19,10 +19,12 @@ from .artifacts import (
         CredentialSet,
         AccountRecord,
         AuthorizationToken,
-        ProfileView
+        ProfileView,
+        ConceptSimpleView
         )
 
 from .payloads import (
         EndpointPayload,
-        AuthorizedPayload
+        AuthorizedPayload,
+        CreateConcept
         )
