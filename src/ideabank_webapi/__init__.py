@@ -7,7 +7,7 @@
 import logging
 from typing import Union
 
-from fastapi import FastAPI
+from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 
 from .handlers.creators import AccountCreationHandler
@@ -37,7 +37,14 @@ LOGGER.addHandler(LOG_HANDLER)
 
 @app.post(
         "/accounts/create",
-        response_model=Union[EndpointInformationalMessage, EndpointErrorMessage])
+        response_model=EndpointInformationalMessage,
+        status_code=status.HTTP_201_CREATED,
+        responses={
+            status.HTTP_403_FORBIDDEN: {
+                'model': EndpointErrorMessage
+                }
+            }
+        )
 def create_account(
         new_account: CredentialSet,
         response: JSONResponse
@@ -52,7 +59,12 @@ def create_account(
 
 @app.post(
         "/accounts/authenticate",
-        response_model=Union[EndpointErrorMessage, AuthorizationToken]
+        response_model=AuthorizationToken,
+        responses={
+            status.HTTP_401_UNAUTHORIZED: {
+                'model': EndpointErrorMessage
+                }
+            }
         )
 def authenticate(
         credentials: CredentialSet,
@@ -71,7 +83,12 @@ def authenticate(
 
 @app.get(
         "/accounts/{display_name}/profile",
-        response_model=Union[EndpointErrorMessage, ProfileView]
+        response_model=ProfileView,
+        responses={
+            status.HTTP_404_NOT_FOUND: {
+                'model': EndpointErrorMessage
+                }
+            }
         )
 def fetch_profile(
         display_name: str,
