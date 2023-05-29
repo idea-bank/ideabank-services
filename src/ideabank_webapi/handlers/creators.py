@@ -12,9 +12,17 @@ from fastapi import status
 from sqlalchemy.exc import IntegrityError
 
 from . import BaseEndpointHandler
+from .preprocessors import AuthorizationRequired
 from ..services import RegisteredService
-from ..models import CredentialSet, AccountRecord
-from ..models import EndpointErrorMessage, EndpointInformationalMessage, EndpointResponse
+from ..models import (
+        CredentialSet,
+        AccountRecord,
+        EndpointErrorMessage,
+        EndpointInformationalMessage,
+        EndpointResponse,
+        CreateConcept,
+        ConceptSimpleView
+        )
 from ..exceptions import DuplicateRecordException, BaseIdeaBankAPIException
 
 LOGGER = logging.getLogger(__name__)
@@ -75,6 +83,60 @@ class AccountCreationHandler(BaseEndpointHandler):
                     code=status.HTTP_403_FORBIDDEN,
                     body=EndpointErrorMessage(
                         err_msg=f'Account not created: {str(exc)} not available'
+                        )
+                    )
+        else:
+            super()._build_error_response(exc)
+
+
+class ConceptCreationHandler(AuthorizationRequired):
+    """Endpoint handler dealing with concept creation"""
+
+    def _do_data_ops(self, request: CreateConcept):
+        LOGGER.info(
+                "Creating concept record `%s` authored by `%s`",
+                request.title,
+                request.author
+                )
+        try:
+            with self.get_service(RegisteredService.CONCEPTS_DS) as service:
+                service.add_query(service.create_concept(
+                        author=request.author,
+                        title=request.title,
+                        description=request.description,
+                        diagram=request.diagram
+                    ))
+                service.exec_next()
+                return ConceptSimpleView(
+                        identifier=service.results.one().identifier,
+                        thumbnail_url=service.share_item(
+                            f'thumbanils/{request.author}/{request.title}'
+                            )
+                        )
+        except IntegrityError as err:
+            LOGGER.error(
+                    "Cannot create duplicate concept `%s/%s`",
+                    request.author,
+                    request.title
+                    )
+            raise DuplicateRecordException(
+                    f'{request.author}/{request.title}'
+                    ) from err
+
+    def _build_success_response(self, requested_data: ConceptSimpleView):
+        LOGGER.info("Successfully created the concept `%s`", requested_data.identifier)
+        self._result = EndpointResponse(
+                code=status.HTTP_201_CREATED,
+                body=requested_data
+                )
+
+    def _build_error_response(self, exc: BaseIdeaBankAPIException):
+        LOGGER.error("Could not create the concept `%s`", str(exc))
+        if isinstance(exc, DuplicateRecordException):
+            self._result = EndpointResponse(
+                    code=status.HTTP_403_FORBIDDEN,
+                    body=EndpointErrorMessage(
+                        err_msg=f'{str(exc)} is not available'
                         )
                     )
         else:
