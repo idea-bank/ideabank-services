@@ -345,3 +345,19 @@ class TestConceptLinkingHandler:
         assert self.handler.result.body == EndpointErrorMessage(
                 err_msg='Really obscure error'
                 )
+
+    @pytest.mark.xfail(raises=IntegrityError)
+    @patch.object(AuthorizationRequired, '_check_if_authorized')
+    def test_a_really_weird_be_error(
+            self,
+            mock_auth_check,
+            mock_query_results,
+            mock_query,
+            test_auth_token,
+            test_linking_request
+            ):
+        mock_query_results.one.side_effect = IntegrityError("Some other integrity violation", "", "")
+        self.handler.receive(EstablishLink(
+            auth_token=test_auth_token,
+            **test_linking_request.dict()
+            ))
