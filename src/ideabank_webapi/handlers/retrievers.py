@@ -8,6 +8,7 @@ import logging
 import hashlib
 import secrets
 import datetime
+from typing import Union
 
 from sqlalchemy.exc import NoResultFound
 from fastapi import status
@@ -16,8 +17,17 @@ import jwt
 from . import BaseEndpointHandler
 from ..config import ServiceConfig
 from ..services import RegisteredService
-from ..models import CredentialSet, AccountRecord, AuthorizationToken, ProfileView
-from ..models import EndpointErrorMessage, EndpointResponse
+from ..models import (
+        CredentialSet,
+        AccountRecord,
+        AuthorizationToken,
+        ProfileView,
+        ConceptRequest,
+        ConceptSimpleView,
+        ConceptFullView,
+        EndpointErrorMessage,
+        EndpointResponse
+        )
 from ..exceptions import (
         InvalidCredentialsException,
         BaseIdeaBankAPIException,
@@ -140,3 +150,68 @@ class ProfileRetrievalHandler(BaseEndpointHandler):
                     )
         else:
             super()._build_error_response(exc)
+
+
+class SpecificConceptRetrievalHandler(BaseEndpointHandler):
+    """Handler for dealing with requests for a particular concept"""
+
+    def _do_data_ops(self, request: ConceptRequest):
+        LOGGER.info(
+                "Searching for specific concept: %s/%s",
+                request.author,
+                request.title
+                )
+        try:
+            with self.get_service(RegisteredService.CONCEPTS_DS) as service:
+                service.add_query(service.find_exact_concept(
+                    title=request.title,
+                    author=request.author
+                    ))
+                service.exec_next()
+                result = service.results.one()
+                if request.simple:
+                    return ConceptSimpleView(
+                            identifier=f'{result.author}/{result.title}',
+                            thumbnail_url=service.share_item(
+                                f'thumbnails/{result.author}/{result.title}'
+                                )
+                            )
+                return ConceptFullView(
+                        author=result.author,
+                        title=result.title,
+                        description=result.description,
+                        diagram=result.diagram,
+                        thumbnail_url=service.share_item(
+                            f'thumbnails/{result.author}/{result.title}'
+                            )
+                        )
+        except NoResultFound as err:
+            LOGGER.error(
+                    "Did not find a concept matching %s/%s",
+                    request.author,
+                    request.title
+                    )
+            raise RequestedDataNotFound(
+                    f"No match for `{request.author}/{request.title}`"
+                    ) from err
+
+    def _build_success_response(self, requested_data: Union[ConceptFullView, ConceptSimpleView]):
+        LOGGER.info("Found a matching concept")
+        self._result = EndpointResponse(
+                code=status.HTTP_200_OK,
+                body=requested_data
+                )
+
+    def _build_error_response(self, exc: BaseIdeaBankAPIException):
+        if isinstance(exc, RequestedDataNotFound):
+            LOGGER.error("Did not find a matching concept")
+            self._result = EndpointResponse(
+                    code=status.HTTP_404_NOT_FOUND,
+                    body=EndpointErrorMessage(err_msg=str(exc))
+                    )
+        else:
+            super()._build_error_response(exc)
+
+
+class ConceptSearchResultHandler(BaseEndpointHandler):
+    """Handler for dealing with search queries for relevant queries"""
