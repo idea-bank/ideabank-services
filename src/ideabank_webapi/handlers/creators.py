@@ -185,15 +185,16 @@ class ConceptLinkingHandler(AuthorizationRequired):
                 raise DuplicateRecordException(
                     f"A link already exists between {request.ancestor} and {request.descendant}"
                     ) from err
-            raise IdeaBankDataServiceException(str(err)) from err
 
     def _build_success_response(self, requested_data: ConceptLinkRecord):
+        LOGGER.info("Link successfully created.")
         self._result = EndpointResponse(
                 code=status.HTTP_201_CREATED,
                 body=requested_data
                 )
 
     def _build_error_response(self, exc: BaseIdeaBankAPIException):
+        LOGGER.error("Link could not be created.")
         if isinstance(exc, (DuplicateRecordException, InvalidReferenceException)):
             self._result = EndpointResponse(
                     code=status.HTTP_403_FORBIDDEN,
