@@ -6,7 +6,7 @@
 
 import logging
 import re
-from typing import Sequence, Union
+from typing import Sequence, Union, Dict, List
 
 from pydantic import BaseModel, validator, HttpUrl  # pylint:disable=no-name-in-module
 
@@ -143,6 +143,22 @@ class ConceptSimpleView(IdeaBankArtifact):
         thumbnail_url: link to view the concept thumbnail
     """
     identifier: str
+    thumbnail_url: HttpUrl
+
+
+class ConceptFullView(IdeaBankArtifact):
+    """Represents the full view of an idea bank concept
+    Attributes:
+        author: display name of the user who created the idea
+        title: name of the idea given by the creating user
+        description: textual description of idea
+        diagram: JSON representation of idea's component graph
+        thumbnail_url: link to view thumbnail of idea
+    """
+    author: str
+    title: str
+    description: str
+    diagram: Dict[str, List[Dict[str, Union[int, str]]]]
     thumbnail_url: HttpUrl
 
 

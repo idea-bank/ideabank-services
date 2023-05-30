@@ -21,7 +21,8 @@ from .artifacts import (
         AuthorizationToken,
         ProfileView,
         ConceptSimpleView,
-        ConceptLinkRecord
+        ConceptFullView,
+        ConceptLinkRecord,
         )
 
 from .payloads import (
@@ -29,5 +30,6 @@ from .payloads import (
         ConceptDataPayload,
         AuthorizedPayload,
         CreateConcept,
-        EstablishLink
+        EstablishLink,
+        ConceptRequest,
         )

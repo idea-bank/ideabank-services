@@ -58,3 +58,10 @@ class CreateConcept(AuthorizedPayload, ConceptDataPayload):
 
 class EstablishLink(AuthorizedPayload, ConceptLinkRecord):
     """Models a concept linking payload with require authorization info"""
+
+
+class ConceptRequest(EndpointPayload):
+    """Models a requests to find a particular concept and control its return form"""
+    author: str
+    title: str
+    simple: bool
