@@ -144,3 +144,13 @@ class ConceptSimpleView(IdeaBankArtifact):
     """
     identifier: str
     thumbnail_url: HttpUrl
+
+
+class ConceptLinkRecord(IdeaBankArtifact):
+    """Represents a link between two idea bank with a parent-child relation
+    Attributes:
+        ancestor: the {author}/{title} formatted string identifying the parent
+        descendant: the {author}/{title} formatted string identifying the child
+    """
+    ancestor: str
+    descendant: str

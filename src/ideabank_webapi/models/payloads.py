@@ -10,7 +10,7 @@ from typing import Union, List, Dict
 
 from pydantic import BaseModel, validator  # pylint:disable=no-name-in-module
 
-from .artifacts import AuthorizationToken
+from .artifacts import AuthorizationToken, ConceptLinkRecord
 
 # pylint:disable=too-few-public-methods
 # pylint:disable=no-self-argument
@@ -54,3 +54,7 @@ class AuthorizedPayload(EndpointPayload):
 
 class CreateConcept(AuthorizedPayload, ConceptDataPayload):
     """Models a concept payload with required authorization information"""
+
+
+class EstablishLink(AuthorizedPayload, ConceptLinkRecord):
+    """Models a concept linking payload with require authorization info"""

@@ -20,12 +20,14 @@ from .artifacts import (
         AccountRecord,
         AuthorizationToken,
         ProfileView,
-        ConceptSimpleView
+        ConceptSimpleView,
+        ConceptLinkRecord
         )
 
 from .payloads import (
         EndpointPayload,
         ConceptDataPayload,
         AuthorizedPayload,
-        CreateConcept
+        CreateConcept,
+        EstablishLink
         )
