@@ -24,8 +24,8 @@ def test_concept_creation_query_builds():
 
 def test_concept_find_query_builds():
     stmt = ConceptsDataService.find_exact_concept('atitle', 'anauthor')
-    assert str(stmt) == 'SELECT concepts.title, concepts.author, concepts.description,' \
-                        ' concepts.diagram, concepts.created_at, concepts.updated_at, concepts.identifier \n' \
+    assert str(stmt) == 'SELECT concepts.author, concepts.title, concepts.description,' \
+                        ' concepts.diagram \n' \
                         'FROM concepts \nWHERE concepts.title = :title_1 AND concepts.author = :author_1'
 
 
