@@ -10,7 +10,11 @@ from typing import Union
 from fastapi import FastAPI, status, Header
 from fastapi.responses import JSONResponse
 
-from .handlers.creators import AccountCreationHandler, ConceptCreationHandler
+from .handlers.creators import (
+        AccountCreationHandler,
+        ConceptCreationHandler,
+        ConceptLinkingHandler
+        )
 from .handlers.retrievers import AuthenticationHandler, ProfileRetrievalHandler
 from .services import RegisteredService, AccountsDataService, ConceptsDataService
 from .models.artifacts import (
@@ -18,6 +22,8 @@ from .models.artifacts import (
         AuthorizationToken,
         ProfileView,
         ConceptSimpleView,
+        ConceptLinkRecord,
+        EstablishLink,
         EndpointErrorMessage,
         EndpointInformationalMessage
 )
@@ -140,6 +146,42 @@ def create_concept(
                     presenter=concept_data.author
                     ),
                 **concept_data.dict()
+                )
+            )
+    response.status_code = handler.result.code
+    return handler.result.body
+
+
+@app.post(
+        "/links",
+        status_code=status.HTTP_201_CREATED,
+        responses={
+            status.HTTP_201_CREATED: {
+                'model': ConceptLinkRecord
+                },
+            status.HTTP_403_FORBIDDEN: {
+                'model': EndpointErrorMessage
+                },
+            status.HTTP_401_UNAUTHORIZED: {
+                'model': EndpointErrorMessage
+                }
+            }
+        )
+def create_link(
+        link_data: ConceptLinkRecord,
+        response: JSONResponse,
+        authorization: str = Header(default="")
+        ):
+    """Creates a link between two concepts in valid and authorization is OK"""
+    handler = ConceptLinkingHandler()
+    handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
+    handler.receive(
+            EstablishLink(
+                auth_token=AuthorizationToken(
+                    token=authorization,
+                    presenter=link_data.descendant.split('/')[0]
+                    ),
+                **link_data.dict()
                 )
             )
     response.status_code = handler.result.code
