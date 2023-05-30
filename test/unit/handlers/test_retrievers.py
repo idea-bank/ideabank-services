@@ -7,17 +7,25 @@ from unittest.mock import patch
 from ideabank_webapi.handlers import EndpointHandlerStatus
 from ideabank_webapi.handlers.retrievers import (
         AuthenticationHandler,
-        ProfileRetrievalHandler
+        ProfileRetrievalHandler,
+        SpecificConceptRetrievalHandler,
         )
-from ideabank_webapi.handlers.creators import AccountCreationHandler
-from ideabank_webapi.services import RegisteredService, AccountsDataService, QueryService, S3Crud
+from ideabank_webapi.services import (
+        RegisteredService,
+        AccountsDataService,
+        ConceptsDataService,
+        QueryService,
+        S3Crud
+        )
 from ideabank_webapi.models import (
         CredentialSet,
         AccountRecord,
         AuthorizationToken,
         ProfileView,
+        ConceptRequest,
+        ConceptFullView,
+        ConceptSimpleView,
         EndpointErrorMessage,
-        IdeaBankSchema,
 )
 from ideabank_webapi.exceptions import BaseIdeaBankAPIException
 
@@ -54,6 +62,25 @@ def test_profile_view(scope='session'):
             preferred_name='a real name',
             biography='A short version of my life story',
             avatar_url='http://example.com/avatars/testuser'
+            )
+
+
+@pytest.fixture
+def test_simple_concept_view():
+    return ConceptSimpleView(
+            identifier='testuser/sample-idea',
+            thumbnail_url='http://example.com/thumbnails/testuser/sample-idea'
+            )
+
+
+@pytest.fixture
+def test_full_concept_view():
+    return ConceptFullView(
+            author='testuser',
+            title='sample-idea',
+            description='This is a explanation of the sample idea',
+            diagram={},
+            thumbnail_url='http://example.com/thumbnails/testuser/sample-idea'
             )
 
 
@@ -203,3 +230,96 @@ class TestProfileRetrievalHandler:
         assert self.handler.result.body == EndpointErrorMessage(
                 err_msg='Really obscure error'
                 )
+
+
+@patch.object(QueryService, 'ENGINE', create_engine('sqlite:///:memory:', echo=True))
+@patch.object(QueryService, 'exec_next')
+@patch.object(QueryService, 'results')
+class TestSpecificConceptRetrievalHandler:
+
+    def setup_method(self):
+        self.handler = SpecificConceptRetrievalHandler()
+        self.handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
+
+    @pytest.mark.parametrize("simple", [
+        True,
+        False
+    ])
+    @patch.object(
+            S3Crud,
+            'share_item',
+            side_effect=(lambda key: f'http://example.com/{key}')
+        )
+    def test_successful_concept_retrieval(
+            self,
+            mock_s3_url,
+            mock_query_results,
+            mock_query,
+            test_full_concept_view,
+            test_simple_concept_view,
+            simple
+            ):
+        mock_query_results.one.return_value = test_full_concept_view
+        self.handler.receive(ConceptRequest(
+            author=test_full_concept_view.author,
+            title=test_full_concept_view.title,
+            simple=simple
+            ))
+        assert self.handler.status == EndpointHandlerStatus.COMPLETE
+        assert self.handler.result.code == status.HTTP_200_OK
+        assert self.handler.result.body == test_simple_concept_view if simple else test_full_concept_view
+
+    @pytest.mark.parametrize("simple", [
+        True,
+        False
+    ])
+    def test_unsuccessful_concept_retrieval(
+            self,
+            mock_query_results,
+            mock_query,
+            test_full_concept_view,
+            simple
+            ):
+        mock_query_results.one.side_effect = NoResultFound
+        self.handler.receive(ConceptRequest(
+            author=test_full_concept_view.author,
+            title=test_full_concept_view.title,
+            simple=simple
+            ))
+        assert self.handler.status == EndpointHandlerStatus.ERROR
+        assert self.handler.result.code == status.HTTP_404_NOT_FOUND
+        assert self.handler.result.body == EndpointErrorMessage(
+            err_msg=f'No match for `{test_full_concept_view.author}/{test_full_concept_view.title}`'
+                )
+
+    @pytest.mark.parametrize("simple", [
+        True,
+        False
+        ])
+    @patch.object(
+            SpecificConceptRetrievalHandler,
+            '_do_data_ops',
+            side_effect=BaseIdeaBankAPIException("Really obscure error")
+        )
+    def test_a_really_messed_up_scenario(
+            self,
+            mock_data_ops,
+            mock_query_results,
+            mock_query,
+            test_full_concept_view,
+            simple
+            ):
+        self.handler.receive(ConceptRequest(
+            author=test_full_concept_view.author,
+            title=test_full_concept_view.title,
+            simple=simple
+            )
+        )
+        mock_data_ops.assert_called_once()
+        assert self.handler.status == EndpointHandlerStatus.ERROR
+        assert self.handler.result.code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert self.handler.result.body == EndpointErrorMessage(
+                err_msg='Really obscure error'
+                )
+
+
