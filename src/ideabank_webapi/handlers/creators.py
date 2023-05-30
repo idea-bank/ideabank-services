@@ -21,9 +21,16 @@ from ..models import (
         EndpointInformationalMessage,
         EndpointResponse,
         CreateConcept,
-        ConceptSimpleView
+        ConceptSimpleView,
+        ConceptLinkRecord,
+        EstablishLink
         )
-from ..exceptions import DuplicateRecordException, BaseIdeaBankAPIException
+from ..exceptions import (
+        InvalidReferenceException,
+        DuplicateRecordException,
+        BaseIdeaBankAPIException,
+        IdeaBankDataServiceException
+        )
 
 LOGGER = logging.getLogger(__name__)
 
@@ -137,6 +144,61 @@ class ConceptCreationHandler(AuthorizationRequired):
                     code=status.HTTP_403_FORBIDDEN,
                     body=EndpointErrorMessage(
                         err_msg=f'{str(exc)} is not available'
+                        )
+                    )
+        else:
+            super()._build_error_response(exc)
+
+
+class ConceptLinkingHandler(AuthorizationRequired):
+    """Endpoint handler dealing with concept linking"""
+
+    def _do_data_ops(self, request: EstablishLink):
+        LOGGER.info(
+                "Establishing a link between `%s` and `%s`",
+                request.ancestor,
+                request.descendant
+                )
+        try:
+            with self.get_service(RegisteredService.CONCEPTS_DS) as service:
+                service.add_query(service.link_existing_concept(
+                    parent_identifier=request.ancestor,
+                    child_identifier=request.descendant
+                    ))
+                service.exec_next()
+                result = service.results.one()
+                return ConceptLinkRecord(
+                        ancestor=result.ancestor,
+                        descendant=result.descendant
+                        )
+        except IntegrityError as err:
+            LOGGER.error(
+                    "Could not establish link between `%s` and `%s`",
+                    request.ancestor,
+                    request.descendant
+                    )
+            if 'not present in table' in str(err):
+                raise InvalidReferenceException(
+                        "Both concepts must exist to link them"
+                        )
+            if 'already exists' in str(err):
+                raise DuplicateRecordException(
+                    f"A link already exists between {request.ancestor} and {request.descendant}"
+                    ) from err
+            raise IdeaBankDataServiceException(str(err)) from err
+
+    def _build_success_response(self, requested_data: ConceptLinkRecord):
+        self._result = EndpointResponse(
+                code=status.HTTP_201_CREATED,
+                body=requested_data
+                )
+
+    def _build_error_response(self, exc: BaseIdeaBankAPIException):
+        if isinstance(exc, [DuplicateRecordException, InvalidReferenceException]):
+            self._result = EndpointResponse(
+                    code=status.HTTP_403_FORBIDDEN,
+                    body=EndpointErrorMessage(
+                        err_msg=str(exc)
                         )
                     )
         else:
