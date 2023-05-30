@@ -15,13 +15,19 @@ from .handlers.creators import (
         ConceptCreationHandler,
         ConceptLinkingHandler
         )
-from .handlers.retrievers import AuthenticationHandler, ProfileRetrievalHandler
+from .handlers.retrievers import (
+        AuthenticationHandler,
+        ProfileRetrievalHandler,
+        SpecificConceptRetrievalHandler
+        )
 from .services import RegisteredService, AccountsDataService, ConceptsDataService
 from .models import (
         CredentialSet,
         AuthorizationToken,
         ProfileView,
         ConceptSimpleView,
+        ConceptFullView,
+        ConceptRequest,
         ConceptLinkRecord,
         EstablishLink,
         EndpointErrorMessage,
@@ -182,6 +188,37 @@ def create_link(
                     presenter=link_data.descendant.split('/')[0]
                     ),
                 **link_data.dict()
+                )
+            )
+    response.status_code = handler.result.code
+    return handler.result.body
+
+
+@app.get(
+        "/concepts/{author}/{title}",
+        responses={
+            status.HTTP_200_OK: {
+                'model': Union[ConceptFullView, ConceptSimpleView]
+                },
+            status.HTTP_404_NOT_FOUND: {
+                'model': EndpointErrorMessage
+                }
+            }
+        )
+def get_specific_concept(
+        author: str,
+        title: str,
+        response: JSONResponse,
+        simple: bool = False
+        ):
+    """Retrieves the concept specified by author/concept if it exists"""
+    handler = SpecificConceptRetrievalHandler()
+    handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
+    handler.receive(
+            ConceptRequest(
+                title=title,
+                author=author,
+                simple=simple
                 )
             )
     response.status_code = handler.result.code
