@@ -29,7 +29,6 @@ from ..exceptions import (
         InvalidReferenceException,
         DuplicateRecordException,
         BaseIdeaBankAPIException,
-        IdeaBankDataServiceException
         )
 
 LOGGER = logging.getLogger(__name__)
@@ -185,6 +184,7 @@ class ConceptLinkingHandler(AuthorizationRequired):
                 raise DuplicateRecordException(
                     f"A link already exists between {request.ancestor} and {request.descendant}"
                     ) from err
+            raise
 
     def _build_success_response(self, requested_data: ConceptLinkRecord):
         LOGGER.info("Link successfully created.")
