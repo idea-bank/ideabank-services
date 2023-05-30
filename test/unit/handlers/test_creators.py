@@ -3,7 +3,11 @@
 import pytest
 from unittest.mock import patch
 from ideabank_webapi.handlers import EndpointHandlerStatus
-from ideabank_webapi.handlers.creators import AccountCreationHandler, ConceptCreationHandler
+from ideabank_webapi.handlers.creators import (
+        AccountCreationHandler,
+        ConceptCreationHandler,
+        ConceptLinkingHandler
+        )
 from ideabank_webapi.handlers.preprocessors import AuthorizationRequired
 from ideabank_webapi.services import (
         RegisteredService,
@@ -19,6 +23,8 @@ from ideabank_webapi.models import (
         ConceptSimpleView,
         ConceptDataPayload,
         CreateConcept,
+        EstablishLink,
+        ConceptLinkRecord
 )
 from ideabank_webapi.exceptions import BaseIdeaBankAPIException, NotAuthorizedError
 
@@ -58,6 +64,14 @@ def test_valid_credential_set():
     return CredentialSet(
             display_name='testuser',
             password='testpassword'
+            )
+
+
+@pytest.fixture
+def test_linking_request():
+    return ConceptLinkRecord(
+            ancestor='testuser/sample-idea',
+            descendant='anotheruser/derived-idea'
             )
 
 
@@ -233,3 +247,101 @@ class TestConceptCreationHandler:
                 )
 
 
+@patch.object(QueryService, 'ENGINE', create_engine('sqlite:///:memory:', echo=True))
+@patch.object(QueryService, 'exec_next')
+@patch.object(QueryService, 'results')
+class TestConceptLinkingHandler:
+
+    def setup_method(self):
+        self.handler = ConceptLinkingHandler()
+        self.handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
+
+    @patch.object(AuthorizationRequired, '_check_if_authorized')
+    def test_successful_linking_request(
+            self,
+            mock_auth_check,
+            mock_query_results,
+            mock_query,
+            test_auth_token,
+            test_linking_request
+            ):
+        mock_query_results.one.return_value = test_linking_request
+        self.handler.receive(EstablishLink(
+            auth_token=test_auth_token,
+            **test_linking_request.dict()
+        ))
+        assert self.handler.status == EndpointHandlerStatus.COMPLETE
+        assert self.handler.result.code == status.HTTP_201_CREATED
+        assert self.handler.result.body == test_linking_request
+
+    @pytest.mark.parametrize("err_type, err_cause, err_msg", [
+        (IntegrityError, "not present in table", "Both concepts must exist to link them"),
+        (IntegrityError, "already exists", "A link already exists between testuser/sample-idea and anotheruser/derived-idea")
+        ])
+    @patch.object(AuthorizationRequired, '_check_if_authorized')
+    def test_unsuccessful_linking_request(
+            self,
+            mock_auth_check,
+            mock_query_results,
+            mock_query,
+            test_auth_token,
+            test_linking_request,
+            err_type,
+            err_cause,
+            err_msg
+            ):
+        mock_query_results.one.side_effect = err_type(err_cause, "", "")
+        self.handler.receive(EstablishLink(
+            auth_token=test_auth_token,
+            **test_linking_request.dict()
+        ))
+        assert self.handler.status == EndpointHandlerStatus.ERROR
+        assert self.handler.result.code == status.HTTP_403_FORBIDDEN
+        assert self.handler.result.body == EndpointErrorMessage(
+                err_msg=err_msg
+                )
+
+    @patch.object(AuthorizationRequired, '_check_if_authorized')
+    def test_unauthorized_linking_request(
+            self,
+            mock_auth_check,
+            mock_query_results,
+            mock_query,
+            test_auth_token,
+            test_linking_request
+            ):
+        mock_auth_check.side_effect = NotAuthorizedError('Invalid token presented.')
+        self.handler.receive(EstablishLink(
+            auth_token=test_auth_token,
+            **test_linking_request.dict()
+            ))
+        assert self.handler.status == EndpointHandlerStatus.ERROR
+        assert self.handler.result.code == status.HTTP_401_UNAUTHORIZED
+        assert self.handler.result.body == EndpointErrorMessage(
+                err_msg='Invalid token presented.'
+                )
+
+    @patch.object(
+            ConceptLinkingHandler,
+            '_do_data_ops',
+            side_effect=BaseIdeaBankAPIException("Really obscure error")
+        )
+    @patch.object(AuthorizationRequired, '_check_if_authorized')
+    def test_a_really_messed_up_scenario(
+            self,
+            mock_auth_check,
+            mock_data_ops,
+            mock_query_result,
+            mock_query,
+            test_auth_token,
+            test_linking_request
+            ):
+        self.handler.receive(EstablishLink(
+            auth_token=test_auth_token,
+            **test_linking_request.dict()
+            ))
+        assert self.handler.status == EndpointHandlerStatus.ERROR
+        assert self.handler.result.code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert self.handler.result.body == EndpointErrorMessage(
+                err_msg='Really obscure error'
+                )
