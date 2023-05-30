@@ -25,6 +25,10 @@ class DuplicateRecordException(IdeaBankDataServiceException):
     """Raised when attempted to insert a duplicate data record"""
 
 
+class InvalidReferenceException(IdeaBankDataServiceException):
+    """Raised when attempting to write a record that violates referential integrity"""
+
+
 class IdeaBankEndpointHandlerException(BaseIdeaBankAPIException):
     """Base exception for endpoint handlers"""
 
