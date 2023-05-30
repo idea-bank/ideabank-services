@@ -62,7 +62,12 @@ class ConceptsDataService(QueryService, S3Crud):
             [Select] the SQLAlchemy selection statement
         """
         LOGGER.info("Built query to select a specific concept")
-        return select(Concept) \
+        return select(
+                Concept.author,
+                Concept.title,
+                Concept.description,
+                Concept.diagram
+                ) \
             .where(Concept.title == title, Concept.author == author)
 
     @staticmethod
