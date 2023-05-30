@@ -180,7 +180,7 @@ class ConceptLinkingHandler(AuthorizationRequired):
             if 'not present in table' in str(err):
                 raise InvalidReferenceException(
                         "Both concepts must exist to link them"
-                        )
+                        ) from err
             if 'already exists' in str(err):
                 raise DuplicateRecordException(
                     f"A link already exists between {request.ancestor} and {request.descendant}"
@@ -194,7 +194,7 @@ class ConceptLinkingHandler(AuthorizationRequired):
                 )
 
     def _build_error_response(self, exc: BaseIdeaBankAPIException):
-        if isinstance(exc, [DuplicateRecordException, InvalidReferenceException]):
+        if isinstance(exc, (DuplicateRecordException, InvalidReferenceException)):
             self._result = EndpointResponse(
                     code=status.HTTP_403_FORBIDDEN,
                     body=EndpointErrorMessage(

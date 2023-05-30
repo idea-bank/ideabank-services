@@ -17,7 +17,7 @@ from .handlers.creators import (
         )
 from .handlers.retrievers import AuthenticationHandler, ProfileRetrievalHandler
 from .services import RegisteredService, AccountsDataService, ConceptsDataService
-from .models.artifacts import (
+from .models import (
         CredentialSet,
         AuthorizationToken,
         ProfileView,
