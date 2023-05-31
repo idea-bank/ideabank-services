@@ -8,7 +8,7 @@ import logging
 import datetime
 from typing import Union, Dict, List
 
-from sqlalchemy import select, insert
+from sqlalchemy import select, insert, literal
 from sqlalchemy.sql.expression import Select, Insert
 
 from .querydb import QueryService
@@ -143,3 +143,65 @@ class ConceptsDataService(QueryService, S3Crud):
                     Concept.updated_at < not_after
                     )
         return stmt
+
+    @staticmethod
+    def find_child_ideas(identifier: str, depth: int) -> Select:
+        """Builds a selection statement to find the child ideas
+        Arguments:
+            identifier: [str] id of the concep to find children for
+            depth: [int] number of generations to cap at
+        Returns:
+            [Select] the selection statement
+        """
+        steps_cte = select(
+                ConceptLink.descendant,
+                ConceptLink.ancestor,
+                literal(1).label('depth'),
+                ) \
+            .where(ConceptLink.ancestor == identifier) \
+            .cte(recursive=True)
+        recursive_query = steps_cte.union_all(
+                select(
+                    ConceptLink.descendant,
+                    ConceptLink.ancestor,
+                    steps_cte.c.depth + 1,
+                    ).where(ConceptLink.ancestor == steps_cte.c.descendant)
+                )
+        return select(
+                recursive_query.c.ancestor,
+                recursive_query.c.descendant,
+                steps_cte.c.depth
+                ) \
+            .where(recursive_query.c.depth <= depth) \
+            .order_by(recursive_query.c.depth)
+
+    @staticmethod
+    def find_parent_ideas(identifier: str, depth: int) -> Select:
+        """Builds a selection statement to find the parent ideas
+        Arguments:
+            identifier: [str] id of the concept to find parents for
+            depth: [int] number of generations to cap at
+        Returns:
+            [Select] the selection statement
+        """
+        steps_cte = select(
+                    ConceptLink.descendant,
+                    ConceptLink.ancestor,
+                    literal(1).label('depth')
+                ) \
+            .where(ConceptLink.descendant == identifier) \
+            .cte(recursive=True)
+        recursive_query = steps_cte.union_all(
+                select(
+                    ConceptLink.descendant,
+                    ConceptLink.ancestor,
+                    steps_cte.c.depth + 1
+                    ).where(ConceptLink.descendant == steps_cte.c.ancestor)
+                )
+        return select(
+                recursive_query.c.ancestor,
+                recursive_query.c.descendant,
+                steps_cte.c.depth
+                ) \
+            .where(recursive_query.c.depth <= depth) \
+            .order_by(recursive_query.c.depth)
