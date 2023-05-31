@@ -20,7 +20,8 @@ from .handlers.retrievers import (
         AuthenticationHandler,
         ProfileRetrievalHandler,
         SpecificConceptRetrievalHandler,
-        ConceptSearchResultHandler
+        ConceptSearchResultHandler,
+        ConceptLineageHandler
         )
 from .services import RegisteredService, AccountsDataService, ConceptsDataService
 from .models import (
@@ -33,6 +34,7 @@ from .models import (
         ConceptLinkRecord,
         EstablishLink,
         ConceptSearchQuery,
+        ConceptLineage,
         EndpointErrorMessage,
         EndpointInformationalMessage
 )
@@ -254,6 +256,33 @@ def search_concepts(
         not_before=notbefore or datetime.datetime.fromtimestamp(0, datetime.timezone.utc),
         not_after=notafter or datetime.datetime.now(datetime.timezone.utc),
         fuzzy=fuzzy
+        ))
+    response.status_code = handler.result.code
+    return handler.result.body
+
+
+@app.get(
+        "/concepts/{author}/{title}/lineage",
+        responses={
+            status.HTTP_200_OK: {
+                'model': ConceptLineage
+                },
+            status.HTTP_404_NOT_FOUND: {
+                'model': EndpointErrorMessage
+                }
+            }
+        )
+def get_lineage(
+        author: str,
+        title: str,
+        response: JSONResponse
+        ):
+    handler = ConceptLineageHandler()
+    handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
+    handler.receive(ConceptRequest(
+        author=author,
+        title=title,
+        simple=True
         ))
     response.status_code = handler.result.code
     return handler.result.body
