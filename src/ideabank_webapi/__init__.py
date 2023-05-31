@@ -243,7 +243,7 @@ def search_concepts(
         notbefore: datetime.datetime = None,
         notafter: datetime.datetime = None,
         fuzzy: bool = False
-        ):
+        ):  # pylint:disable=too-many-arguments
     """Retrieves the concepts matching the given criteria"""
     handler = ConceptSearchResultHandler()
     handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())

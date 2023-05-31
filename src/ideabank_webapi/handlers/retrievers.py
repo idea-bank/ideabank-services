@@ -8,7 +8,6 @@ import logging
 import hashlib
 import secrets
 import datetime
-import json
 from typing import Union, List
 
 from sqlalchemy.exc import NoResultFound
@@ -249,5 +248,5 @@ class ConceptSearchResultHandler(BaseEndpointHandler):
                 body=requested_data
                 )
 
-    def _build_error_response(self, exc: BaseIdeaBankAPIException):
+    def _build_error_response(self, exc: BaseIdeaBankAPIException):  # pylint:disable=useless-parent-delegation
         super()._build_error_response(exc)

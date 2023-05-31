@@ -190,6 +190,7 @@ class ConceptSearchQuery(IdeaBankArtifact):
 
     @validator('not_before')
     def not_before_or_default(cls, value):
+        """Use the given datetime otherwise use the default"""
         if value:
             LOGGER.debug(
                     "Not before timestamp provided: %s",
@@ -201,6 +202,7 @@ class ConceptSearchQuery(IdeaBankArtifact):
 
     @validator('not_after')
     def not_after_or_default(cls, value):
+        """Use the given datetime otherwise use the default"""
         if value:
             LOGGER.debug(
                     "Not after timestamp provided: %s",
