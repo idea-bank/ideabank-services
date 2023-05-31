@@ -3,6 +3,7 @@
 import pytest
 import datetime
 from ideabank_webapi.services import ConceptsDataService
+from ideabank_webapi.models.artifacts import FuzzyOption
 
 
 def test_account_has_all_parent_class_attributes():
@@ -38,10 +39,7 @@ def test_concept_linking_query_builds():
                         'RETURNING concept_links.ancestor, concept_links.descendant'
 
 
-@pytest.mark.parametrize("fuzzy", [
-    True,
-    False
-    ])
+@pytest.mark.parametrize("fuzzy", FuzzyOption)
 def test_concept_query_result_builds(fuzzy):
     stmt = ConceptsDataService.query_concepts(
             'atitle',
@@ -50,11 +48,25 @@ def test_concept_query_result_builds(fuzzy):
             datetime.datetime.utcnow(),
             fuzzy
             )
-    if fuzzy:
+    if fuzzy == FuzzyOption.all:
         assert str(stmt) == 'SELECT concepts.identifier \n' \
                             'FROM concepts \n' \
                             'WHERE concepts.author LIKE :author_1 AND ' \
                             'concepts.title LIKE :title_1 AND ' \
+                            'concepts.updated_at > :updated_at_1 AND ' \
+                            'concepts.updated_at < :updated_at_2'
+    elif fuzzy == FuzzyOption.title:
+        assert str(stmt) == 'SELECT concepts.identifier \n' \
+                            'FROM concepts \n' \
+                            'WHERE concepts.author = :author_1 AND ' \
+                            'concepts.title LIKE :title_1 AND ' \
+                            'concepts.updated_at > :updated_at_1 AND ' \
+                            'concepts.updated_at < :updated_at_2'
+    elif fuzzy == FuzzyOption.author:
+        assert str(stmt) == 'SELECT concepts.identifier \n' \
+                            'FROM concepts \n' \
+                            'WHERE concepts.author LIKE :author_1 AND ' \
+                            'concepts.title = :title_1 AND ' \
                             'concepts.updated_at > :updated_at_1 AND ' \
                             'concepts.updated_at < :updated_at_2'
     else:

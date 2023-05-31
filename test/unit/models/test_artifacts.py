@@ -11,6 +11,7 @@ from ideabank_webapi.models import (
         AccountRecord,
         ConceptSearchQuery
         )
+from ideabank_webapi.models.artifacts import FuzzyOption
 
 
 def test_valid_credential_set():
@@ -75,7 +76,7 @@ def test_default_date_range_in_search_params():
     assert search_params.author == 'anauthor'
     assert search_params.not_before == datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
     assert search_params.not_after == datetime.datetime.now(datetime.timezone.utc)
-    assert search_params.fuzzy is False
+    assert search_params.fuzzy is FuzzyOption.none
 
 
 @freeze_time("2023-01-16 18:30:11")
@@ -90,4 +91,4 @@ def test_non_default_date_range_in_search_params():
     assert search_params.author == 'anauthor'
     assert search_params.not_before == datetime.datetime.utcnow() - datetime.timedelta(days=4)
     assert search_params.not_after == datetime.datetime.utcnow() - datetime.timedelta(days=2)
-    assert search_params.fuzzy is False
+    assert search_params.fuzzy == FuzzyOption.none
