@@ -9,12 +9,28 @@ import re
 import datetime
 from typing import Sequence, Union, Dict, List
 
-from pydantic import BaseModel, validator, HttpUrl  # pylint:disable=no-name-in-module
+from pydantic import BaseModel, validator, HttpUrl, Field  # pylint:disable=no-name-in-module
 
 LOGGER = logging.getLogger(__name__)
 
 # pylint:disable=too-few-public-methods
 # pylint:disable=no-self-argument
+
+
+def unix_epoch() -> datetime.datetime:
+    """Utility function for returning a datetime representing the unix epoch
+    Returns:
+        [datetime] 1970, 1, 1
+    """
+    return datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
+
+
+def utc_now() -> datetime.datetime:
+    """Utility function for returning a datetime representing current utc timezone
+    Returns:
+        [datetime] utcnow
+    """
+    return datetime.datetime.now(tz=datetime.timezone.utc)
 
 
 class IdeaBankArtifact(BaseModel):
@@ -184,30 +200,6 @@ class ConceptSearchQuery(IdeaBankArtifact):
     """
     author: str
     title: str
-    not_before: datetime.datetime = None
-    not_after: datetime.datetime = None
+    not_before: datetime.datetime = Field(default_factory=unix_epoch)
+    not_after: datetime.datetime = Field(default_factory=utc_now)
     fuzzy: bool = False
-
-    @validator('not_before')
-    def not_before_or_default(cls, value):
-        """Use the given datetime otherwise use the default"""
-        if value:
-            LOGGER.debug(
-                    "Not before timestamp provided: %s",
-                    value.isoformat()
-                    )
-            return value
-        LOGGER.debug("Using default not before timestamp (unix epoch)")
-        return datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
-
-    @validator('not_after')
-    def not_after_or_default(cls, value):
-        """Use the given datetime otherwise use the default"""
-        if value:
-            LOGGER.debug(
-                    "Not after timestamp provided: %s",
-                    value.isoformat()
-                    )
-            return value
-        LOGGER.debug("Using default not after timestamp (now)")
-        return datetime.datetime.utcnow()
