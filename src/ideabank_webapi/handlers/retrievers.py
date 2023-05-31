@@ -264,42 +264,75 @@ class ConceptLineageHandler(BaseEndpointHandler):
                 request.title
                 )
         focus = f'{request.author}/{request.title}'
-        lineage = Tree()
-        lineage.create_node(tag=focus, identifier=focus)
-        with self.get_service(RegisteredService.CONCEPTS_DS) as service:
-            service.add_query(service.find_parent_ideas(
-                identifier=focus,
-                depth=10
-                ))
-            service.exec_next()
-            for parent in service.results.all():
-                new_lineage = Tree()
-                new_lineage.create_node(
-                        tag=parent.ancestor,
-                        identifier=parent.ancestor
-                        )
-                new_lineage.paste(parent.ancestor, lineage)
-                lineage = new_lineage
-
-            service.add_query(service.find_child_ideas(
-                identifier=focus,
-                depth=10
-                ))
-            service.exec_next()
-            for child in service.results.all():
+        try:
+            with self.get_service(RegisteredService.CONCEPTS_DS) as service:
+                service.add_query(service.find_exact_concept(
+                    author=request.author,
+                    title=request.title
+                    ))
+                service.exec_next()
+                service.results.one()  # Ensure it exists
+                lineage = Tree()
                 lineage.create_node(
-                        tag=child.descendant,
-                        identifier=child.descendant,
-                        parent=child.ancestor
+                    tag=focus,
+                    identifier=focus,
+                    data=ConceptSimpleView(
+                        identifier=focus,
+                        thumbnail_url=service.share_item(
+                            f'thumbnails/{focus}'
+                            )
                         )
-        if lineage.size() == 0:
-            raise RequestedDataNotFound(
-                    f"Could not build the lineage for {focus}"
                     )
-        return ConceptLineage(
-                nodes=lineage.size(),
-                lineage=lineage.to_dict()
-                )
+                service.add_query(service.find_parent_ideas(
+                    identifier=focus,
+                    depth=10
+                    ))
+                service.exec_next()
+                for parent in service.results.all():
+                    new_lineage = Tree()
+                    new_lineage.create_node(
+                            tag=parent.ancestor,
+                            identifier=parent.ancestor,
+                            data=ConceptSimpleView(
+                                identifier=parent.ancestor,
+                                thumbnail_url=service.share_item(
+                                    f'thumbnails/{parent.ancestor}'
+                                    )
+                                )
+                            )
+                    new_lineage.paste(parent.ancestor, lineage)
+                    lineage = new_lineage
+
+                service.add_query(service.find_child_ideas(
+                    identifier=focus,
+                    depth=10
+                    ))
+                service.exec_next()
+                for child in service.results.all():
+                    lineage.create_node(
+                            tag=child.descendant,
+                            identifier=child.descendant,
+                            parent=child.ancestor,
+                            data=ConceptSimpleView(
+                                identifier=child.descendant,
+                                thumbnail_url=service.share_item(
+                                    f'thumbnails/{child.descendant}'
+                                    )
+                                )
+                            )
+            return ConceptLineage(
+                    nodes=lineage.size(),
+                    lineage=lineage.to_dict(with_data=True)
+                    )
+        except NoResultFound as err:
+            LOGGER.error(
+                    "No concept record found for `%s/%s`. Unable to build lineage",
+                    request.author,
+                    request.title
+                    )
+            raise RequestedDataNotFound(
+                    f"Could not build the lineage for {request.author}/{request.title}"
+                    ) from err
 
     def _build_success_response(self, requested_data: ConceptLineage):
         LOGGER.info("Lineage successfully obtained")
