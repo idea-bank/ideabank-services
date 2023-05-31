@@ -114,21 +114,21 @@ class ConceptsDataService(QueryService, S3Crud):
         stmt = select(
                     Concept.identifier
                 )
-        if fuzzy == FuzzyOption.all:
+        if fuzzy == FuzzyOption.ALL:
             stmt = stmt.where(
                     Concept.author.like(f'%{author}%'),
                     Concept.title.like(f'%{title}%'),
                     Concept.updated_at > not_before,
                     Concept.updated_at < not_after
                     )
-        elif fuzzy == FuzzyOption.author:
+        elif fuzzy == FuzzyOption.AUTHOR:
             stmt = stmt.where(
                     Concept.author.like(f'%{author}%'),
                     Concept.title == title,
                     Concept.updated_at > not_before,
                     Concept.updated_at < not_after
                     )
-        elif fuzzy == FuzzyOption.title:
+        elif fuzzy == FuzzyOption.TITLE:
             stmt = stmt.where(
                     Concept.author == author,
                     Concept.title.like(f'{title}'),

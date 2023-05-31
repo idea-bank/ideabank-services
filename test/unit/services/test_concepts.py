@@ -48,21 +48,21 @@ def test_concept_query_result_builds(fuzzy):
             datetime.datetime.utcnow(),
             fuzzy
             )
-    if fuzzy == FuzzyOption.all:
+    if fuzzy == FuzzyOption.ALL:
         assert str(stmt) == 'SELECT concepts.identifier \n' \
                             'FROM concepts \n' \
                             'WHERE concepts.author LIKE :author_1 AND ' \
                             'concepts.title LIKE :title_1 AND ' \
                             'concepts.updated_at > :updated_at_1 AND ' \
                             'concepts.updated_at < :updated_at_2'
-    elif fuzzy == FuzzyOption.title:
+    elif fuzzy == FuzzyOption.TITLE:
         assert str(stmt) == 'SELECT concepts.identifier \n' \
                             'FROM concepts \n' \
                             'WHERE concepts.author = :author_1 AND ' \
                             'concepts.title LIKE :title_1 AND ' \
                             'concepts.updated_at > :updated_at_1 AND ' \
                             'concepts.updated_at < :updated_at_2'
-    elif fuzzy == FuzzyOption.author:
+    elif fuzzy == FuzzyOption.AUTHOR:
         assert str(stmt) == 'SELECT concepts.identifier \n' \
                             'FROM concepts \n' \
                             'WHERE concepts.author LIKE :author_1 AND ' \

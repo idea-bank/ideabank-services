@@ -191,10 +191,11 @@ class ConceptLinkRecord(IdeaBankArtifact):
 
 
 class FuzzyOption(str, Enum):
-    none = 'none'
-    title = 'title-only'
-    author = 'author-only'
-    all = 'all'
+    """Enumeration of options for fuzzy searching of concepts"""
+    NONE = 'none'
+    TITLE = 'title-only'
+    AUTHOR = 'author-only'
+    ALL = 'all'
 
 
 class ConceptSearchQuery(IdeaBankArtifact):
@@ -210,4 +211,4 @@ class ConceptSearchQuery(IdeaBankArtifact):
     title: str
     not_before: datetime.datetime = Field(default_factory=unix_epoch)
     not_after: datetime.datetime = Field(default_factory=utc_now)
-    fuzzy: FuzzyOption = FuzzyOption.none
+    fuzzy: FuzzyOption = FuzzyOption.NONE
