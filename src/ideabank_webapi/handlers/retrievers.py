@@ -12,6 +12,7 @@ from typing import Union, List
 
 from sqlalchemy.exc import NoResultFound
 from fastapi import status
+from treelib import Tree
 import jwt
 
 from . import BaseEndpointHandler
@@ -26,6 +27,7 @@ from ..models import (
         ConceptSimpleView,
         ConceptFullView,
         ConceptSearchQuery,
+        ConceptLineage,
         EndpointErrorMessage,
         EndpointResponse,
         )
@@ -250,3 +252,70 @@ class ConceptSearchResultHandler(BaseEndpointHandler):
 
     def _build_error_response(self, exc: BaseIdeaBankAPIException):  # pylint:disable=useless-parent-delegation
         super()._build_error_response(exc)
+
+
+class ConceptLineageHandler(BaseEndpointHandler):
+    """Endpoint handler for dealing with concept lineage retrieval"""
+
+    def _do_data_ops(self, request: ConceptRequest) -> ConceptLineage:
+        LOGGER.info(
+                "Building lineage for `%s/%s`",
+                request.author,
+                request.title
+                )
+        focus = f'{request.author}/{request.title}'
+        lineage = Tree()
+        lineage.create_node(tag=focus, identifier=focus)
+        with self.get_service(RegisteredService.CONCEPTS_DS) as service:
+            service.add_query(service.find_parent_ideas(
+                identifier=focus,
+                depth=10
+                ))
+            service.exec_next()
+            for parent in service.results.all():
+                new_lineage = Tree()
+                new_lineage.create_node(
+                        tag=parent.ancestor,
+                        identifier=parent.ancestor
+                        )
+                new_lineage.paste(parent.ancestor, lineage)
+                lineage = new_lineage
+
+            service.add_query(service.find_child_ideas(
+                identifier=focus,
+                depth=10
+                ))
+            service.exec_next()
+            for child in service.results.all():
+                lineage.create_node(
+                        tag=child.descendant,
+                        identifier=child.descendant,
+                        parent=child.ancestor
+                        )
+        if lineage.size() == 0:
+            raise RequestedDataNotFound(
+                    f"Could not build the lineage for {focus}"
+                    )
+        return ConceptLineage(
+                nodes=lineage.size(),
+                lineage=lineage.to_dict()
+                )
+
+    def _build_success_response(self, requested_data: ConceptLineage):
+        LOGGER.info("Lineage successfully obtained")
+        self._result = EndpointResponse(
+                code=status.HTTP_200_OK,
+                body=requested_data
+                )
+
+    def _build_error_response(self, exc: BaseException):
+        if isinstance(exc, RequestedDataNotFound):
+            LOGGER.error("No lineage tree resulted from build process")
+            self._result = EndpointResponse(
+                    code=status.HTTP_404_NOT_FOUND,
+                    body=EndpointErrorMessage(
+                        err_msg=str(exc)
+                        )
+                    )
+        else:
+            super()._build_error_response(exc)
