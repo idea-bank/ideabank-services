@@ -8,6 +8,7 @@ import logging
 import re
 import datetime
 from typing import Sequence, Union, Dict, List
+from enum import Enum
 
 from pydantic import BaseModel, validator, HttpUrl, Field  # pylint:disable=no-name-in-module
 
@@ -189,6 +190,13 @@ class ConceptLinkRecord(IdeaBankArtifact):
     descendant: str
 
 
+class FuzzyOption(str, Enum):
+    none = 'none'
+    title = 'title-only'
+    author = 'author-only'
+    all = 'all'
+
+
 class ConceptSearchQuery(IdeaBankArtifact):
     """Represents a collection of parameters for searching idea bank concepts
     Attributes:
@@ -196,10 +204,10 @@ class ConceptSearchQuery(IdeaBankArtifact):
         title:  [str] the title of the search query to find
         not_before: [datetime] the timestamp marking the start of the range to search in
         not_after: [datetime] the timestamp marking the end of the range to search in
-        fuzzy: [bool] if true, autho/title will be fuzzy searched otherwise exact match only
+        fuzzy: [FuzzyOption] level of fuzziness to use during search
     """
     author: str
     title: str
     not_before: datetime.datetime = Field(default_factory=unix_epoch)
     not_after: datetime.datetime = Field(default_factory=utc_now)
-    fuzzy: bool = False
+    fuzzy: FuzzyOption = FuzzyOption.none

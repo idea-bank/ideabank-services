@@ -14,6 +14,7 @@ from sqlalchemy.sql.expression import Select, Insert
 from .querydb import QueryService
 from .s3crud import S3Crud
 from ..models.schema import Concept, ConceptLink
+from ..models.artifacts import FuzzyOption
 
 LOGGER = logging.getLogger(__name__)
 
@@ -97,7 +98,7 @@ class ConceptsDataService(QueryService, S3Crud):
             title: str,
             not_before: datetime.datetime,
             not_after: datetime.datetime,
-            fuzzy: bool
+            fuzzy: FuzzyOption
             ) -> Select:
         """Builds a selection statement to query the concept records
         Arguments:
@@ -105,7 +106,7 @@ class ConceptsDataService(QueryService, S3Crud):
             title: [str] the title to query on
             not_before: [datetime] the start of the time range to query on
             not_after: [datetime] the end of the time range to query on
-            fuzzy: [bool] controls fuzzy searches on author and title
+            fuzzy: [FuzzyOption] controls fuzzy searches on author and title
         Returns:
             [Select] the SQLAlchemy selection statement
         """
@@ -113,10 +114,24 @@ class ConceptsDataService(QueryService, S3Crud):
         stmt = select(
                     Concept.identifier
                 )
-        if fuzzy:
+        if fuzzy == FuzzyOption.all:
             stmt = stmt.where(
                     Concept.author.like(f'%{author}%'),
                     Concept.title.like(f'%{title}%'),
+                    Concept.updated_at > not_before,
+                    Concept.updated_at < not_after
+                    )
+        elif fuzzy == FuzzyOption.author:
+            stmt = stmt.where(
+                    Concept.author.like(f'%{author}%'),
+                    Concept.title == title,
+                    Concept.updated_at > not_before,
+                    Concept.updated_at < not_after
+                    )
+        elif fuzzy == FuzzyOption.title:
+            stmt = stmt.where(
+                    Concept.author == author,
+                    Concept.title.like(f'{title}'),
                     Concept.updated_at > not_before,
                     Concept.updated_at < not_after
                     )
