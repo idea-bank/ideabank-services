@@ -5,7 +5,8 @@
 """
 
 import logging
-from typing import Union
+import datetime
+from typing import Union, List
 
 from fastapi import FastAPI, status, Header
 from fastapi.responses import JSONResponse
@@ -18,7 +19,8 @@ from .handlers.creators import (
 from .handlers.retrievers import (
         AuthenticationHandler,
         ProfileRetrievalHandler,
-        SpecificConceptRetrievalHandler
+        SpecificConceptRetrievalHandler,
+        ConceptSearchResultHandler
         )
 from .services import RegisteredService, AccountsDataService, ConceptsDataService
 from .models import (
@@ -30,6 +32,7 @@ from .models import (
         ConceptRequest,
         ConceptLinkRecord,
         EstablishLink,
+        ConceptSearchQuery,
         EndpointErrorMessage,
         EndpointInformationalMessage
 )
@@ -221,5 +224,35 @@ def get_specific_concept(
                 simple=simple
                 )
             )
+    response.status_code = handler.result.code
+    return handler.result.body
+
+
+@app.get(
+        "/concepts",
+        responses={
+            status.HTTP_200_OK: {
+                'model': List[ConceptSimpleView]
+                }
+            }
+        )
+def search_concepts(
+        response: JSONResponse,
+        author: str = '',
+        title: str = '',
+        notbefore: datetime.datetime = None,
+        notafter: datetime.datetime = None,
+        fuzzy: bool = False
+        ):
+    """Retrieves the concepts matching the given criteria"""
+    handler = ConceptSearchResultHandler()
+    handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
+    handler.receive(ConceptSearchQuery(
+        author=author,
+        title=title,
+        not_before=notbefore,
+        not_after=notafter,
+        fuzzy=fuzzy
+        ))
     response.status_code = handler.result.code
     return handler.result.body
