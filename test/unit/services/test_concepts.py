@@ -1,5 +1,7 @@
 """Tests for concepts data service"""
 
+import pytest
+import datetime
 from ideabank_webapi.services import ConceptsDataService
 
 
@@ -34,3 +36,31 @@ def test_concept_linking_query_builds():
     assert str(stmt) == 'INSERT INTO concept_links (ancestor, descendant) ' \
                         'VALUES (:ancestor, :descendant) ' \
                         'RETURNING concept_links.ancestor, concept_links.descendant'
+
+
+@pytest.mark.parametrize("fuzzy", [
+    True,
+    False
+    ])
+def test_concept_query_result_builds(fuzzy):
+    stmt = ConceptsDataService.query_concepts(
+            'atitle',
+            'anauthor',
+            datetime.datetime.utcnow(),
+            datetime.datetime.utcnow(),
+            fuzzy
+            )
+    if fuzzy:
+        assert str(stmt) == 'SELECT concepts.identifier \n' \
+                            'FROM concepts \n' \
+                            'WHERE concepts.author LIKE :author_1 AND ' \
+                            'concepts.title LIKE :title_1 AND ' \
+                            'concepts.updated_at > :updated_at_1 AND ' \
+                            'concepts.updated_at < :updated_at_2'
+    else:
+        assert str(stmt) == 'SELECT concepts.identifier \n' \
+                            'FROM concepts \n' \
+                            'WHERE concepts.author = :author_1 AND ' \
+                            'concepts.title = :title_1 AND ' \
+                            'concepts.updated_at > :updated_at_1 AND ' \
+                            'concepts.updated_at < :updated_at_2'
