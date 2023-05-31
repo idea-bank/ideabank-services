@@ -277,6 +277,7 @@ def get_lineage(
         title: str,
         response: JSONResponse
         ):
+    """Retrieve a tree-like structure showing the lineage of the specified concept"""
     handler = ConceptLineageHandler()
     handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
     handler.receive(ConceptRequest(
