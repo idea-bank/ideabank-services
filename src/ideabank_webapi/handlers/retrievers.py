@@ -8,7 +8,8 @@ import logging
 import hashlib
 import secrets
 import datetime
-from typing import Union
+import json
+from typing import Union, List
 
 from sqlalchemy.exc import NoResultFound
 from fastapi import status
@@ -25,8 +26,9 @@ from ..models import (
         ConceptRequest,
         ConceptSimpleView,
         ConceptFullView,
+        ConceptSearchQuery,
         EndpointErrorMessage,
-        EndpointResponse
+        EndpointResponse,
         )
 from ..exceptions import (
         InvalidCredentialsException,
@@ -215,3 +217,37 @@ class SpecificConceptRetrievalHandler(BaseEndpointHandler):
 
 class ConceptSearchResultHandler(BaseEndpointHandler):
     """Handler for dealing with search queries for relevant queries"""
+
+    def _do_data_ops(self, request: ConceptSearchQuery) -> List[ConceptSimpleView]:
+        LOGGER.info(
+                "Searching for concepts matching the following criteria:\n%s",
+                request.json(indent=4)
+                )
+        with self.get_service(RegisteredService.CONCEPTS_DS) as service:
+            service.add_query(service.query_concepts(
+                author=request.author,
+                title=request.title,
+                not_before=request.not_before,
+                not_after=request.not_after,
+                fuzzy=request.fuzzy
+                ))
+            service.exec_next()
+            return [
+                    ConceptSimpleView(
+                        identifier=result.identifier,
+                        thumbnail_url=service.share_item(
+                            f'thumbnails/{result.identifier}'
+                            )
+
+                        )
+                    for result in service.results.all()
+                    ]
+
+    def _build_success_response(self, requested_data: List[ConceptSimpleView]):
+        self._result = EndpointResponse(
+                code=status.HTTP_200_OK,
+                body=requested_data
+                )
+
+    def _build_error_response(self, exc: BaseIdeaBankAPIException):
+        super()._build_error_response(exc)
