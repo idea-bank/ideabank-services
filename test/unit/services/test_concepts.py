@@ -88,8 +88,8 @@ def test_concept_find_children_query_build():
                         'SELECT concept_links.descendant AS descendant, concept_links.ancestor AS ancestor, anon_1.depth + :depth_1 AS anon_2 \n' \
                         'FROM concept_links, anon_1 \n' \
                         'WHERE concept_links.ancestor = anon_1.descendant)\n ' \
-                        'SELECT anon_1.ancestor, anon_1.descendant, anon_1.depth \n' \
-                        'FROM anon_1, anon_1 \n' \
+                        'SELECT anon_1.ancestor, anon_1.descendant \n' \
+                        'FROM anon_1 \n' \
                         'WHERE anon_1.depth <= :depth_2 ORDER BY anon_1.depth'
 
 
@@ -103,6 +103,6 @@ def test_concept_find_parents_query_build():
                         'SELECT concept_links.descendant AS descendant, concept_links.ancestor AS ancestor, anon_1.depth + :depth_1 AS anon_2 \n' \
                         'FROM concept_links, anon_1 \n' \
                         'WHERE concept_links.descendant = anon_1.ancestor)\n ' \
-                        'SELECT anon_1.ancestor, anon_1.descendant, anon_1.depth \n' \
-                        'FROM anon_1, anon_1 \n' \
+                        'SELECT anon_1.ancestor, anon_1.descendant \n' \
+                        'FROM anon_1 \n' \
                         'WHERE anon_1.depth <= :depth_2 ORDER BY anon_1.depth'
