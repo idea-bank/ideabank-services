@@ -5,6 +5,7 @@
 """
 
 import logging
+import datetime
 from typing import Union, Dict, List
 
 from sqlalchemy import select, insert
@@ -89,3 +90,41 @@ class ConceptsDataService(QueryService, S3Crud):
                     ConceptLink.ancestor,
                     ConceptLink.descendant
                     )
+
+    @staticmethod
+    def query_concepts(
+            author: str,
+            title: str,
+            not_before: datetime.datetime,
+            not_after: datetime.datetime,
+            fuzzy: bool
+            ) -> Select:
+        """Builds a selection statement to query the concept records
+        Arguments:
+            author: [str] the author the query on
+            title: [str] the title to query on
+            not_before: [datetime] the start of the time range to query on
+            not_after: [datetime] the end of the time range to query on
+            fuzzy: [bool] controls fuzzy searches on author and title
+        Returns:
+            [Select] the SQLAlchemy selection statement
+        """
+        LOGGER.info("Built query to search concept records")
+        stmt = select(
+                    Concept.identifier
+                )
+        if fuzzy:
+            stmt = stmt.where(
+                    Concept.author.like(f'%{author}%'),
+                    Concept.title.like(f'%{title}%'),
+                    Concept.updated_at > not_before,
+                    Concept.updated_at < not_after
+                    )
+        else:
+            stmt = stmt.where(
+                    Concept.author == author,
+                    Concept.title == title,
+                    Concept.updated_at > not_before,
+                    Concept.updated_at < not_after
+                    )
+        return stmt
