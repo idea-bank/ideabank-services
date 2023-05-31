@@ -6,6 +6,7 @@
 
 import logging
 import re
+import datetime
 from typing import Sequence, Union, Dict, List
 
 from pydantic import BaseModel, validator, HttpUrl  # pylint:disable=no-name-in-module
@@ -170,3 +171,41 @@ class ConceptLinkRecord(IdeaBankArtifact):
     """
     ancestor: str
     descendant: str
+
+
+class ConceptSearchQuery(IdeaBankArtifact):
+    """Represents a collection of parameters for searching idea bank concepts
+    Attributes:
+        author: [str] the author of the search query to find
+        title:  [str] the title of the search query to find
+        not_before: [datetime] the timestamp marking the start of the range to search in
+        not_after: [datetime] the timestamp marking the end of the range to search in
+        fuzzy: [bool] if true, autho/title will be fuzzy searched otherwise exact match only
+    """
+    author: str
+    title: str
+    not_before: datetime.datetime = None
+    not_after: datetime.datetime = None
+    fuzzy: bool = False
+
+    @validator('not_before')
+    def not_before_or_default(cls, value):
+        if value:
+            LOGGER.debug(
+                    "Not before timestamp provided: %s",
+                    value.isoformat()
+                    )
+            return value
+        LOGGER.debug("Using default not before timestamp (unix epoch)")
+        return datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
+
+    @validator('not_after')
+    def not_after_or_default(cls, value):
+        if value:
+            LOGGER.debug(
+                    "Not after timestamp provided: %s",
+                    value.isoformat()
+                    )
+            return value
+        LOGGER.debug("Using default not after timestamp (now)")
+        return datetime.datetime.utcnow()

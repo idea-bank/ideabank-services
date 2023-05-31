@@ -23,6 +23,7 @@ from .artifacts import (
         ConceptSimpleView,
         ConceptFullView,
         ConceptLinkRecord,
+        ConceptSearchQuery
         )
 
 from .payloads import (
