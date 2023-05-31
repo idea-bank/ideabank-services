@@ -76,3 +76,33 @@ def test_concept_query_result_builds(fuzzy):
                             'concepts.title = :title_1 AND ' \
                             'concepts.updated_at > :updated_at_1 AND ' \
                             'concepts.updated_at < :updated_at_2'
+
+
+def test_concept_find_children_query_build():
+    stmt = ConceptsDataService.find_child_ideas('testuser/sample-idea', 5)
+    assert str(stmt) == 'WITH RECURSIVE anon_1(descendant, ancestor, depth) AS \n' \
+                        '(SELECT concept_links.descendant AS descendant, concept_links.ancestor AS ancestor, :param_1 AS depth \n' \
+                        'FROM concept_links \n' \
+                        'WHERE concept_links.ancestor = :ancestor_1 ' \
+                        'UNION ALL ' \
+                        'SELECT concept_links.descendant AS descendant, concept_links.ancestor AS ancestor, anon_1.depth + :depth_1 AS anon_2 \n' \
+                        'FROM concept_links, anon_1 \n' \
+                        'WHERE concept_links.ancestor = anon_1.descendant)\n ' \
+                        'SELECT anon_1.ancestor, anon_1.descendant, anon_1.depth \n' \
+                        'FROM anon_1, anon_1 \n' \
+                        'WHERE anon_1.depth <= :depth_2 ORDER BY anon_1.depth'
+
+
+def test_concept_find_parents_query_build():
+    stmt = ConceptsDataService.find_parent_ideas('testuser/sample-idea', 5)
+    assert str(stmt) == 'WITH RECURSIVE anon_1(descendant, ancestor, depth) AS \n' \
+                        '(SELECT concept_links.descendant AS descendant, concept_links.ancestor AS ancestor, :param_1 AS depth \n' \
+                        'FROM concept_links \n' \
+                        'WHERE concept_links.descendant = :descendant_1 ' \
+                        'UNION ALL ' \
+                        'SELECT concept_links.descendant AS descendant, concept_links.ancestor AS ancestor, anon_1.depth + :depth_1 AS anon_2 \n' \
+                        'FROM concept_links, anon_1 \n' \
+                        'WHERE concept_links.descendant = anon_1.ancestor)\n ' \
+                        'SELECT anon_1.ancestor, anon_1.descendant, anon_1.depth \n' \
+                        'FROM anon_1, anon_1 \n' \
+                        'WHERE anon_1.depth <= :depth_2 ORDER BY anon_1.depth'
