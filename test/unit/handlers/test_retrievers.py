@@ -4,13 +4,15 @@ import pytest
 import secrets
 import hashlib
 import datetime
+import treelib
 from unittest.mock import patch
 from ideabank_webapi.handlers import EndpointHandlerStatus
 from ideabank_webapi.handlers.retrievers import (
         AuthenticationHandler,
         ProfileRetrievalHandler,
         SpecificConceptRetrievalHandler,
-        ConceptSearchResultHandler
+        ConceptSearchResultHandler,
+        ConceptLineageHandler
         )
 from ideabank_webapi.services import (
         RegisteredService,
@@ -28,6 +30,8 @@ from ideabank_webapi.models import (
         ConceptFullView,
         ConceptSearchQuery,
         ConceptSimpleView,
+        ConceptLinkRecord,
+        ConceptLineage,
         EndpointErrorMessage,
 )
 from ideabank_webapi.exceptions import BaseIdeaBankAPIException
@@ -85,6 +89,47 @@ def test_full_concept_view():
             diagram={},
             thumbnail_url='http://example.com/thumbnails/testuser/sample-idea'
             )
+
+
+@pytest.fixture
+def test_lineage():
+    t = treelib.Tree()
+    t.create_node(
+            tag='testuser/old-idea',
+            identifier='testuser/old-idea',
+            data=ConceptSimpleView(
+                identifier='testuser/old-idea',
+                thumbnail_url='http://example.com/thumbnails/testuser/old-idea'
+                )
+            )
+    t.create_node(
+            tag='testuser/new-idea',
+            identifier='testuser/new-idea',
+            parent='testuser/old-idea',
+            data=ConceptSimpleView(
+                identifier='testuser/new-idea',
+                thumbnail_url='http://example.com/thumbnails/testuser/new-idea'
+                )
+            )
+    t.create_node(
+            tag='anotheruser/helpful-suggestion',
+            identifier='anotheruser/helpful-suggestion',
+            parent='testuser/new-idea',
+            data=ConceptSimpleView(
+                identifier='anotheruser/helpful-suggestion',
+                thumbnail_url='http://example.com/thumbnails/anotheruser/helpful-suggestion'
+                )
+            )
+    t.create_node(
+            tag='someotheruser/a-little-improvement',
+            identifier='someotheruser/a-little-improvement',
+            parent='testuser/new-idea',
+            data=ConceptSimpleView(
+                identifier='someotheruser/a-little-improvement',
+                thumbnail_url='http://example.com/thumbnails/someotheruser/a-little-improvement'
+                )
+            )
+    return t
 
 
 @patch.object(QueryService, 'ENGINE', create_engine('sqlite:///:memory:', echo=True))
@@ -405,3 +450,86 @@ class TestConceptSearchHandler:
         assert self.handler.status == EndpointHandlerStatus.COMPLETE
         assert self.handler.result.code == status.HTTP_200_OK
         assert self.handler.result.body == mock_query_results.all.return_value
+
+
+@patch.object(QueryService, 'ENGINE', create_engine('sqlite:///:memory:', echo=True))
+@patch.object(QueryService, 'exec_next')
+@patch.object(QueryService, 'results')
+class TestConceptLineageHandler:
+
+    def setup_method(self):
+        self.handler = ConceptLineageHandler()
+        self.handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
+
+    @patch.object(
+            S3Crud,
+            'share_item',
+            side_effect=(lambda key: f'http://example.com/{key}')
+            )
+    def test_successful_lineage_retrieval(
+            self,
+            mock_s3_url,
+            mock_query_results,
+            mock_query,
+            test_simple_concept_view,
+            test_lineage
+            ):
+        mock_query_results.one.return_value = test_simple_concept_view
+        mock_query_results.all.side_effect = [
+                [ConceptLinkRecord(ancestor='testuser/old-idea', descendant='testuser/new-idea')],
+                [
+                    ConceptLinkRecord(ancestor='testuser/new-idea', descendant='someotheruser/a-little-improvement'),
+                    ConceptLinkRecord(ancestor='testuser/new-idea', descendant='anotheruser/helpful-suggestion')
+                    ]
+                ]
+        self.handler.receive(ConceptRequest(
+            author='testuser',
+            title='new-idea',
+            simple=True
+            ))
+        assert self.handler.status == EndpointHandlerStatus.COMPLETE
+        assert self.handler.result.code == status.HTTP_200_OK
+        assert self.handler.result.body == ConceptLineage(
+                nodes=test_lineage.size(),
+                lineage=test_lineage.to_dict(with_data=True)
+                )
+
+    def test_retrieval_of_lineage_where_focus_does_not_exist(
+            self,
+            mock_query_results,
+            mock_query
+            ):
+        mock_query_results.one.side_effect = NoResultFound
+        self.handler.receive(ConceptRequest(
+            author='testuser',
+            title='fake-idea',
+            simple=True
+            ))
+        assert self.handler.status == EndpointHandlerStatus.ERROR
+        assert self.handler.result.code == status.HTTP_404_NOT_FOUND
+        assert self.handler.result.body == EndpointErrorMessage(
+                err_msg="Could not build the lineage for testuser/fake-idea"
+                )
+
+    @patch.object(
+            ConceptLineageHandler,
+            '_do_data_ops',
+            side_effect=BaseIdeaBankAPIException("Really obscure error")
+        )
+    def test_a_really_messed_up_scenario(
+            self,
+            mock_data_ops,
+            mock_query_results,
+            mock_query
+            ):
+        self.handler.receive(ConceptRequest(
+            author='testuser',
+            title='fake-idea',
+            simple=True
+            ))
+        mock_data_ops.assert_called_once()
+        assert self.handler.status == EndpointHandlerStatus.ERROR
+        assert self.handler.result.code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert self.handler.result.body == EndpointErrorMessage(
+                err_msg='Really obscure error'
+                )
