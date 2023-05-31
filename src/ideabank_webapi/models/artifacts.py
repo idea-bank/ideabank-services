@@ -196,3 +196,9 @@ class ConceptSearchQuery(IdeaBankArtifact):
     not_before: datetime.datetime
     not_after: datetime.datetime
     fuzzy: FuzzyOption = FuzzyOption.NONE
+
+
+class ConceptLineage(IdeaBankArtifact):
+    """Model representing a report of an idea's lineage"""
+    nodes: int
+    lineage: dict
