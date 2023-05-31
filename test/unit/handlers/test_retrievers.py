@@ -3,6 +3,7 @@
 import pytest
 import secrets
 import hashlib
+import datetime
 from unittest.mock import patch
 from ideabank_webapi.handlers import EndpointHandlerStatus
 from ideabank_webapi.handlers.retrievers import (
@@ -349,7 +350,9 @@ class TestConceptSearchHandler:
         mock_query_results.all.return_value = 10 * [test_simple_concept_view]
         self.handler.receive(ConceptSearchQuery(
                 author=test_simple_concept_view.identifier.split('/')[0],
-                title=test_simple_concept_view.identifier.split('/')[1]
+                title=test_simple_concept_view.identifier.split('/')[1],
+                not_before=datetime.datetime.fromtimestamp(0, datetime.timezone.utc),
+                not_after=datetime.datetime.now(datetime.timezone.utc)
             ))
         assert self.handler.status == EndpointHandlerStatus.COMPLETE
         assert self.handler.result.code == status.HTTP_200_OK
@@ -368,10 +371,11 @@ class TestConceptSearchHandler:
             test_simple_concept_view
             ):
         self.handler.receive(ConceptSearchQuery(
-            author=test_simple_concept_view.identifier.split('/')[0],
-            title=test_simple_concept_view.identifier.split('/')[1]
-            )
-        )
+                author=test_simple_concept_view.identifier.split('/')[0],
+                title=test_simple_concept_view.identifier.split('/')[1],
+                not_before=datetime.datetime.fromtimestamp(0, datetime.timezone.utc),
+                not_after=datetime.datetime.now(datetime.timezone.utc)
+            ))
         mock_data_ops.assert_called_once()
         assert self.handler.status == EndpointHandlerStatus.ERROR
         assert self.handler.result.code == status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -394,7 +398,9 @@ class TestConceptSearchHandler:
         mock_query_results.all.return_value = []
         self.handler.receive(ConceptSearchQuery(
                 author=test_simple_concept_view.identifier.split('/')[0],
-                title=test_simple_concept_view.identifier.split('/')[1]
+                title=test_simple_concept_view.identifier.split('/')[1],
+                not_before=datetime.datetime.fromtimestamp(0, datetime.timezone.utc),
+                not_after=datetime.datetime.now(datetime.timezone.utc)
             ))
         assert self.handler.status == EndpointHandlerStatus.COMPLETE
         assert self.handler.result.code == status.HTTP_200_OK

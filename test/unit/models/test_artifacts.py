@@ -67,19 +67,6 @@ def test_invalid_account_record(username, hash, salt):
 
 
 @freeze_time("2023-01-16 18:30:11")
-def test_default_date_range_in_search_params():
-    search_params = ConceptSearchQuery(
-            title='atitle',
-            author='anauthor'
-            )
-    assert search_params.title == 'atitle'
-    assert search_params.author == 'anauthor'
-    assert search_params.not_before == datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
-    assert search_params.not_after == datetime.datetime.now(datetime.timezone.utc)
-    assert search_params.fuzzy is FuzzyOption.NONE
-
-
-@freeze_time("2023-01-16 18:30:11")
 def test_non_default_date_range_in_search_params():
     search_params = ConceptSearchQuery(
             title='atitle',

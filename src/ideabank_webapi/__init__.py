@@ -37,6 +37,7 @@ from .models import (
         EndpointInformationalMessage
 )
 from .models.payloads import ConceptDataPayload, CreateConcept
+from .models.artifacts import FuzzyOption
 
 app = FastAPI()
 
@@ -242,7 +243,7 @@ def search_concepts(
         title: str = '',
         notbefore: datetime.datetime = None,
         notafter: datetime.datetime = None,
-        fuzzy: bool = False
+        fuzzy: FuzzyOption = FuzzyOption.NONE
         ):  # pylint:disable=too-many-arguments
     """Retrieves the concepts matching the given criteria"""
     handler = ConceptSearchResultHandler()
@@ -250,8 +251,8 @@ def search_concepts(
     handler.receive(ConceptSearchQuery(
         author=author,
         title=title,
-        not_before=notbefore,
-        not_after=notafter,
+        not_before=notbefore or datetime.datetime.fromtimestamp(0, datetime.timezone.utc),
+        not_after=notafter or datetime.datetime.now(datetime.timezone.utc),
         fuzzy=fuzzy
         ))
     response.status_code = handler.result.code

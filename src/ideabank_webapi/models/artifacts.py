@@ -18,22 +18,6 @@ LOGGER = logging.getLogger(__name__)
 # pylint:disable=no-self-argument
 
 
-def unix_epoch() -> datetime.datetime:
-    """Utility function for returning a datetime representing the unix epoch
-    Returns:
-        [datetime] 1970, 1, 1
-    """
-    return datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
-
-
-def utc_now() -> datetime.datetime:
-    """Utility function for returning a datetime representing current utc timezone
-    Returns:
-        [datetime] utcnow
-    """
-    return datetime.datetime.now(tz=datetime.timezone.utc)
-
-
 class IdeaBankArtifact(BaseModel):
     """Base class for all data entity representable by this API"""
 
@@ -209,6 +193,6 @@ class ConceptSearchQuery(IdeaBankArtifact):
     """
     author: str
     title: str
-    not_before: datetime.datetime = Field(default_factory=unix_epoch)
-    not_after: datetime.datetime = Field(default_factory=utc_now)
+    not_before: datetime.datetime
+    not_after: datetime.datetime
     fuzzy: FuzzyOption = FuzzyOption.NONE
