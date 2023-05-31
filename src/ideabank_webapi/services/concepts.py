@@ -169,8 +169,7 @@ class ConceptsDataService(QueryService, S3Crud):
                 )
         return select(
                 recursive_query.c.ancestor,
-                recursive_query.c.descendant,
-                steps_cte.c.depth
+                recursive_query.c.descendant
                 ) \
             .where(recursive_query.c.depth <= depth) \
             .order_by(recursive_query.c.depth)
@@ -200,8 +199,7 @@ class ConceptsDataService(QueryService, S3Crud):
                 )
         return select(
                 recursive_query.c.ancestor,
-                recursive_query.c.descendant,
-                steps_cte.c.depth
+                recursive_query.c.descendant
                 ) \
             .where(recursive_query.c.depth <= depth) \
             .order_by(recursive_query.c.depth)
