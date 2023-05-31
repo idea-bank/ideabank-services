@@ -9,6 +9,7 @@ from ideabank_webapi.handlers.retrievers import (
         AuthenticationHandler,
         ProfileRetrievalHandler,
         SpecificConceptRetrievalHandler,
+        ConceptSearchResultHandler
         )
 from ideabank_webapi.services import (
         RegisteredService,
@@ -24,6 +25,7 @@ from ideabank_webapi.models import (
         ProfileView,
         ConceptRequest,
         ConceptFullView,
+        ConceptSearchQuery,
         ConceptSimpleView,
         EndpointErrorMessage,
 )
@@ -323,3 +325,77 @@ class TestSpecificConceptRetrievalHandler:
                 )
 
 
+@patch.object(QueryService, 'ENGINE', create_engine('sqlite:///:memory:', echo=True))
+@patch.object(QueryService, 'exec_next')
+@patch.object(QueryService, 'results')
+class TestConceptSearchHandler:
+
+    def setup_method(self):
+        self.handler = ConceptSearchResultHandler()
+        self.handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
+
+    @patch.object(
+            S3Crud,
+            'share_item',
+            side_effect=(lambda key: f'http://example.com/{key}')
+            )
+    def test_successful_search_result_retrieval(
+            self,
+            mock_s3_url,
+            mock_query_results,
+            mock_query,
+            test_simple_concept_view
+            ):
+        mock_query_results.all.return_value = 10 * [test_simple_concept_view]
+        self.handler.receive(ConceptSearchQuery(
+                author=test_simple_concept_view.identifier.split('/')[0],
+                title=test_simple_concept_view.identifier.split('/')[1]
+            ))
+        assert self.handler.status == EndpointHandlerStatus.COMPLETE
+        assert self.handler.result.code == status.HTTP_200_OK
+        assert self.handler.result.body == mock_query_results.all.return_value
+
+    @patch.object(
+            ConceptSearchResultHandler,
+            '_do_data_ops',
+            side_effect=BaseIdeaBankAPIException("Really obscure error")
+        )
+    def test_a_really_messed_up_scenario(
+            self,
+            mock_data_ops,
+            mock_query_results,
+            mock_query,
+            test_simple_concept_view
+            ):
+        self.handler.receive(ConceptSearchQuery(
+            author=test_simple_concept_view.identifier.split('/')[0],
+            title=test_simple_concept_view.identifier.split('/')[1]
+            )
+        )
+        mock_data_ops.assert_called_once()
+        assert self.handler.status == EndpointHandlerStatus.ERROR
+        assert self.handler.result.code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert self.handler.result.body == EndpointErrorMessage(
+                err_msg='Really obscure error'
+                )
+
+    @patch.object(
+            S3Crud,
+            'share_item',
+            side_effect=(lambda key: f'http://example.com/{key}')
+            )
+    def test_no_results_is_not_an_error(
+            self,
+            mock_s3_url,
+            mock_query_results,
+            mock_query,
+            test_simple_concept_view
+            ):
+        mock_query_results.all.return_value = []
+        self.handler.receive(ConceptSearchQuery(
+                author=test_simple_concept_view.identifier.split('/')[0],
+                title=test_simple_concept_view.identifier.split('/')[1]
+            ))
+        assert self.handler.status == EndpointHandlerStatus.COMPLETE
+        assert self.handler.result.code == status.HTTP_200_OK
+        assert self.handler.result.body == mock_query_results.all.return_value
