@@ -10,7 +10,7 @@ import datetime
 from typing import Sequence, Union, Dict, List
 from enum import Enum
 
-from pydantic import BaseModel, validator, HttpUrl, Field  # pylint:disable=no-name-in-module
+from pydantic import BaseModel, validator, HttpUrl  # pylint:disable=no-name-in-module
 
 LOGGER = logging.getLogger(__name__)
 
