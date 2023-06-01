@@ -4,3 +4,5 @@ pytest-cov
 pytest-sugar
 pylint
 freezegun
+faker
+random-password-generator
