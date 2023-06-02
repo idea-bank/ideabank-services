@@ -4,5 +4,8 @@ pytest-cov
 pytest-sugar
 pylint
 freezegun
+
+# modules used to generate fake data
 faker
 random-password-generator
+pillow
