@@ -38,3 +38,15 @@ CREATE TABLE concept_links (
         ON UPDATE CASCADE
         ON DELETE CASCADE
 );
+
+COPY Accounts(display_name, preferred_name, biography, password_hash, salt_value, created_at, updated_at)
+FROM '/docker-entrypoint-initdb.d/test_accounts.csv'
+DELIMITER '|';
+
+COPY Concepts(author, title, description, diagram, created_at, updated_at)
+FROM '/docker-entrypoint-initdb.d/test_concepts.csv'
+DELIMITER '|';
+
+COPY Concept_Links(ancestor, descendant)
+FROM '/docker-entrypoint-initdb.d/test_links.csv'
+DELIMITER '|';
