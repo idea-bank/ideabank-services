@@ -158,6 +158,11 @@ class ConceptLinkingHandler(AuthorizationRequired):
                 request.ancestor,
                 request.descendant
                 )
+        if request.ancestor == request.descendant:
+            LOGGER.error("Cannot link a concept to itself")
+            raise InvalidReferenceException(
+                    "Self referential links not allowed"
+                    )
         try:
             with self.get_service(RegisteredService.CONCEPTS_DS) as service:
                 service.add_query(service.link_existing_concept(
