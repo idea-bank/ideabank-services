@@ -26,7 +26,11 @@ from ideabank_webapi.models import (
         EstablishLink,
         ConceptLinkRecord
 )
-from ideabank_webapi.exceptions import BaseIdeaBankAPIException, NotAuthorizedError
+from ideabank_webapi.exceptions import (
+        BaseIdeaBankAPIException,
+        NotAuthorizedError,
+        InvalidReferenceException
+        )
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
@@ -319,6 +323,26 @@ class TestConceptLinkingHandler:
         assert self.handler.result.code == status.HTTP_401_UNAUTHORIZED
         assert self.handler.result.body == EndpointErrorMessage(
                 err_msg='Invalid token presented.'
+                )
+
+    @patch.object(AuthorizationRequired, '_check_if_authorized')
+    def test_self_referential_links_not_allowed(
+            self,
+            mock_auth_check,
+            mock_query_results,
+            mock_query,
+            test_auth_token,
+            test_linking_request
+            ):
+        test_linking_request.descendant = test_linking_request.ancestor
+        self.handler.receive(EstablishLink(
+            auth_token=test_auth_token,
+            **test_linking_request.dict()
+            ))
+        assert self.handler.status == EndpointHandlerStatus.ERROR
+        assert self.handler.result.code == status.HTTP_403_FORBIDDEN
+        assert self.handler.result.body == EndpointErrorMessage(
+                err_msg='Self referential links not allowed'
                 )
 
     @patch.object(
