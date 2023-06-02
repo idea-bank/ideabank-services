@@ -12,6 +12,9 @@ import datetime
 import random
 import csv
 import json
+import os
+from PIL import Image
+
 
 pwo = PasswordGenerator()
 
@@ -110,6 +113,15 @@ class FakeLink:
         print(f"Fake Link: {self.ancestor} <- {self.descendant}")
 
 
+def create_rectangle(width, height, color, output_file):
+    # Create a new image with the specified dimensions
+    image = Image.new("RGB", (width, height), color)
+
+    # Save the image as a PNG file
+    image.save(output_file, "PNG")
+    print(f"Rectangle image saved as {output_file}")
+
+
 account_rows = set()
 concept_rows = set()
 link_rows = set()
@@ -159,3 +171,20 @@ with open('test_links.csv', newline='', mode='w') as links_csv:
     for link in link_rows:
         row = [link.ancestor, link.descendant]
         link_writer.writerow(row)
+
+
+with open('test_accounts.csv', newline='', mode='r') as accounts_csv:
+    accounts_reader = csv.reader(accounts_csv, quotechar="'", delimiter='|')
+    os.mkdir('./avatars')
+    for row in accounts_reader:
+        height, width = 200, 200
+        color = tuple(random.randint(0, 255) for _ in range(3))  # random RGB tuple
+        create_rectangle(width, height, color, f'avatars/{row[0]}')
+
+with open('test_concepts.csv', newline='', mode='r') as concepts_csv:
+    concepts_reader = csv.reader(concepts_csv, quotechar="'", delimiter='|')
+    for row in concepts_reader:
+        os.makedirs(f'thumbnails/{row[0]}', exist_ok=True)
+        height, width = 400, 800
+        color = tuple(random.randint(0, 255) for _ in range(3))  # random RGB tuple
+        create_rectangle(width, height, color, f'thumbnails/{row[0]}/{row[1]}')
