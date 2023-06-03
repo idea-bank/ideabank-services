@@ -13,6 +13,7 @@ from sqlalchemy.sql.expression import Select, Insert, Delete
 from .querydb import QueryService
 from ..models.schema import Likes, Follows, Comments
 
+# pylint:disable=singleton-comparison
 LOGGER = logging.getLogger(__name__)
 
 
@@ -159,7 +160,7 @@ class EngagementDataService(QueryService):
         """
         LOGGER.info("Built query to find initial threads on a given concept")
         return select(Comments.comment_by, Comments.free_text) \
-            .where(Comments.comment_on == concept_id, Comments.parent is None) \
+            .where(Comments.comment_on == concept_id, Comments.parent == None) \
             .order_by(Comments.created_at)
 
     @staticmethod
