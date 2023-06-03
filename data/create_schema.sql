@@ -1,6 +1,7 @@
 DROP TABLE IF EXISTS "likes";
-DROP TABLE IF EXISTS "follows":
+DROP TABLE IF EXISTS "follows";
 DROP TABLE IF EXISTS "concept_links";
+DROP TABLE IF EXISTS "commets";
 DROP TABLE IF EXISTS "concepts";
 DROP TABLE IF EXISTS "accounts";
 
@@ -47,7 +48,7 @@ CREATE TABLE follows (
 	PRIMARY KEY (follower, followee),
 	FOREIGN KEY(follower) REFERENCES accounts (display_name) ON DELETE CASCADE ON UPDATE CASCADE,
 	FOREIGN KEY(followee) REFERENCES accounts (display_name) ON DELETE CASCADE ON UPDATE CASCADE
-)
+);
 
 CREATE TABLE likes (
 	display_name VARCHAR(64) NOT NULL,
@@ -55,7 +56,7 @@ CREATE TABLE likes (
 	PRIMARY KEY (display_name),
 	FOREIGN KEY(display_name) REFERENCES accounts (display_name) ON DELETE CASCADE ON UPDATE CASCADE,
 	FOREIGN KEY(concept_id) REFERENCES concepts (identifier) ON DELETE CASCADE ON UPDATE CASCADE
-)
+);
 
 CREATE TABLE comments (
 	comment_id INTEGER NOT NULL,
@@ -63,12 +64,12 @@ CREATE TABLE comments (
 	comment_by VARCHAR(64) DEFAULT '[Anonymous]',
 	free_text VARCHAR,
 	parent INTEGER,
-	created_at DATETIME,
+	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 	PRIMARY KEY (comment_id),
 	FOREIGN KEY(comment_on) REFERENCES concepts (identifier) ON DELETE CASCADE ON UPDATE CASCADE,
 	FOREIGN KEY(comment_by) REFERENCES accounts (display_name) ON DELETE SET DEFAULT ON UPDATE CASCADE,
 	FOREIGN KEY(parent) REFERENCES comments (comment_id)
-)
+);
 
 COPY Accounts(display_name, preferred_name, biography, password_hash, salt_value, created_at, updated_at)
 FROM '/docker-entrypoint-initdb.d/test_accounts.csv'
