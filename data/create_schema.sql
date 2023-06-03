@@ -6,41 +6,32 @@ DROP TABLE IF EXISTS "concepts";
 DROP TABLE IF EXISTS "accounts";
 
 CREATE TABLE accounts (
-    display_name VARCHAR(64) PRIMARY KEY,
-    preferred_name VARCHAR(255),
-    biography TEXT,
-    password_hash CHAR(64),
-    salt_value CHAR(64),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	display_name VARCHAR(64) NOT NULL,
+	preferred_name VARCHAR(255),
+	biography VARCHAR,
+	password_hash VARCHAR(64),
+	salt_value VARCHAR(64),
+	created_at TIMESTAMP WITHOUT TIME ZONE,
+	updated_at TIMESTAMP WITHOUT TIME ZONE,
+	PRIMARY KEY (display_name)
 );
+
+
 
 CREATE TABLE concepts (
-    title VARCHAR(128),
-    author VARCHAR(64) DEFAULT '[Anonymous]',
-    description TEXT,
-    diagram JSON,
-    identifier VARCHAR(255) GENERATED ALWAYS AS (author || '/' || title) STORED,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-	UNIQUE (identifier),
-    PRIMARY KEY (author, title),
-    CONSTRAINT fk_concept_author FOREIGN KEY (author) REFERENCES accounts(display_name)
-        ON UPDATE CASCADE
-        ON DELETE SET DEFAULT
+	title VARCHAR(128) NOT NULL,
+	author VARCHAR(64) NOT NULL,
+	description VARCHAR,
+	diagram JSON,
+	created_at TIMESTAMP WITHOUT TIME ZONE,
+	updated_at TIMESTAMP WITHOUT TIME ZONE,
+	identifier VARCHAR GENERATED ALWAYS AS (author || '/' || title) STORED,
+	PRIMARY KEY (title, author),
+	FOREIGN KEY(author) REFERENCES accounts (display_name) ON DELETE SET DEFAULT ON UPDATE CASCADE,
+	UNIQUE (identifier)
 );
 
-CREATE TABLE concept_links (
-    ancestor VARCHAR(255),
-    descendant VARCHAR(255),
-    PRIMARY KEY (ancestor, descendant),
-    CONSTRAINT fk_ancestor_identifier FOREIGN KEY (ancestor) REFERENCES concepts(identifier)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE,
-    CONSTRAINT fk_descendant_identifier FOREIGN KEY (descendant) REFERENCES concepts(identifier)
-        ON UPDATE CASCADE
-        ON DELETE CASCADE
-);
+
 
 CREATE TABLE follows (
 	follower VARCHAR(64) NOT NULL,
@@ -50,21 +41,36 @@ CREATE TABLE follows (
 	FOREIGN KEY(followee) REFERENCES accounts (display_name) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+
+
+CREATE TABLE concept_links (
+	ancestor VARCHAR NOT NULL,
+	descendant VARCHAR NOT NULL,
+	PRIMARY KEY (ancestor, descendant),
+	FOREIGN KEY(ancestor) REFERENCES concepts (identifier) ON DELETE CASCADE ON UPDATE CASCADE,
+	FOREIGN KEY(descendant) REFERENCES concepts (identifier) ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+
+
 CREATE TABLE likes (
 	display_name VARCHAR(64) NOT NULL,
-	concept_id VARCHAR,
-	PRIMARY KEY (display_name),
+	concept_id VARCHAR NOT NULL,
+	PRIMARY KEY (display_name, concept_id),
 	FOREIGN KEY(display_name) REFERENCES accounts (display_name) ON DELETE CASCADE ON UPDATE CASCADE,
 	FOREIGN KEY(concept_id) REFERENCES concepts (identifier) ON DELETE CASCADE ON UPDATE CASCADE
 );
 
+
+CREATE SEQUENCE comment_id_seq START WITH 1;
+
 CREATE TABLE comments (
 	comment_id INTEGER NOT NULL,
 	comment_on VARCHAR,
-	comment_by VARCHAR(64) DEFAULT '[Anonymous]',
+	comment_by VARCHAR(64),
 	free_text VARCHAR,
 	parent INTEGER,
-	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+	created_at TIMESTAMP WITHOUT TIME ZONE,
 	PRIMARY KEY (comment_id),
 	FOREIGN KEY(comment_on) REFERENCES concepts (identifier) ON DELETE CASCADE ON UPDATE CASCADE,
 	FOREIGN KEY(comment_by) REFERENCES accounts (display_name) ON DELETE SET DEFAULT ON UPDATE CASCADE,
