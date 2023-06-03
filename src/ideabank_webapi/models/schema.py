@@ -8,12 +8,17 @@ import logging
 import datetime
 
 from sqlalchemy.orm import DeclarativeBase
-from sqlalchemy import Column, String, DateTime, JSON, ForeignKey, Computed
+from sqlalchemy import (
+        Column, String, DateTime,
+        JSON, ForeignKey, Computed,
+        Integer, Sequence
+        )
 
+# pylint:disable=too-few-public-methods
 LOGGER = logging.getLogger(__name__)
 
 
-class IdeaBankSchema(DeclarativeBase):  # pylint:disable=too-few-public-methods
+class IdeaBankSchema(DeclarativeBase):
     """Base schema object for the idea bank data schema"""
 
 
@@ -36,7 +41,7 @@ def _default_bio_placeholder(context):
     return f'{current_username} hasn\'t added a bio.'
 
 
-class Accounts(IdeaBankSchema):  # pylint:disable=too-few-public-methods
+class Accounts(IdeaBankSchema):
     """Models a row in the Accounts
     Attributes:
         display_name: the unique identifier for the account
@@ -61,7 +66,7 @@ class Accounts(IdeaBankSchema):  # pylint:disable=too-few-public-methods
             )
 
 
-class Concept(IdeaBankSchema):  # pylint:disable=too-few-public-methods
+class Concept(IdeaBankSchema):
     """Models a row in the concepts table
     Attributes:
         title: the title of this concept
@@ -98,7 +103,7 @@ class Concept(IdeaBankSchema):  # pylint:disable=too-few-public-methods
             )
 
 
-class ConceptLink(IdeaBankSchema):  # pylint:disable=too-few-public-methods
+class ConceptLink(IdeaBankSchema):
     """Models a row in the concept links table
     Attributes:
         ancestor: the unique identifying string of the ancestor concept
@@ -121,3 +126,91 @@ class ConceptLink(IdeaBankSchema):  # pylint:disable=too-few-public-methods
                 ),
             primary_key=True
             )
+
+
+class Follows(IdeaBankSchema):
+    """Models a row in the follows relationship between accounts
+    Attributes:
+        follower: the account following another
+        followee: the account being followed by follower
+    """
+    __tablename__ = 'follows'
+    follower = Column(
+            ForeignKey(
+                Accounts.display_name,
+                onupdate="CASCADE",
+                ondelete="CASCADE"
+                ),
+            primary_key=True
+            )
+    followee = Column(
+            ForeignKey(
+                Accounts.display_name,
+                onupdate="CASCADE",
+                ondelete="CASCADE"
+                ),
+            primary_key=True
+            )
+
+
+class Likes(IdeaBankSchema):
+    """Modles a row in the likes relationship between an account and a concept
+    Attributes:
+        display_name: the account liking a concept
+        concept_id: the identifier of a the concept being liked
+    """
+    __tablename__ = 'likes'
+    display_name = Column(
+            ForeignKey(
+                Accounts.display_name,
+                onupdate="CASCADE",
+                ondelete="CASCADE"
+                ),
+            primary_key=True
+            )
+    concept_id = Column(
+            ForeignKey(
+                Concept.identifier,
+                onupdate="CASCADE",
+                ondelete="CASCADE"
+                ),
+            primary_key=True
+            )
+
+
+class Comments(IdeaBankSchema):
+    """Models a row in the comments table for a concept
+    Attributes:
+        comment_id: a sequential identifier for Comments
+        comment_on: the concept being commented on
+        comment_by: the author of this comment
+        free_text: the contents of this comment
+        parent: the comment being responded to (if any)
+        created_at: the timestamp the comment was created at
+    """
+    __tablename__ = 'comments'
+    comment_id = Column(
+            Integer,
+            Sequence("comment_id_seq", start=1),
+            primary_key=True
+            )
+    comment_on = Column(
+            ForeignKey(
+                Concept.identifier,
+                onupdate="CASCADE",
+                ondelete="CASCADE"
+                )
+            )
+    comment_by = Column(
+            ForeignKey(
+                Accounts.display_name,
+                onupdate="CASCADE",
+                ondelete="SET DEFAULT"
+                )
+        )
+    free_text = Column(String)
+    parent = Column(
+            ForeignKey(comment_id),
+            nullable=True
+            )
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
