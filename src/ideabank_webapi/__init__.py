@@ -25,6 +25,9 @@ from .handlers.retrievers import (
         ConceptLineageHandler,
         CheckFollowingStatusHandler
         )
+from .handlers.erasers import (
+        StopFollowingAccountHandler
+        )
 from .services import (
         RegisteredService,
         AccountsDataService,
@@ -308,6 +311,9 @@ def get_lineage(
                 },
             status.HTTP_403_FORBIDDEN: {
                 'model': EndpointErrorMessage
+                },
+            status.HTTP_401_UNAUTHORIZED: {
+                'model': EndpointErrorMessage
                 }
             }
         )
@@ -352,6 +358,39 @@ def check_following(
     handler.receive(AccountFollowingRecord(
         follower=follower,
         followee=followee
+        ))
+    response.status_code = handler.result.code
+    return handler.result.body
+
+
+@app.delete(
+        "/accounts/follow",
+        responses={
+            status.HTTP_200_OK: {
+                'model': EndpointInformationalMessage
+                },
+            status.HTTP_403_FORBIDDEN: {
+                'model': EndpointErrorMessage
+                },
+            status.HTTP_401_UNAUTHORIZED: {
+                'model': EndpointErrorMessage
+                }
+            }
+        )
+def stop_following(
+        response: JSONResponse,
+        follow_data: AccountFollowingRecord,
+        authorization: str = Header(default='')
+        ):
+    """Records the event where one account starts following another"""
+    handler = StopFollowingAccountHandler()
+    handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+    handler.receive(UnfollowRequest(
+        auth_token=AuthorizationToken(
+            token=authorization,
+            presenter=follow_data.follower
+            ),
+        **follow_data.dict()
         ))
     response.status_code = handler.result.code
     return handler.result.body
