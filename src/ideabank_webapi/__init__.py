@@ -424,7 +424,7 @@ def start_liking(
         authorization: str = Header(default='')
         ):
     """Records the event where one user likes a given concept"""
-    handler = StopLikingConceptHandler()
+    handler = StartLikingConceptHandler()
     handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
     handler.receive(LikeRequest(
         auth_token=AuthorizationToken(
@@ -438,7 +438,7 @@ def start_liking(
 
 
 @app.get(
-        "/accounts/{display_name}/likes/{concept}",
+        "/accounts/{display_name}/likes/{concept:path}",
         responses={
             status.HTTP_200_OK: {
                 'model': EndpointInformationalMessage
@@ -454,7 +454,7 @@ def check_liking(
         concept: str
         ):
     """Checks if a liking record between the specified account and concept"""
-    handler = ()
+    handler = CheckLikingStatusHandler()
     handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
     handler.receive(ConceptLikingRecord(
         user_liking=display_name,
