@@ -202,3 +202,9 @@ class ConceptLineage(IdeaBankArtifact):
     """Model representing a report of an idea's lineage"""
     nodes: int
     lineage: dict
+
+
+class AccountFollowingRecord(IdeaBankArtifact):
+    """Models an instance of one account following another"""
+    follower: str
+    followee: str

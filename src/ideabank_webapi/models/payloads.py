@@ -10,7 +10,11 @@ from typing import Union, List, Dict
 
 from pydantic import BaseModel, validator  # pylint:disable=no-name-in-module
 
-from .artifacts import AuthorizationToken, ConceptLinkRecord
+from .artifacts import (
+        AuthorizationToken,
+        ConceptLinkRecord,
+        AccountFollowingRecord
+        )
 
 # pylint:disable=too-few-public-methods
 # pylint:disable=no-self-argument
@@ -65,3 +69,11 @@ class ConceptRequest(EndpointPayload):
     author: str
     title: str
     simple: bool
+
+
+class FollowRequest(AuthorizedPayload, AccountFollowingRecord):
+    """Models a request for one user to start following another"""
+
+
+class UnfollowRequest(AuthorizedPayload, AccountFollowingRecord):
+    """Models a request for one user to stop following another"""

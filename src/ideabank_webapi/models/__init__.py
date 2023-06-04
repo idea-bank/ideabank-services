@@ -8,7 +8,9 @@ from .schema import (
         IdeaBankSchema,
         Accounts,
         Concept,
-        ConceptLink
+        ConceptLink,
+        Follows,
+        Likes
         )
 
 from .artifacts import (
@@ -24,7 +26,8 @@ from .artifacts import (
         ConceptFullView,
         ConceptLinkRecord,
         ConceptSearchQuery,
-        ConceptLineage
+        ConceptLineage,
+        AccountFollowingRecord
         )
 
 from .payloads import (
@@ -34,4 +37,6 @@ from .payloads import (
         CreateConcept,
         EstablishLink,
         ConceptRequest,
+        FollowRequest,
+        UnfollowRequest
         )
