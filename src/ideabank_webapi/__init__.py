@@ -15,7 +15,8 @@ from .handlers.creators import (
         AccountCreationHandler,
         ConceptCreationHandler,
         ConceptLinkingHandler,
-        StartFollowingAccountHandler
+        StartFollowingAccountHandler,
+        StartLikingConceptHandler,
         )
 from .handlers.retrievers import (
         AuthenticationHandler,
@@ -23,10 +24,12 @@ from .handlers.retrievers import (
         SpecificConceptRetrievalHandler,
         ConceptSearchResultHandler,
         ConceptLineageHandler,
-        CheckFollowingStatusHandler
+        CheckFollowingStatusHandler,
+        CheckLikingStatusHandler
         )
 from .handlers.erasers import (
-        StopFollowingAccountHandler
+        StopFollowingAccountHandler,
+        StopLikingConceptHandler
         )
 from .services import (
         RegisteredService,
@@ -41,6 +44,8 @@ from .models import (
         ConceptSimpleView,
         ConceptFullView,
         ConceptRequest,
+        ConceptDataPayload,
+        CreateConcept,
         ConceptLinkRecord,
         EstablishLink,
         ConceptSearchQuery,
@@ -48,10 +53,12 @@ from .models import (
         AccountFollowingRecord,
         FollowRequest,
         UnfollowRequest,
+        ConceptLikingRecord,
+        LikeRequest,
+        UnlikeRequest,
         EndpointErrorMessage,
         EndpointInformationalMessage
 )
-from .models.payloads import ConceptDataPayload, CreateConcept
 from .models.artifacts import FuzzyOption
 
 app = FastAPI()
@@ -391,6 +398,100 @@ def stop_following(
             presenter=follow_data.follower
             ),
         **follow_data.dict()
+        ))
+    response.status_code = handler.result.code
+    return handler.result.body
+
+
+@app.post(
+        "/accounts/likes",
+        status_code=status.HTTP_201_CREATED,
+        responses={
+            status.HTTP_201_CREATED: {
+                'model': EndpointInformationalMessage
+                },
+            status.HTTP_403_FORBIDDEN: {
+                'model': EndpointErrorMessage
+                },
+            status.HTTP_401_UNAUTHORIZED: {
+                'model': EndpointErrorMessage
+                }
+            }
+        )
+def start_liking(
+        response: JSONResponse,
+        like_data: ConceptLikingRecord,
+        authorization: str = Header(default='')
+        ):
+    """Records the event where one user likes a given concept"""
+    handler = StopLikingConceptHandler()
+    handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+    handler.receive(LikeRequest(
+        auth_token=AuthorizationToken(
+            token=authorization,
+            presenter=like_data.user_liking
+            ),
+        **like_data.dict()
+        ))
+    response.status_code = handler.result.code
+    return handler.result.body
+
+
+@app.get(
+        "/accounts/{display_name}/likes/{concept}",
+        responses={
+            status.HTTP_200_OK: {
+                'model': EndpointInformationalMessage
+                },
+            status.HTTP_404_NOT_FOUND: {
+                'model': EndpointErrorMessage
+                }
+            }
+        )
+def check_liking(
+        response: JSONResponse,
+        display_name: str,
+        concept: str
+        ):
+    """Checks if a liking record between the specified account and concept"""
+    handler = ()
+    handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+    handler.receive(ConceptLikingRecord(
+        user_liking=display_name,
+        concept_liked=concept
+        ))
+    response.status_code = handler.result.code
+    return handler.result.body
+
+
+@app.delete(
+        "/accounts/likes",
+        responses={
+            status.HTTP_200_OK: {
+                'model': EndpointInformationalMessage
+                },
+            status.HTTP_403_FORBIDDEN: {
+                'model': EndpointErrorMessage
+                },
+            status.HTTP_401_UNAUTHORIZED: {
+                'model': EndpointErrorMessage
+                }
+            }
+        )
+def stop_liking(
+        response: JSONResponse,
+        like_data: ConceptLikingRecord,
+        authorization: str = Header(default='')
+        ):
+    """Records the event where one account stops liking another"""
+    handler = StopLikingConceptHandler()
+    handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+    handler.receive(UnlikeRequest(
+        auth_token=AuthorizationToken(
+            token=authorization,
+            presenter=like_data.user_liking
+            ),
+        **like_data.dict()
         ))
     response.status_code = handler.result.code
     return handler.result.body
