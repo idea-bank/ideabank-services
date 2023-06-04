@@ -12,12 +12,14 @@ from ideabank_webapi.handlers.retrievers import (
         ProfileRetrievalHandler,
         SpecificConceptRetrievalHandler,
         ConceptSearchResultHandler,
-        ConceptLineageHandler
+        ConceptLineageHandler,
+        CheckFollowingStatusHandler
         )
 from ideabank_webapi.services import (
         RegisteredService,
         AccountsDataService,
         ConceptsDataService,
+        EngagementDataService,
         QueryService,
         S3Crud
         )
@@ -32,7 +34,9 @@ from ideabank_webapi.models import (
         ConceptSimpleView,
         ConceptLinkRecord,
         ConceptLineage,
+        AccountFollowingRecord,
         EndpointErrorMessage,
+        EndpointInformationalMessage
 )
 from ideabank_webapi.exceptions import BaseIdeaBankAPIException
 
@@ -130,6 +134,14 @@ def test_lineage():
                 )
             )
     return t
+
+
+@pytest.fixture
+def test_following_record():
+    return AccountFollowingRecord(
+            follower='user-a',
+            followee='user-b'
+            )
 
 
 @patch.object(QueryService, 'ENGINE', create_engine('sqlite:///:memory:', echo=True))
@@ -527,6 +539,64 @@ class TestConceptLineageHandler:
             title='fake-idea',
             simple=True
             ))
+        mock_data_ops.assert_called_once()
+        assert self.handler.status == EndpointHandlerStatus.ERROR
+        assert self.handler.result.code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert self.handler.result.body == EndpointErrorMessage(
+                err_msg='Really obscure error'
+                )
+
+
+@patch.object(QueryService, 'ENGINE', create_engine('sqlite:///:memory:', echo=True))
+@patch.object(QueryService, 'exec_next')
+@patch.object(QueryService, 'results')
+class TestFollowStatusHandler:
+
+    def setup_method(self):
+        self.handler = CheckFollowingStatusHandler()
+        self.handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+
+    def test_check_affirms_following_status(
+            self,
+            mock_query_results,
+            mock_query,
+            test_following_record
+            ):
+        mock_query_results.one.return_value == test_following_record
+        self.handler.receive(test_following_record)
+        assert self.handler.status == EndpointHandlerStatus.COMPLETE
+        assert self.handler.result.code == status.HTTP_200_OK
+        assert self.handler.result.body == EndpointInformationalMessage(
+                msg=f"{test_following_record.follower} is following {test_following_record.followee}"
+                )
+
+    def test_check_denies_following_status(
+            self,
+            mock_query_results,
+            mock_query,
+            test_following_record
+            ):
+        mock_query_results.one.side_effect = NoResultFound
+        self.handler.receive(test_following_record)
+        assert self.handler.status == EndpointHandlerStatus.ERROR
+        assert self.handler.result.code == status.HTTP_404_NOT_FOUND
+        assert self.handler.result.body == EndpointErrorMessage(
+                err_msg=f"{test_following_record.follower} is not following {test_following_record.followee}"
+                )
+
+    @patch.object(
+            CheckFollowingStatusHandler,
+            '_do_data_ops',
+            side_effect=BaseIdeaBankAPIException("Really obscure error")
+        )
+    def test_a_really_messed_up_scenario(
+            self,
+            mock_data_ops,
+            mock_query_results,
+            mock_query,
+            test_following_record
+            ):
+        self.handler.receive(test_following_record)
         mock_data_ops.assert_called_once()
         assert self.handler.status == EndpointHandlerStatus.ERROR
         assert self.handler.result.code == status.HTTP_500_INTERNAL_SERVER_ERROR

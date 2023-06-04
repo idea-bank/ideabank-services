@@ -6,14 +6,16 @@ from ideabank_webapi.handlers import EndpointHandlerStatus
 from ideabank_webapi.handlers.creators import (
         AccountCreationHandler,
         ConceptCreationHandler,
-        ConceptLinkingHandler
+        ConceptLinkingHandler,
+        StartFollowingAccountHandler
         )
 from ideabank_webapi.handlers.preprocessors import AuthorizationRequired
 from ideabank_webapi.services import (
         RegisteredService,
         AccountsDataService,
         QueryService,
-        ConceptsDataService
+        ConceptsDataService,
+        EngagementDataService
         )
 from ideabank_webapi.models import (
         CredentialSet,
@@ -24,7 +26,9 @@ from ideabank_webapi.models import (
         ConceptDataPayload,
         CreateConcept,
         EstablishLink,
-        ConceptLinkRecord
+        ConceptLinkRecord,
+        FollowRequest,
+        AccountFollowingRecord
 )
 from ideabank_webapi.exceptions import (
         BaseIdeaBankAPIException,
@@ -76,6 +80,15 @@ def test_linking_request():
     return ConceptLinkRecord(
             ancestor='testuser/sample-idea',
             descendant='anotheruser/derived-idea'
+            )
+
+
+@pytest.fixture
+def test_follow_request(test_auth_token):
+    return FollowRequest(
+            auth_token=test_auth_token,
+            follower='user-a',
+            followee='user-b'
             )
 
 
@@ -385,3 +398,126 @@ class TestConceptLinkingHandler:
             auth_token=test_auth_token,
             **test_linking_request.dict()
             ))
+
+
+@patch.object(QueryService, 'ENGINE', create_engine('sqlite:///:memory:', echo=True))
+@patch.object(QueryService, 'exec_next')
+@patch.object(QueryService, 'results')
+class TestStartFollowingHandler:
+
+    def setup_method(self):
+        self.handler = StartFollowingAccountHandler()
+        self.handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+
+    @patch.object(AuthorizationRequired, "_check_if_authorized")
+    def test_successful_start_following_user(
+            self,
+            mock_auth_check,
+            mock_query_results,
+            mock_query,
+            test_follow_request
+            ):
+        mock_query_results.one.return_value = AccountFollowingRecord(
+                follower=test_follow_request.follower,
+                followee=test_follow_request.followee
+                )
+        self.handler.receive(test_follow_request)
+        assert self.handler.status == EndpointHandlerStatus.COMPLETE
+        assert self.handler.result.code == status.HTTP_201_CREATED
+        assert self.handler.result.body == EndpointInformationalMessage(
+                msg=f'{test_follow_request.follower} is now following {test_follow_request.followee}'
+                )
+
+    @pytest.mark.parametrize("err_type, err_cause, err_msg", [
+        (IntegrityError, "not present in table", "Both accounts must exist to follow or be followed"),
+        (IntegrityError, "already exists", "A following exists between user-a and user-b")
+        ])
+    @patch.object(AuthorizationRequired, '_check_if_authorized')
+    def test_invalid_follow_request(
+            self,
+            mock_auth_check,
+            mock_query_results,
+            mock_query,
+            test_follow_request,
+            err_type,
+            err_cause,
+            err_msg
+            ):
+        mock_query_results.one.side_effect = err_type(err_cause, "", "")
+        self.handler.receive(test_follow_request)
+        self.handler.status == EndpointHandlerStatus.ERROR
+        self.handler.result.code == status.HTTP_403_FORBIDDEN
+        self.handler.result.body == EndpointErrorMessage(
+                err_msg=err_msg
+                )
+
+    @patch.object(AuthorizationRequired, '_check_if_authorized')
+    def test_attempt_to_follow_self(
+            self,
+            mock_auth_check,
+            mock_query_results,
+            mock_query,
+            test_follow_request
+            ):
+        test_follow_request.followee = test_follow_request.follower
+        self.handler.receive(test_follow_request)
+        self.handler.status == EndpointHandlerStatus.ERROR
+        self.handler.result.code == status.HTTP_403_FORBIDDEN
+        self.handler.result.body == EndpointErrorMessage(
+                err_msg="Cannot follow yourself. You'll need to make real connections"
+                )
+
+    @pytest.mark.parametrize("err_type, err_msg", [
+        (NotAuthorizedError, 'Invalid token presented'),
+        (NotAuthorizedError, 'Unable to verify token ownership')
+        ])
+    @patch.object(AuthorizationRequired, '_check_if_authorized')
+    def test_unauthorized_follow_request(
+            self,
+            mock_auth_check,
+            mock_query_results,
+            mock_query,
+            test_follow_request,
+            err_type,
+            err_msg
+            ):
+        mock_auth_check.side_effect = err_type(err_msg)
+        self.handler.receive(test_follow_request)
+        self.handler.status == EndpointHandlerStatus.ERROR
+        self.handler.result.code == status.HTTP_401_UNAUTHORIZED
+        self.handler.result.body == EndpointErrorMessage(
+                err_msg=err_msg
+                )
+
+    @patch.object(
+            StartFollowingAccountHandler,
+            '_do_data_ops',
+            side_effect=BaseIdeaBankAPIException("Really obscure error")
+        )
+    @patch.object(AuthorizationRequired, '_check_if_authorized')
+    def test_a_really_messed_up_scenario(
+            self,
+            mock_auth_check,
+            mock_data_ops,
+            mock_query_result,
+            mock_query,
+            test_follow_request
+            ):
+        self.handler.receive(test_follow_request)
+        assert self.handler.status == EndpointHandlerStatus.ERROR
+        assert self.handler.result.code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert self.handler.result.body == EndpointErrorMessage(
+                err_msg='Really obscure error'
+                )
+
+    @pytest.mark.xfail(raises=IntegrityError)
+    @patch.object(AuthorizationRequired, '_check_if_authorized')
+    def test_a_really_weird_be_error(
+            self,
+            mock_auth_check,
+            mock_query_results,
+            mock_query,
+            test_follow_request
+            ):
+        mock_query_results.one.side_effect = IntegrityError("Some other integrity violation", "", "")
+        self.handler.receive(test_follow_request)
