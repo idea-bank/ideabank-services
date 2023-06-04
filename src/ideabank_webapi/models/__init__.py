@@ -27,7 +27,8 @@ from .artifacts import (
         ConceptLinkRecord,
         ConceptSearchQuery,
         ConceptLineage,
-        AccountFollowingRecord
+        AccountFollowingRecord,
+        ConceptLikingRecord
         )
 
 from .payloads import (
@@ -38,5 +39,7 @@ from .payloads import (
         EstablishLink,
         ConceptRequest,
         FollowRequest,
-        UnfollowRequest
+        UnfollowRequest,
+        LikeRequest,
+        UnlikeRequest
         )
