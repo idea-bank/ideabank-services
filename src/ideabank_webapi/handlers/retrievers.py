@@ -28,7 +28,9 @@ from ..models import (
         ConceptFullView,
         ConceptSearchQuery,
         ConceptLineage,
+        AccountFollowingRecord,
         EndpointErrorMessage,
+        EndpointInformationalMessage,
         EndpointResponse,
         )
 from ..exceptions import (
@@ -344,6 +346,50 @@ class ConceptLineageHandler(BaseEndpointHandler):
     def _build_error_response(self, exc: BaseException):
         if isinstance(exc, RequestedDataNotFound):
             LOGGER.error("No lineage tree resulted from build process")
+            self._result = EndpointResponse(
+                    code=status.HTTP_404_NOT_FOUND,
+                    body=EndpointErrorMessage(
+                        err_msg=str(exc)
+                        )
+                    )
+        else:
+            super()._build_error_response(exc)
+
+
+class CheckFollowingStatusHandler(BaseEndpointHandler):
+    """Endpoint handler dealing with checking if a user follows another"""
+
+    def _do_data_ops(self, request: AccountFollowingRecord):
+        LOGGER.info(
+                "Checking if %s follows %s",
+                request.follower,
+                request.followee
+                )
+        try:
+            with self.get_service(RegisteredService.ENGAGE_DS) as service:
+                service.add_query(service.check_following(
+                    follower=request.follower,
+                    followee=request.followee
+                    ))
+                service.exec_next()
+                service.results.one()
+                return EndpointInformationalMessage(
+                        msg=f"{request.follower} is following {request.followee}"
+                        )
+        except NoResultFound as err:
+            LOGGER.error("Could not find a matching follow record")
+            raise RequestedDataNotFound(
+                    f"{request.follower} is not following {request.followee}"
+                    ) from err
+
+    def _build_success_response(self, requested_data: EndpointInformationalMessage):
+        self._result = EndpointResponse(
+                code=status.HTTP_200_OK,
+                body=requested_data
+                )
+
+    def _build_error_response(self, exc: BaseIdeaBankAPIException):
+        if isinstance(exc, RequestedDataNotFound):
             self._result = EndpointResponse(
                     code=status.HTTP_404_NOT_FOUND,
                     body=EndpointErrorMessage(
