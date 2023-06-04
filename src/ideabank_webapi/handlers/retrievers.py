@@ -29,6 +29,7 @@ from ..models import (
         ConceptSearchQuery,
         ConceptLineage,
         AccountFollowingRecord,
+        ConceptLikingRecord,
         EndpointErrorMessage,
         EndpointInformationalMessage,
         EndpointResponse,
@@ -380,6 +381,50 @@ class CheckFollowingStatusHandler(BaseEndpointHandler):
             LOGGER.error("Could not find a matching follow record")
             raise RequestedDataNotFound(
                     f"{request.follower} is not following {request.followee}"
+                    ) from err
+
+    def _build_success_response(self, requested_data: EndpointInformationalMessage):
+        self._result = EndpointResponse(
+                code=status.HTTP_200_OK,
+                body=requested_data
+                )
+
+    def _build_error_response(self, exc: BaseIdeaBankAPIException):
+        if isinstance(exc, RequestedDataNotFound):
+            self._result = EndpointResponse(
+                    code=status.HTTP_404_NOT_FOUND,
+                    body=EndpointErrorMessage(
+                        err_msg=str(exc)
+                        )
+                    )
+        else:
+            super()._build_error_response(exc)
+
+
+class CheckLikingStatusHandler(BaseEndpointHandler):
+    """Endpoint handler dealing with checking if a user likes a concept"""
+
+    def _do_data_ops(self, request: ConceptLikingRecord):
+        LOGGER.info(
+                "Checking if %s likes %s",
+                request.user_liking,
+                request.concept_liked
+                )
+        try:
+            with self.get_service(RegisteredService.ENGAGE_DS) as service:
+                service.add_query(service.check_following(
+                    account=request.user_liking,
+                    concept_unliked=request.concept_liked
+                    ))
+                service.exec_next()
+                service.results.one()
+                return EndpointInformationalMessage(
+                        msg=f"{request.user_liking} does like {request.concept_liked}"
+                        )
+        except NoResultFound as err:
+            LOGGER.error("Could not find a matching liking record")
+            raise RequestedDataNotFound(
+                    f"{request.user_liking} does not like {request.concept_liked}"
                     ) from err
 
     def _build_success_response(self, requested_data: EndpointInformationalMessage):

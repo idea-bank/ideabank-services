@@ -24,7 +24,8 @@ from ..models import (
         ConceptSimpleView,
         ConceptLinkRecord,
         EstablishLink,
-        FollowRequest
+        FollowRequest,
+        LikeRequest
         )
 from ..exceptions import (
         InvalidReferenceException,
@@ -251,6 +252,60 @@ class StartFollowingAccountHandler(AuthorizationRequired):
             if 'already exists' in str(err):
                 raise DuplicateRecordException(
                     f"A following exists between {request.follower} and {request.followee}"
+                    ) from err
+            raise
+
+    def _build_success_response(self, requested_data: EndpointInformationalMessage):
+        self._result = EndpointResponse(
+                code=status.HTTP_201_CREATED,
+                body=requested_data
+                )
+
+    def _build_error_response(self, exc: BaseIdeaBankAPIException):
+        if isinstance(exc, (InvalidReferenceException, DuplicateRecordException)):
+            self._result = EndpointResponse(
+                    code=status.HTTP_403_FORBIDDEN,
+                    body=EndpointErrorMessage(
+                        err_msg=str(exc)
+                        )
+                    )
+        else:
+            super()._build_error_response(exc)
+
+
+class StartLikingConceptHandler(AuthorizationRequired):
+    """Endpoint handler dealing with creating liking records"""
+
+    def _do_data_ops(self, request: LikeRequest):
+        LOGGER.info(
+                "Creating the likes record: %s <- %s",
+                request.concept_liked,
+                request.user_liking
+                )
+        try:
+            with self.get_service(RegisteredService.ENGAGE_DS) as service:
+                service.add_query(service.insert_liking(
+                    request.user_liking,
+                    request.concept_liked
+                    ))
+                service.exec_next()
+                result = service.results.one()
+                return EndpointInformationalMessage(
+                        msg=f"{result.display_name} now likes the concept of {result.concept_id}"
+                        )
+        except IntegrityError as err:
+            LOGGER.error(
+                    "Could not create likes record between `%s` and `%s`",
+                    request.concept_liked,
+                    request.user_liking
+                    )
+            if 'not present in table' in str(err):
+                raise InvalidReferenceException(
+                        "Both the account and concept must exist"
+                        ) from err
+            if 'already exists' in str(err):
+                raise DuplicateRecordException(
+                    f"A liking exists between {request.concept_liked} and {request.user_liking}"
                     ) from err
             raise
 

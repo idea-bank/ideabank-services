@@ -12,6 +12,7 @@ from .preprocessors import AuthorizationRequired
 from ..services import RegisteredService
 from ..models import (
     UnfollowRequest,
+    UnlikeRequest,
     EndpointInformationalMessage,
     EndpointResponse
         )
@@ -38,6 +39,36 @@ class StopFollowingAccountHandler(AuthorizationRequired):
 
         return EndpointInformationalMessage(
                 msg=f"{request.follower} is no longer following {request.followee}"
+                )
+
+    def _build_error_response(self, exc: BaseIdeaBankAPIException):  # pylint:disable=useless-parent-delegation
+        super()._build_error_response(exc)
+
+    def _build_success_response(self, requested_data: EndpointInformationalMessage):
+        self._result = EndpointResponse(
+                code=status.HTTP_200_OK,
+                body=requested_data
+                )
+
+
+class StopLikingConceptHandler(AuthorizationRequired):
+    """Endpoint handler dealing with removing liking records"""
+
+    def _do_data_ops(self, request: UnlikeRequest):
+        LOGGER.info(
+                "Removing the liking record %s <- %s",
+                request.concept_liked,
+                request.user_liking
+                )
+        with self.get_service(RegisteredService.ENGAGE_DS) as service:
+            service.add_query(service.revoke_liking(
+                account_unliking=request.user_liking,
+                concept_unliked=request.concept_liked
+                ))
+            service.exec_next()
+
+        return EndpointInformationalMessage(
+                msg=f"{request.user_liking} no longer likes {request.concept_liked}"
                 )
 
     def _build_error_response(self, exc: BaseIdeaBankAPIException):  # pylint:disable=useless-parent-delegation
