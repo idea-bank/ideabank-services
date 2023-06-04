@@ -14,7 +14,8 @@ from fastapi.responses import JSONResponse
 from .handlers.creators import (
         AccountCreationHandler,
         ConceptCreationHandler,
-        ConceptLinkingHandler
+        ConceptLinkingHandler,
+        StartFollowingAccountHandler
         )
 from .handlers.retrievers import (
         AuthenticationHandler,
@@ -23,7 +24,12 @@ from .handlers.retrievers import (
         ConceptSearchResultHandler,
         ConceptLineageHandler
         )
-from .services import RegisteredService, AccountsDataService, ConceptsDataService
+from .services import (
+        RegisteredService,
+        AccountsDataService,
+        ConceptsDataService,
+        EngagementDataService
+        )
 from .models import (
         CredentialSet,
         AuthorizationToken,
@@ -35,6 +41,9 @@ from .models import (
         EstablishLink,
         ConceptSearchQuery,
         ConceptLineage,
+        AccountFollowingRecord,
+        FollowRequest,
+        UnfollowRequest,
         EndpointErrorMessage,
         EndpointInformationalMessage
 )
@@ -284,6 +293,37 @@ def get_lineage(
         author=author,
         title=title,
         simple=True
+        ))
+    response.status_code = handler.result.code
+    return handler.result.body
+
+
+@app.post(
+        "/accounts/follow",
+        status_code=status.HTTP_201_CREATED,
+        responses={
+            status.HTTP_201_CREATED: {
+                'model': EndpointInformationalMessage
+                },
+            status.HTTP_403_FORBIDDEN: {
+                'model': EndpointErrorMessage
+                }
+            }
+        )
+def start_following(
+        response: JSONResponse,
+        follow_data: AccountFollowingRecord,
+        authorization: str = Header(default='')
+        ):
+    """Records the event where one account starts following another"""
+    handler = StartFollowingAccountHandler()
+    handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+    handler.receive(FollowRequest(
+        auth_token=AuthorizationToken(
+            token=authorization,
+            presenter=follow_data.follower
+            ),
+        **follow_data.dict()
         ))
     response.status_code = handler.result.code
     return handler.result.body
