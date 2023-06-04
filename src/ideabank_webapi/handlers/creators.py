@@ -23,7 +23,8 @@ from ..models import (
         CreateConcept,
         ConceptSimpleView,
         ConceptLinkRecord,
-        EstablishLink
+        EstablishLink,
+        FollowRequest
         )
 from ..exceptions import (
         InvalidReferenceException,
@@ -201,6 +202,66 @@ class ConceptLinkingHandler(AuthorizationRequired):
     def _build_error_response(self, exc: BaseIdeaBankAPIException):
         LOGGER.error("Link could not be created.")
         if isinstance(exc, (DuplicateRecordException, InvalidReferenceException)):
+            self._result = EndpointResponse(
+                    code=status.HTTP_403_FORBIDDEN,
+                    body=EndpointErrorMessage(
+                        err_msg=str(exc)
+                        )
+                    )
+        else:
+            super()._build_error_response(exc)
+
+
+class StartFollowingAccountHandler(AuthorizationRequired):
+    """Endpoint handler dealing with creating following records"""
+
+    def _do_data_ops(self, request: FollowRequest):
+        LOGGER.info(
+                "Creating the follow record: %s <- %s",
+                request.followee,
+                request.follower
+                )
+        if request.follower == request.followee:
+            LOGGER.error("Cannot follow self")
+            raise InvalidReferenceException(
+                    "Cannot follow yourself. "
+                    "You'll need to make real connections."
+                    )
+        try:
+            with self.get_service(RegisteredService.ENGAGE_DS) as service:
+                service.add_query(service.insert_following(
+                    request.follower,
+                    request.followee
+                    ))
+                service.exec_next()
+                result = service.results.one()
+                return EndpointInformationalMessage(
+                        msg=f"{result.follower} is now following {result.followee}"
+                        )
+        except IntegrityError as err:
+            LOGGER.error(
+                    "Could not create follow record between `%s` and `%s`",
+                    request.followee,
+                    request.follower
+                    )
+            if 'not present in table' in str(err):
+                raise InvalidReferenceException(
+                        "Both accounts must exist to follow or be followed"
+                        ) from err
+            if 'already exists' in str(err):
+                raise DuplicateRecordException(
+                    f"A following exists between {request.follower} and {request.followee}"
+                    ) from err
+            raise
+
+    def _build_success_response(self, requested_data: EndpointInformationalMessage):
+        self._result = EndpointResponse(
+                code=status.HTTP_201_CREATED,
+                body=requested_data
+                )
+
+    def _build_error_response(self, exc: BaseIdeaBankAPIException):
+        if isinstance(exc, (InvalidReferenceException, DuplicateRecordException)):
             self._result = EndpointResponse(
                     code=status.HTTP_403_FORBIDDEN,
                     body=EndpointErrorMessage(
