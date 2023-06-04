@@ -22,7 +22,8 @@ from .handlers.retrievers import (
         ProfileRetrievalHandler,
         SpecificConceptRetrievalHandler,
         ConceptSearchResultHandler,
-        ConceptLineageHandler
+        ConceptLineageHandler,
+        CheckFollowingStatusHandler
         )
 from .services import (
         RegisteredService,
@@ -324,6 +325,33 @@ def start_following(
             presenter=follow_data.follower
             ),
         **follow_data.dict()
+        ))
+    response.status_code = handler.result.code
+    return handler.result.body
+
+
+@app.get(
+        "/accounts/{follower}/follows/{followee}",
+        responses={
+            status.HTTP_200_OK: {
+                'model': EndpointInformationalMessage
+                },
+            status.HTTP_404_NOT_FOUND: {
+                'model': EndpointErrorMessage
+                }
+            }
+        )
+def check_following(
+        response: JSONResponse,
+        follower: str,
+        followee: str
+        ):
+    """Checks if a following record between the specified accounts exists"""
+    handler = CheckFollowingStatusHandler()
+    handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+    handler.receive(AccountFollowingRecord(
+        follower=follower,
+        followee=followee
         ))
     response.status_code = handler.result.code
     return handler.result.body
