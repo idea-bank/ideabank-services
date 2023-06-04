@@ -208,3 +208,9 @@ class AccountFollowingRecord(IdeaBankArtifact):
     """Models an instance of one account following another"""
     follower: str
     followee: str
+
+
+class ConceptLikingRecord(IdeaBankArtifact):
+    """Models an instance of one account liking a concept"""
+    user_liking: str
+    concept_liked: str

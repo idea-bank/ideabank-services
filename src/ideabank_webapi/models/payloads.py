@@ -13,7 +13,8 @@ from pydantic import BaseModel, validator  # pylint:disable=no-name-in-module
 from .artifacts import (
         AuthorizationToken,
         ConceptLinkRecord,
-        AccountFollowingRecord
+        AccountFollowingRecord,
+        ConceptLikingRecord
         )
 
 # pylint:disable=too-few-public-methods
@@ -77,3 +78,11 @@ class FollowRequest(AuthorizedPayload, AccountFollowingRecord):
 
 class UnfollowRequest(AuthorizedPayload, AccountFollowingRecord):
     """Models a request for one user to stop following another"""
+
+
+class LikeRequest(AuthorizedPayload, ConceptLikingRecord):
+    """Models a request for a user to start liking a concept"""
+
+
+class UnlikeRequest(AuthorizedPayload, ConceptLikingRecord):
+    """Models a request for a user to stop liking a concept"""
