@@ -412,9 +412,9 @@ class CheckLikingStatusHandler(BaseEndpointHandler):
                 )
         try:
             with self.get_service(RegisteredService.ENGAGE_DS) as service:
-                service.add_query(service.check_following(
+                service.add_query(service.check_liking(
                     account=request.user_liking,
-                    concept_unliked=request.concept_liked
+                    concept=request.concept_liked
                     ))
                 service.exec_next()
                 service.results.one()
