@@ -7,7 +7,6 @@
 import logging
 
 import boto3
-import botocore
 
 from ..config import ServiceConfig
 
@@ -25,7 +24,6 @@ class S3Crud:
         self._s3_client = boto3.session.Session().client(
                 's3',
                 endpoint_url=ServiceConfig.FileBucket.BUCKET_HOST,
-                config=botocore.config.Config(s3={'addressing_style': 'virtual'}),
                 region_name=ServiceConfig.FileBucket.BUCKET_REGION,
                 aws_access_key_id=ServiceConfig.FileBucket.BUCKET_KEY,
                 aws_secret_access_key=ServiceConfig.FileBucket.BUCKET_SECRET
