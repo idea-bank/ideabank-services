@@ -13,7 +13,8 @@ from ideabank_webapi.handlers.retrievers import (
         SpecificConceptRetrievalHandler,
         ConceptSearchResultHandler,
         ConceptLineageHandler,
-        CheckFollowingStatusHandler
+        CheckFollowingStatusHandler,
+        CheckLikingStatusHandler
         )
 from ideabank_webapi.services import (
         RegisteredService,
@@ -35,6 +36,7 @@ from ideabank_webapi.models import (
         ConceptLinkRecord,
         ConceptLineage,
         AccountFollowingRecord,
+        ConceptLikingRecord,
         EndpointErrorMessage,
         EndpointInformationalMessage
 )
@@ -141,6 +143,14 @@ def test_following_record():
     return AccountFollowingRecord(
             follower='user-a',
             followee='user-b'
+            )
+
+
+@pytest.fixture
+def test_liking_record():
+    return ConceptLikingRecord(
+            user_liking='someuser',
+            concept_liked='testuser/sample-idea'
             )
 
 
@@ -597,6 +607,64 @@ class TestFollowStatusHandler:
             test_following_record
             ):
         self.handler.receive(test_following_record)
+        mock_data_ops.assert_called_once()
+        assert self.handler.status == EndpointHandlerStatus.ERROR
+        assert self.handler.result.code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert self.handler.result.body == EndpointErrorMessage(
+                err_msg='Really obscure error'
+                )
+
+
+@patch.object(QueryService, 'ENGINE', create_engine('sqlite:///:memory:', echo=True))
+@patch.object(QueryService, 'exec_next')
+@patch.object(QueryService, 'results')
+class TestLikeStatusHandler:
+
+    def setup_method(self):
+        self.handler = CheckLikingStatusHandler()
+        self.handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+
+    def test_check_affirms_liking_status(
+            self,
+            mock_query_results,
+            mock_query,
+            test_liking_record
+            ):
+        mock_query_results.one.return_value == test_liking_record
+        self.handler.receive(test_liking_record)
+        assert self.handler.status == EndpointHandlerStatus.COMPLETE
+        assert self.handler.result.code == status.HTTP_200_OK
+        assert self.handler.result.body == EndpointInformationalMessage(
+                msg=f"{test_liking_record.user_liking} does like {test_liking_record.concept_liked}"
+                )
+
+    def test_check_denies_liking_status(
+            self,
+            mock_query_results,
+            mock_query,
+            test_liking_record
+            ):
+        mock_query_results.one.side_effect = NoResultFound
+        self.handler.receive(test_liking_record)
+        assert self.handler.status == EndpointHandlerStatus.ERROR
+        assert self.handler.result.code == status.HTTP_404_NOT_FOUND
+        assert self.handler.result.body == EndpointErrorMessage(
+                err_msg=f"{test_liking_record.user_liking} does not like {test_liking_record.concept_liked}"
+                )
+
+    @patch.object(
+            CheckLikingStatusHandler,
+            '_do_data_ops',
+            side_effect=BaseIdeaBankAPIException("Really obscure error")
+        )
+    def test_a_really_messed_up_scenario(
+            self,
+            mock_data_ops,
+            mock_query_results,
+            mock_query,
+            test_liking_record
+            ):
+        self.handler.receive(test_liking_record)
         mock_data_ops.assert_called_once()
         assert self.handler.status == EndpointHandlerStatus.ERROR
         assert self.handler.result.code == status.HTTP_500_INTERNAL_SERVER_ERROR

@@ -7,7 +7,8 @@ from ideabank_webapi.handlers.creators import (
         AccountCreationHandler,
         ConceptCreationHandler,
         ConceptLinkingHandler,
-        StartFollowingAccountHandler
+        StartFollowingAccountHandler,
+        StartLikingConceptHandler
         )
 from ideabank_webapi.handlers.preprocessors import AuthorizationRequired
 from ideabank_webapi.services import (
@@ -28,8 +29,11 @@ from ideabank_webapi.models import (
         EstablishLink,
         ConceptLinkRecord,
         FollowRequest,
-        AccountFollowingRecord
+        AccountFollowingRecord,
+        LikeRequest,
+        ConceptLikingRecord
 )
+from ideabank_webapi.models.schema import Likes
 from ideabank_webapi.exceptions import (
         BaseIdeaBankAPIException,
         NotAuthorizedError,
@@ -89,6 +93,15 @@ def test_follow_request(test_auth_token):
             auth_token=test_auth_token,
             follower='user-a',
             followee='user-b'
+            )
+
+
+@pytest.fixture
+def test_like_request(test_auth_token):
+    return LikeRequest(
+            auth_token=test_auth_token,
+            user_liking='someuser',
+            concept_liked='testuser/sample-idea'
             )
 
 
@@ -521,3 +534,110 @@ class TestStartFollowingHandler:
             ):
         mock_query_results.one.side_effect = IntegrityError("Some other integrity violation", "", "")
         self.handler.receive(test_follow_request)
+
+
+@patch.object(QueryService, 'ENGINE', create_engine('sqlite:///:memory:', echo=True))
+@patch.object(QueryService, 'exec_next')
+@patch.object(QueryService, 'results')
+class TestStartLikingHandler:
+
+    def setup_method(self):
+        self.handler = StartLikingConceptHandler()
+        self.handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+
+    @patch.object(AuthorizationRequired, "_check_if_authorized")
+    def test_successful_start_liking_concept(
+            self,
+            mock_auth_check,
+            mock_query_results,
+            mock_query,
+            test_like_request
+            ):
+        mock_query_results.one.return_value = Likes(
+                display_name=test_like_request.user_liking,
+                concept_id=test_like_request.concept_liked
+                )
+        self.handler.receive(test_like_request)
+        assert self.handler.status == EndpointHandlerStatus.COMPLETE
+        assert self.handler.result.code == status.HTTP_201_CREATED
+        assert self.handler.result.body == EndpointInformationalMessage(
+                msg=f'{test_like_request.user_liking} now likes the concept of {test_like_request.concept_liked}'
+                )
+
+    @pytest.mark.parametrize("err_type, err_cause, err_msg", [
+        (IntegrityError, "not present in table", "Both accounnt concept must exist"),
+        (IntegrityError, "already exists", "A liking exists between someuser and testuser/sample-idea")
+        ])
+    @patch.object(AuthorizationRequired, '_check_if_authorized')
+    def test_invalid_like_request(
+            self,
+            mock_auth_check,
+            mock_query_results,
+            mock_query,
+            test_like_request,
+            err_type,
+            err_cause,
+            err_msg
+            ):
+        mock_query_results.one.side_effect = err_type(err_cause, "", "")
+        self.handler.receive(test_like_request)
+        self.handler.status == EndpointHandlerStatus.ERROR
+        self.handler.result.code == status.HTTP_403_FORBIDDEN
+        self.handler.result.body == EndpointErrorMessage(
+                err_msg=err_msg
+                )
+
+    @pytest.mark.parametrize("err_type, err_msg", [
+        (NotAuthorizedError, 'Invalid token presented'),
+        (NotAuthorizedError, 'Unable to verify token ownership')
+        ])
+    @patch.object(AuthorizationRequired, '_check_if_authorized')
+    def test_unauthorized_like_request(
+            self,
+            mock_auth_check,
+            mock_query_results,
+            mock_query,
+            test_like_request,
+            err_type,
+            err_msg
+            ):
+        mock_auth_check.side_effect = err_type(err_msg)
+        self.handler.receive(test_like_request)
+        self.handler.status == EndpointHandlerStatus.ERROR
+        self.handler.result.code == status.HTTP_401_UNAUTHORIZED
+        self.handler.result.body == EndpointErrorMessage(
+                err_msg=err_msg
+                )
+
+    @patch.object(
+            StartLikingConceptHandler,
+            '_do_data_ops',
+            side_effect=BaseIdeaBankAPIException("Really obscure error")
+        )
+    @patch.object(AuthorizationRequired, '_check_if_authorized')
+    def test_a_really_messed_up_scenario(
+            self,
+            mock_auth_check,
+            mock_data_ops,
+            mock_query_result,
+            mock_query,
+            test_like_request
+            ):
+        self.handler.receive(test_like_request)
+        assert self.handler.status == EndpointHandlerStatus.ERROR
+        assert self.handler.result.code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert self.handler.result.body == EndpointErrorMessage(
+                err_msg='Really obscure error'
+                )
+
+    @pytest.mark.xfail(raises=IntegrityError)
+    @patch.object(AuthorizationRequired, '_check_if_authorized')
+    def test_a_really_weird_be_error(
+            self,
+            mock_auth_check,
+            mock_query_results,
+            mock_query,
+            test_like_request
+            ):
+        mock_query_results.one.side_effect = IntegrityError("Some other integrity violation", "", "")
+        self.handler.receive(test_like_request)
