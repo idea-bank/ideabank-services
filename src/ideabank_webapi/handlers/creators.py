@@ -27,8 +27,6 @@ from ..models import (
         FollowRequest,
         LikeRequest,
         CreateComment,
-        ConceptComment,
-        ConceptCommentThreads
         )
 from ..exceptions import (
         InvalidReferenceException,
@@ -357,7 +355,7 @@ class CommentCreationHandler(AuthorizationRequired):
                 raise InvalidReferenceException(
                         "Both the concept and author must exist to comment. "
                         "If responding to another comment, it must exist also."
-                        )
+                        ) from err
             raise
 
     def _build_success_response(self, requested_data: EndpointInformationalMessage):
