@@ -25,7 +25,10 @@ from ..models import (
         ConceptLinkRecord,
         EstablishLink,
         FollowRequest,
-        LikeRequest
+        LikeRequest,
+        CreateComment,
+        ConceptComment,
+        ConceptCommentThreads
         )
 from ..exceptions import (
         InvalidReferenceException,
@@ -317,6 +320,54 @@ class StartLikingConceptHandler(AuthorizationRequired):
 
     def _build_error_response(self, exc: BaseIdeaBankAPIException):
         if isinstance(exc, (InvalidReferenceException, DuplicateRecordException)):
+            self._result = EndpointResponse(
+                    code=status.HTTP_403_FORBIDDEN,
+                    body=EndpointErrorMessage(
+                        err_msg=str(exc)
+                        )
+                    )
+        else:
+            super()._build_error_response(exc)
+
+
+class CommentCreationHandler(AuthorizationRequired):
+    """Endpoint handler dealing with comment creation"""
+
+    def _do_data_ops(self, request: CreateComment):
+        LOGGER.info(
+                "%s left a comment on %s",
+                request.comment_author,
+                request.concept_id
+                )
+        try:
+            with self.get_service(RegisteredService.ENGAGE_DS) as service:
+                service.add_query(service.create_comment(
+                        author=request.comment_author,
+                        concept=request.concept_id,
+                        contents=request.comment_text,
+                        response_to=request.response_to
+                    ))
+                service.exec_next()
+                service.result.one()
+                return EndpointInformationalMessage(
+                        msg='Comment created successfully'
+                        )
+        except IntegrityError as err:
+            if 'not present in table' in str(err):
+                raise InvalidReferenceException(
+                        "Both the concept and author must exist to comment. "
+                        "If responding to another comment, it must exist also."
+                        )
+            raise
+
+    def _build_success_response(self, requested_data: EndpointInformationalMessage):
+        self._result = EndpointResponse(
+                code=status.HTTP_201_CREATED,
+                body=requested_data
+                )
+
+    def _build_error_response(self, exc: BaseIdeaBankAPIException):
+        if isinstance(exc, InvalidReferenceException):
             self._result = EndpointResponse(
                     code=status.HTTP_403_FORBIDDEN,
                     body=EndpointErrorMessage(
