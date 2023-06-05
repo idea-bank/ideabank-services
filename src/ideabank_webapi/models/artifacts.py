@@ -8,10 +8,10 @@ from __future__ import annotations
 import logging
 import re
 import datetime
-from typing import Sequence, Union, Dict, List, Optional
+from typing import Sequence, Union, List, Optional
 from enum import Enum
 
-from pydantic import BaseModel, validator, HttpUrl, UUID4 # pylint:disable=no-name-in-module
+from pydantic import BaseModel, validator, AnyHttpUrl, UUID4, Json  # pylint:disable=no-name-in-module
 
 LOGGER = logging.getLogger(__name__)
 
@@ -136,7 +136,7 @@ class ProfileView(IdeaBankArtifact):
     """
     preferred_name: str
     biography: str
-    avatar_url: HttpUrl
+    avatar_url: AnyHttpUrl
 
 
 class ConceptSimpleView(IdeaBankArtifact):
@@ -146,7 +146,7 @@ class ConceptSimpleView(IdeaBankArtifact):
         thumbnail_url: link to view the concept thumbnail
     """
     identifier: str
-    thumbnail_url: HttpUrl
+    thumbnail_url: AnyHttpUrl
 
 
 class ConceptFullView(IdeaBankArtifact):
@@ -161,8 +161,8 @@ class ConceptFullView(IdeaBankArtifact):
     author: str
     title: str
     description: str
-    diagram: Dict[str, List[Dict[str, Union[int, str]]]]
-    thumbnail_url: HttpUrl
+    diagram: Json
+    thumbnail_url: AnyHttpUrl
 
 
 class ConceptLinkRecord(IdeaBankArtifact):

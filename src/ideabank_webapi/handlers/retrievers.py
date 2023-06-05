@@ -8,6 +8,7 @@ import logging
 import hashlib
 import secrets
 import datetime
+import json
 from typing import Union, List
 
 from sqlalchemy.exc import NoResultFound
@@ -186,7 +187,7 @@ class SpecificConceptRetrievalHandler(BaseEndpointHandler):
                         author=result.author,
                         title=result.title,
                         description=result.description,
-                        diagram=result.diagram,
+                        diagram=json.dumps(result.diagram),
                         thumbnail_url=service.share_item(
                             f'thumbnails/{result.author}/{result.title}'
                             )
