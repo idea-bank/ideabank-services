@@ -348,7 +348,7 @@ class CommentCreationHandler(AuthorizationRequired):
                         response_to=request.response_to
                     ))
                 service.exec_next()
-                service.result.one()
+                service.results.one()
                 return EndpointInformationalMessage(
                         msg='Comment created successfully'
                         )
