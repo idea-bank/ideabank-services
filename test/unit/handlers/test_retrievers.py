@@ -5,6 +5,7 @@ import secrets
 import hashlib
 import datetime
 import treelib
+import uuid
 from unittest.mock import patch
 from ideabank_webapi.handlers import EndpointHandlerStatus
 from ideabank_webapi.handlers.retrievers import (
@@ -14,7 +15,8 @@ from ideabank_webapi.handlers.retrievers import (
         ConceptSearchResultHandler,
         ConceptLineageHandler,
         CheckFollowingStatusHandler,
-        CheckLikingStatusHandler
+        CheckLikingStatusHandler,
+        ConceptCommentsSectionHandler,
         )
 from ideabank_webapi.services import (
         RegisteredService,
@@ -37,9 +39,12 @@ from ideabank_webapi.models import (
         ConceptLineage,
         AccountFollowingRecord,
         ConceptLikingRecord,
+        ConceptComment,
+        ConceptCommentThreads,
         EndpointErrorMessage,
         EndpointInformationalMessage
 )
+from ideabank_webapi.models.schema import Comments
 from ideabank_webapi.exceptions import BaseIdeaBankAPIException
 
 from sqlalchemy import create_engine
@@ -152,6 +157,44 @@ def test_liking_record():
             user_liking='someuser',
             concept_liked='testuser/sample-idea'
             )
+
+
+@pytest.fixture(scope='session')
+def test_existing_comment_thread():
+    return ConceptCommentThreads(
+            threads=[
+                ConceptComment(
+                    comment_id=uuid.uuid4(),
+                    comment_author='testuser',
+                    comment_text='thread #1',
+                    responses=[
+                        ConceptComment(
+                            comment_id=uuid.uuid4(),
+                            comment_author='someuser',
+                            comment_text='thread #1.1',
+                            responses=[]
+                            ),
+                        ConceptComment(
+                            comment_id=uuid.uuid4(),
+                            comment_author='anotheruser',
+                            comment_text='thread #1.2',
+                            responses=[]
+                            )
+                        ]
+                    ),
+                ConceptComment(
+                    comment_id=uuid.uuid4(),
+                    comment_author='someotheruser',
+                    comment_text='thread#2',
+                    responses=[]
+                    )
+                ]
+            )
+
+
+@pytest.fixture
+def test_empty_comment_thread():
+    return ConceptCommentThreads(threads=[])
 
 
 @patch.object(QueryService, 'ENGINE', create_engine('sqlite:///:memory:', echo=True))
@@ -665,6 +708,98 @@ class TestLikeStatusHandler:
             test_liking_record
             ):
         self.handler.receive(test_liking_record)
+        mock_data_ops.assert_called_once()
+        assert self.handler.status == EndpointHandlerStatus.ERROR
+        assert self.handler.result.code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert self.handler.result.body == EndpointErrorMessage(
+                err_msg='Really obscure error'
+                )
+
+
+@patch.object(QueryService, 'ENGINE', create_engine('sqlite:///:memory:', echo=True))
+@patch.object(QueryService, 'exec_next')
+@patch.object(QueryService, 'results')
+class TestCommentSectionHandler:
+
+    def setup_method(self):
+        self.handler = ConceptCommentsSectionHandler()
+        self.handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+
+    def test_obtain_existing_comment_thread(
+            self,
+            mock_query_results,
+            mock_query,
+            test_existing_comment_thread
+            ):
+        mock_query_results.all.side_effect = [
+                [
+                    Comments(
+                        comment_id=c.comment_id,
+                        comment_by=c.comment_author,
+                        free_text=c.comment_text
+                        )
+                    for c in test_existing_comment_thread.threads
+                    ],
+                [
+                    Comments(
+                        comment_id=c.comment_id,
+                        comment_by=c.comment_author,
+                        free_text=c.comment_text
+                        )
+                    for c in test_existing_comment_thread.threads[0].responses
+                    ],
+                [
+                    Comments(
+                        comment_id=c.comment_id,
+                        comment_by=c.comment_author,
+                        free_text=c.comment_text
+                        )
+                    for c in test_existing_comment_thread.threads[1].responses
+                    ],
+                test_existing_comment_thread.threads[0].responses[0].responses,
+                test_existing_comment_thread.threads[0].responses[1].responses
+                ]
+        self.handler.receive(ConceptRequest(
+            author='testuser',
+            title='sample-idea',
+            simple=True
+            ))
+        assert self.handler.status == EndpointHandlerStatus.COMPLETE
+        assert self.handler.result.code == status.HTTP_200_OK
+        assert self.handler.result.body == test_existing_comment_thread
+
+    def test_obtain_blank_comment_thread(
+            self,
+            mock_query_results,
+            mock_query,
+            test_empty_comment_thread
+            ):
+        mock_query_results.all.side_effect = [[]]
+        self.handler.receive(ConceptRequest(
+            author='testuser',
+            title='sample-idea',
+            simple=True
+            ))
+        assert self.handler.status == EndpointHandlerStatus.COMPLETE
+        assert self.handler.result.code == status.HTTP_200_OK
+        assert self.handler.result.body == test_empty_comment_thread
+
+    @patch.object(
+            ConceptCommentsSectionHandler,
+            '_do_data_ops',
+            side_effect=BaseIdeaBankAPIException("Really obscure error")
+        )
+    def test_a_really_messed_up_scenario(
+            self,
+            mock_data_ops,
+            mock_query_results,
+            mock_query,
+            ):
+        self.handler.receive(ConceptRequest(
+            author='testuser',
+            title='sample-idea',
+            simple=True
+            ))
         mock_data_ops.assert_called_once()
         assert self.handler.status == EndpointHandlerStatus.ERROR
         assert self.handler.result.code == status.HTTP_500_INTERNAL_SERVER_ERROR
