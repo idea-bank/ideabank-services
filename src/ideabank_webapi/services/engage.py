@@ -159,7 +159,7 @@ class EngagementDataService(QueryService):
             A sqlalchemy selection statement to find the specified Comments
         """
         LOGGER.info("Built query to find initial threads on a given concept")
-        return select(Comments.comment_by, Comments.free_text) \
+        return select(Comments.comment_id, Comments.comment_by, Comments.free_text) \
             .where(Comments.comment_on == concept_id, Comments.parent == None) \
             .order_by(Comments.created_at)
 
@@ -173,6 +173,6 @@ class EngagementDataService(QueryService):
             A sqlalchemy selection statement to gather thread comments
         """
         LOGGER.info("Built query to find comments part of a given thread")
-        return select(Comments.comment_by, Comments.free_text) \
+        return select(Comments.comment_id, Comments.comment_by, Comments.free_text) \
             .where(Comments.comment_on == concept_id, Comments.parent == response_to) \
             .order_by(Comments.created_at)
