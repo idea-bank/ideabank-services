@@ -6,12 +6,13 @@
 
 import logging
 import datetime
+import uuid
 
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy import (
         Column, String, DateTime,
         JSON, ForeignKey, Computed,
-        Integer, Sequence
+        Uuid
         )
 
 # pylint:disable=too-few-public-methods
@@ -190,8 +191,8 @@ class Comments(IdeaBankSchema):
     """
     __tablename__ = 'comments'
     comment_id = Column(
-            Integer,
-            Sequence("comment_id_seq", start=1),
+            Uuid(as_uuid=True),
+            default=uuid.uuid4,
             primary_key=True
             )
     comment_on = Column(

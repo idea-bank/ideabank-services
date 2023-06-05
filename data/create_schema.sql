@@ -62,14 +62,13 @@ CREATE TABLE likes (
 );
 
 
-CREATE SEQUENCE comment_id_seq START WITH 1;
 
 CREATE TABLE comments (
-	comment_id INTEGER NOT NULL,
+	comment_id UUID NOT NULL,
 	comment_on VARCHAR,
 	comment_by VARCHAR(64),
 	free_text VARCHAR,
-	parent INTEGER,
+	parent UUID,
 	created_at TIMESTAMP WITHOUT TIME ZONE,
 	PRIMARY KEY (comment_id),
 	FOREIGN KEY(comment_on) REFERENCES concepts (identifier) ON DELETE CASCADE ON UPDATE CASCADE,
