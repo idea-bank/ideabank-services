@@ -26,7 +26,8 @@ from .handlers.retrievers import (
         ConceptSearchResultHandler,
         ConceptLineageHandler,
         CheckFollowingStatusHandler,
-        CheckLikingStatusHandler
+        CheckLikingStatusHandler,
+        ConceptCommentsSectionHandler
         )
 from .handlers.erasers import (
         StopFollowingAccountHandler,
@@ -533,6 +534,32 @@ def leave_comment_on_concept(
             ),
         concept_id=f'{author}/{title}',
         **comment_data.dict()
+        ))
+    response.status_code = handler.result.code
+    return handler.result.body
+
+
+@app.get(
+        "/concepts/{author}/{title}/comment",
+        status_code=status.HTTP_201_CREATED,
+        responses={
+            status.HTTP_200_OK: {
+                'model': EndpointInformationalMessage
+                }
+            }
+        )
+def get_comments_section_on_concept(
+        response: JSONResponse,
+        author: str,
+        title: str
+        ):
+    """Gathers all the comments left on a concept ordered by oldest to newest"""
+    handler = ConceptCommentsSectionHandler()
+    handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+    handler.receive(ConceptRequest(
+        author=author,
+        title=title,
+        simple=True
         ))
     response.status_code = handler.result.code
     return handler.result.body
