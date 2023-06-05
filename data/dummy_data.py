@@ -13,6 +13,7 @@ import random
 import csv
 import json
 import os
+import shutil
 from PIL import Image
 
 
@@ -175,6 +176,8 @@ with open('test_links.csv', newline='', mode='w') as links_csv:
 
 with open('test_accounts.csv', newline='', mode='r') as accounts_csv:
     accounts_reader = csv.reader(accounts_csv, quotechar="'", delimiter='|')
+    if os.path.exists('./avatars'):
+        shutil.rmtree('./avatars')
     os.mkdir('./avatars')
     for row in accounts_reader:
         height, width = 200, 200
@@ -184,7 +187,9 @@ with open('test_accounts.csv', newline='', mode='r') as accounts_csv:
 with open('test_concepts.csv', newline='', mode='r') as concepts_csv:
     concepts_reader = csv.reader(concepts_csv, quotechar="'", delimiter='|')
     for row in concepts_reader:
-        os.makedirs(f'thumbnails/{row[0]}', exist_ok=True)
+        if os.path.exists(f'thumbnails/{row[0]}'):
+            shutil.rmtree(f'thumbnails/{row[0]}')
+        os.makedirs(f'thumbnails/{row[0]}')
         height, width = 400, 800
         color = tuple(random.randint(0, 255) for _ in range(3))  # random RGB tuple
         create_rectangle(width, height, color, f'thumbnails/{row[0]}/{row[1]}')
