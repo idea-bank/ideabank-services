@@ -31,6 +31,8 @@ from ..models import (
         ConceptLineage,
         AccountFollowingRecord,
         ConceptLikingRecord,
+        ConceptComment,
+        ConceptCommentThreads,
         EndpointErrorMessage,
         EndpointInformationalMessage,
         EndpointResponse,
@@ -444,3 +446,61 @@ class CheckLikingStatusHandler(BaseEndpointHandler):
                     )
         else:
             super()._build_error_response(exc)
+
+
+class ConceptCommentsSectionHandler(BaseEndpointHandler):
+    """Endpoint handler for retrieving the comments section of a concept"""
+
+    def _do_data_ops(self, request: ConceptRequest):
+        comment_tree = ConceptCommentThreads(threads=[])
+        comment_tree.threads.extend(self.__thread_starts(
+            concept_id=f'{request.author}/{request.title}'
+            ))
+        for thread in comment_tree.threads:
+            self.__gather_responses(
+                    concept_id=f'{request.author}/{request.title}',
+                    current_thread=thread
+                    )
+        return comment_tree
+
+    def _build_success_response(self, requested_data: ConceptCommentThreads):
+        self._result = EndpointResponse(
+                code=status.HTTP_200_OK,
+                body=requested_data
+                )
+
+    def _build_error_response(self, exc: BaseIdeaBankAPIException):  # pylint:disable=useless-parent-delegation
+        super()._build_error_response(exc)
+
+    def __thread_starts(self, concept_id: str):
+        with self.get_service(RegisteredService.ENGAGE_DS) as service:
+            service.add_query(service.top_level_comments(concept_id))
+            service.exec_next()
+            return [
+                    ConceptComment(
+                        comment_id=c.comment_id,
+                        comment_author=c.comment_by,
+                        comment_text=c.free_text
+                        )
+                    for c in service.results.all()
+                    ]
+
+    def __gather_responses(self, concept_id: str, current_thread: ConceptComment):
+        with self.get_service(RegisteredService.ENGAGE_DS) as service:
+            service.add_query(service.comment_responses(
+                concept_id=concept_id,
+                response_to=current_thread.comment_id
+                ))
+            service.exec_next()
+            current_thread.responses.extend(
+                    [
+                        ConceptComment(
+                            comment_id=c.comment_id,
+                            comment_author=c.comment_by,
+                            comment_text=c.free_text
+                            )
+                        for c in service.results.all()
+                        ]
+                    )
+        for subthread in current_thread.responses:
+            self.__gather_responses(concept_id, subthread)
