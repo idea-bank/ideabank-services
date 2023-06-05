@@ -92,7 +92,7 @@ def test_full_concept_view():
             author='testuser',
             title='sample-idea',
             description='This is a explanation of the sample idea',
-            diagram={},
+            diagram='{}',
             thumbnail_url='http://example.com/thumbnails/testuser/sample-idea'
             )
 

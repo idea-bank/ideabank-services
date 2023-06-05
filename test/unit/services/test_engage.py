@@ -57,7 +57,7 @@ def test_create_comment_query_builds():
             )
     assert str(stmt) == 'INSERT INTO comments ' \
                         '(comment_id, comment_on, comment_by, free_text, parent, created_at) ' \
-                        'VALUES (<next sequence value: comment_id_seq>, :comment_on, :comment_by, :free_text, :parent, :created_at) ' \
+                        'VALUES (:comment_id, :comment_on, :comment_by, :free_text, :parent, :created_at) ' \
                         'RETURNING comments.comment_id'
 
 
