@@ -11,7 +11,7 @@ import datetime
 from typing import Sequence, Union, Dict, List, Optional
 from enum import Enum
 
-from pydantic import BaseModel, validator, HttpUrl  # pylint:disable=no-name-in-module
+from pydantic import BaseModel, validator, HttpUrl, UUID4 # pylint:disable=no-name-in-module
 
 LOGGER = logging.getLogger(__name__)
 
@@ -219,7 +219,7 @@ class ConceptLikingRecord(IdeaBankArtifact):
 
 class ConceptComment(IdeaBankArtifact):
     """Models a single comment instance left by a user"""
-    comment_id: Optional[int]
+    comment_id: Optional[UUID4]
     comment_author: str
     comment_text: str
     responses: List[ConceptComment] = []
