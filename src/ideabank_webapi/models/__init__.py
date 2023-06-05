@@ -43,5 +43,6 @@ from .payloads import (
         FollowRequest,
         UnfollowRequest,
         LikeRequest,
-        UnlikeRequest
+        UnlikeRequest,
+        CreateComment
         )

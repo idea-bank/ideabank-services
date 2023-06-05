@@ -8,7 +8,7 @@ from __future__ import annotations
 import logging
 import re
 import datetime
-from typing import Sequence, Union, Dict, List
+from typing import Sequence, Union, Dict, List, Optional
 from enum import Enum
 
 from pydantic import BaseModel, validator, HttpUrl  # pylint:disable=no-name-in-module
@@ -219,11 +219,12 @@ class ConceptLikingRecord(IdeaBankArtifact):
 
 class ConceptComment(IdeaBankArtifact):
     """Models a single comment instance left by a user"""
+    comment_id: Optional[int]
     comment_author: str
     comment_text: str
+    responses: List[ConceptComment]
 
 
 class ConceptCommentThreads(IdeaBankArtifact):
     """Models the comment threads left on a concept"""
-    comment: ConceptComment
-    responses: List[ConceptCommentThreads] = []
+    threads: List[ConceptComment]

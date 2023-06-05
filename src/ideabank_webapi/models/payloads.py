@@ -6,7 +6,7 @@
 
 import logging
 import re
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Optional
 
 from pydantic import BaseModel, validator  # pylint:disable=no-name-in-module
 
@@ -14,7 +14,8 @@ from .artifacts import (
         AuthorizationToken,
         ConceptLinkRecord,
         AccountFollowingRecord,
-        ConceptLikingRecord
+        ConceptLikingRecord,
+        ConceptComment
         )
 
 # pylint:disable=too-few-public-methods
@@ -86,3 +87,9 @@ class LikeRequest(AuthorizedPayload, ConceptLikingRecord):
 
 class UnlikeRequest(AuthorizedPayload, ConceptLikingRecord):
     """Models a request for a user to stop liking a concept"""
+
+
+class CreateComment(AuthorizedPayload, ConceptComment):
+    """Models a request for a user to leave a comment on a concept"""
+    concept_id: str
+    response_to: Optional[int]
