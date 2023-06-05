@@ -1,6 +1,7 @@
 """Tests for creator handlers"""
 
 import pytest
+import uuid
 from unittest.mock import patch
 from ideabank_webapi.handlers import EndpointHandlerStatus
 from ideabank_webapi.handlers.creators import (
@@ -8,7 +9,8 @@ from ideabank_webapi.handlers.creators import (
         ConceptCreationHandler,
         ConceptLinkingHandler,
         StartFollowingAccountHandler,
-        StartLikingConceptHandler
+        StartLikingConceptHandler,
+        CommentCreationHandler
         )
 from ideabank_webapi.handlers.preprocessors import AuthorizationRequired
 from ideabank_webapi.services import (
@@ -31,13 +33,12 @@ from ideabank_webapi.models import (
         FollowRequest,
         AccountFollowingRecord,
         LikeRequest,
-        ConceptLikingRecord
+        CreateComment
 )
 from ideabank_webapi.models.schema import Likes
 from ideabank_webapi.exceptions import (
         BaseIdeaBankAPIException,
         NotAuthorizedError,
-        InvalidReferenceException
         )
 
 from sqlalchemy import create_engine
@@ -102,6 +103,27 @@ def test_like_request(test_auth_token):
             auth_token=test_auth_token,
             user_liking='someuser',
             concept_liked='testuser/sample-idea'
+            )
+
+
+@pytest.fixture
+def test_start_new_thread(test_auth_token):
+    return CreateComment(
+            auth_token=test_auth_token,
+            concept_id="testuser/sample-idea",
+            comment_author="someuser",
+            comment_text="this is a cool idea"
+            )
+
+
+@pytest.fixture
+def test_responsd_in_thread(test_auth_token):
+    return CreateComment(
+            auth_token=test_auth_token,
+            concept_id="testuser/sample-idea",
+            comment_author="testuser",
+            comment_text="Thank you",
+            response_to=uuid.uuid4()
             )
 
 
@@ -641,3 +663,115 @@ class TestStartLikingHandler:
             ):
         mock_query_results.one.side_effect = IntegrityError("Some other integrity violation", "", "")
         self.handler.receive(test_like_request)
+
+
+@patch.object(QueryService, 'ENGINE', create_engine('sqlite:///:memory:', echo=True))
+@patch.object(QueryService, 'exec_next')
+@patch.object(QueryService, 'results')
+class TestCommentCreationHandler:
+
+    def setup_method(self):
+        self.handler = CommentCreationHandler()
+        self.handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+
+    @patch.object(AuthorizationRequired, "_check_if_authorized")
+    def test_successful_thread_creation(
+            self,
+            mock_auth_check,
+            mock_query_results,
+            mock_query,
+            test_start_new_thread
+            ):
+        self.handler.receive(test_start_new_thread)
+        assert self.handler.status == EndpointHandlerStatus.COMPLETE
+        assert self.handler.result.code == status.HTTP_201_CREATED
+        assert self.handler.result.body == EndpointInformationalMessage(
+                msg='Comment created successfully'
+                )
+
+    @patch.object(AuthorizationRequired, "_check_if_authorized")
+    def test_successful_thread_contribution(
+            self,
+            mock_auth_check,
+            mock_query_results,
+            mock_query,
+            test_responsd_in_thread
+            ):
+        self.handler.receive(test_responsd_in_thread)
+        assert self.handler.status == EndpointHandlerStatus.COMPLETE
+        assert self.handler.result.code == status.HTTP_201_CREATED
+        assert self.handler.result.body == EndpointInformationalMessage(
+                msg='Comment created successfully'
+                )
+
+    @patch.object(AuthorizationRequired, '_check_if_authorized')
+    def test_invalid_comment_create(
+            self,
+            mock_auth_check,
+            mock_query_results,
+            mock_query,
+            test_start_new_thread
+            ):
+        mock_query_results.one.side_effect = IntegrityError('not present in table', '', '')
+        self.handler.receive(test_start_new_thread)
+        self.handler.status == EndpointHandlerStatus.ERROR
+        self.handler.result.code == status.HTTP_403_FORBIDDEN
+        self.handler.result.body == EndpointErrorMessage(
+                err_msg="Both the concept and author must exist to comment. "
+                        "If responding to another comment, it must exist also."
+                )
+
+    @pytest.mark.parametrize("err_type, err_msg", [
+        (NotAuthorizedError, 'Invalid token presented'),
+        (NotAuthorizedError, 'Unable to verify token ownership')
+        ])
+    @patch.object(AuthorizationRequired, '_check_if_authorized')
+    def test_unauthorized_like_request(
+            self,
+            mock_auth_check,
+            mock_query_results,
+            mock_query,
+            test_start_new_thread,
+            err_type,
+            err_msg
+            ):
+        mock_auth_check.side_effect = err_type(err_msg)
+        self.handler.receive(test_start_new_thread)
+        self.handler.status == EndpointHandlerStatus.ERROR
+        self.handler.result.code == status.HTTP_401_UNAUTHORIZED
+        self.handler.result.body == EndpointErrorMessage(
+                err_msg=err_msg
+                )
+
+    @patch.object(
+            CommentCreationHandler,
+            '_do_data_ops',
+            side_effect=BaseIdeaBankAPIException("Really obscure error")
+        )
+    @patch.object(AuthorizationRequired, '_check_if_authorized')
+    def test_a_really_messed_up_scenario(
+            self,
+            mock_auth_check,
+            mock_data_ops,
+            mock_query_result,
+            mock_query,
+            test_start_new_thread
+            ):
+        self.handler.receive(test_start_new_thread)
+        assert self.handler.status == EndpointHandlerStatus.ERROR
+        assert self.handler.result.code == status.HTTP_500_INTERNAL_SERVER_ERROR
+        assert self.handler.result.body == EndpointErrorMessage(
+                err_msg='Really obscure error'
+                )
+
+    @pytest.mark.xfail(raises=IntegrityError)
+    @patch.object(AuthorizationRequired, '_check_if_authorized')
+    def test_a_really_weird_be_error(
+            self,
+            mock_auth_check,
+            mock_query_results,
+            mock_query,
+            test_start_new_thread
+            ):
+        mock_query_results.one.side_effect = IntegrityError("Some other integrity violation", "", "")
+        self.handler.receive(test_start_new_thread)
