@@ -254,9 +254,9 @@ with open('test_accounts.csv', newline='', mode='r') as accounts_csv:
 
 with open('test_concepts.csv', newline='', mode='r') as concepts_csv:
     concepts_reader = csv.reader(concepts_csv, quotechar="'", delimiter='|')
+    if os.path.exists('thumbnails/'):
+        shutil.rmtree('thumbnails/')
     for row in concepts_reader:
-        if os.path.exists(f'thumbnails/{row[0]}'):
-            shutil.rmtree(f'thumbnails/{row[0]}')
         os.makedirs(f'thumbnails/{row[0]}')
         height, width = 400, 800
         color = tuple(random.randint(0, 255) for _ in range(3))  # random RGB tuple
