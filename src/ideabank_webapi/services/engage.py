@@ -164,7 +164,7 @@ class EngagementDataService(QueryService):
             .order_by(Comments.created_at)
 
     @staticmethod
-    def comment_responses(concept_id: str, response_to: int) -> Select:
+    def comment_responses(concept_id: str, response_to: str) -> Select:
         """Builds a selection statement to gather comments of a given thread on a given idea
         Arguments:
             concept_id: [str] the string identifier of the concept being commented on

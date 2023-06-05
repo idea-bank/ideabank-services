@@ -8,7 +8,7 @@ import logging
 import re
 from typing import Union, List, Dict, Optional
 
-from pydantic import BaseModel, validator  # pylint:disable=no-name-in-module
+from pydantic import BaseModel, validator, UUID4  # pylint:disable=no-name-in-module
 
 from .artifacts import (
         AuthorizationToken,
@@ -92,4 +92,4 @@ class UnlikeRequest(AuthorizedPayload, ConceptLikingRecord):
 class CreateComment(AuthorizedPayload, ConceptComment):
     """Models a request for a user to leave a comment on a concept"""
     concept_id: str
-    response_to: Optional[int]
+    response_to: Optional[UUID4]

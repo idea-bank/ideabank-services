@@ -533,6 +533,7 @@ def leave_comment_on_concept(
             presenter=comment_data.comment_author
             ),
         concept_id=f'{author}/{title}',
+        response_to=comment_data.comment_id,
         **comment_data.dict()
         ))
     response.status_code = handler.result.code
