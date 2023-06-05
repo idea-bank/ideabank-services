@@ -152,6 +152,7 @@ class FakeFollow:
             raise ValueError("Cannot follow self")
         self.follower = follower.display_name
         self.followee = user.display_name
+        print(f"Fake follow: {self.followee} <- {self.follower}")
 
 
 account_rows = set()
@@ -186,7 +187,10 @@ for account in account_rows:
     follower_count = random.randint(0, 55)
     this_users_followers = set()
     while len(this_users_followers) < follower_count:
-        this_users_followers.add(FakeFollow(account, list(account_rows)))
+        try:
+            this_users_followers.add(FakeFollow(account, list(account_rows)))
+        except ValueError as err:
+            print(str(err))
     follow_rows = follow_rows.union(this_users_followers)
 
 
