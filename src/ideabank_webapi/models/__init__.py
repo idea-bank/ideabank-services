@@ -28,7 +28,9 @@ from .artifacts import (
         ConceptSearchQuery,
         ConceptLineage,
         AccountFollowingRecord,
-        ConceptLikingRecord
+        ConceptLikingRecord,
+        ConceptComment,
+        ConceptCommentThreads
         )
 
 from .payloads import (

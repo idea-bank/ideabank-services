@@ -4,6 +4,7 @@
     :module author: Nathan Mendoza (nathancm@uci.edu)
 """
 
+from __future__ import annotations
 import logging
 import re
 import datetime
@@ -214,3 +215,15 @@ class ConceptLikingRecord(IdeaBankArtifact):
     """Models an instance of one account liking a concept"""
     user_liking: str
     concept_liked: str
+
+
+class ConceptComment(IdeaBankArtifact):
+    """Models a single comment instance left by a user"""
+    comment_author: str
+    comment_text: str
+
+
+class ConceptCommentThreads(IdeaBankArtifact):
+    """Models the comment threads left on a concept"""
+    comment: ConceptComment
+    responses: List[ConceptCommentThreads] = []
