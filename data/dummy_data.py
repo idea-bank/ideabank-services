@@ -123,9 +123,42 @@ def create_rectangle(width, height, color, output_file):
     print(f"Rectangle image saved as {output_file}")
 
 
+class FakeLike:
+    def __eq__(self, other):
+        return self.display_name == other.display_name and \
+                self.concept_id == other.concept_id
+
+    def __hash__(self):
+        return hash((self.display_name, self.concept_id))
+
+    def __init__(self, concept, like_pool):
+        liker = random.choice(like_pool)
+        self.concept_id = f'{concept.author}/{concept.title}'
+        self.display_name = liker.display_name
+        print(f"Fake like: {self.concept_id} <- {self.display_name}")
+
+
+class FakeFollow:
+    def __eq__(self, other):
+        return self.follower == other.follower and \
+                self.followee == other.followee
+
+    def __hash__(self):
+        return hash((self.follower, self.followee))
+
+    def __init__(self, user, follow_pool):
+        follower = random.choice(follow_pool)
+        if user == follower:
+            raise ValueError("Cannot follow self")
+        self.follower = follower.display_name
+        self.followee = user.display_name
+
+
 account_rows = set()
 concept_rows = set()
 link_rows = set()
+like_rows = set()
+follow_rows = set()
 
 while len(account_rows) < 1000:
     account_rows.add(FakeAccount())
@@ -139,6 +172,23 @@ while len(link_rows) < 5000:
         link_rows.add(FakeLink(list(concept_rows)))
     except ValueError as err:
         print(str(err))
+
+
+for concept in concept_rows:
+    like_count = random.randint(0, 55)
+    this_concepts_likes = set()
+    while len(this_concepts_likes) < like_count:
+        this_concepts_likes.add(FakeLike(concept, list(account_rows)))
+    like_rows = like_rows.union(this_concepts_likes)
+
+
+for account in account_rows:
+    follower_count = random.randint(0, 55)
+    this_users_followers = set()
+    while len(this_users_followers) < follower_count:
+        this_users_followers.add(FakeFollow(account, list(account_rows)))
+    follow_rows = follow_rows.union(this_users_followers)
+
 
 with open('test_accounts.csv', newline='', mode='w') as accounts_csv:
     accounts_writer = csv.writer(accounts_csv, quotechar="'", delimiter='|')
@@ -172,6 +222,20 @@ with open('test_links.csv', newline='', mode='w') as links_csv:
     for link in link_rows:
         row = [link.ancestor, link.descendant]
         link_writer.writerow(row)
+
+
+with open('test_likes.csv', newline='', mode='w') as likes_csv:
+    likes_writer = csv.writer(likes_csv, quotechar="'", delimiter='|')
+    for like in like_rows:
+        row = [like.display_name, like.concept_id]
+        likes_writer.writerow(row)
+
+
+with open('test_follows.csv', newline='', mode='w') as follows_csv:
+    follows_writer = csv.writer(follows_csv, quotechar="'", delimiter='|')
+    for follow in follow_rows:
+        row = [follow.follower, follow.followee]
+        follows_writer.writerow(row)
 
 
 with open('test_accounts.csv', newline='', mode='r') as accounts_csv:

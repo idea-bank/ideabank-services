@@ -88,3 +88,11 @@ DELIMITER '|';
 COPY Concept_Links(ancestor, descendant)
 FROM '/docker-entrypoint-initdb.d/test_links.csv'
 DELIMITER '|';
+
+COPY Likes(display_name, concept_id)
+FROM '/docker-entrypoint-initdb.d/test_likes.csv'
+DELIMITER '|';
+
+COPY Follows(follower, followee)
+FROM '/docker-entrypoint-initdb.d/test_follows.csv'
+DELIMITER '|';
