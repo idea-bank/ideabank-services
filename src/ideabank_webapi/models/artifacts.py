@@ -222,7 +222,7 @@ class ConceptComment(IdeaBankArtifact):
     comment_id: Optional[int]
     comment_author: str
     comment_text: str
-    responses: List[ConceptComment]
+    responses: List[ConceptComment] = []
 
 
 class ConceptCommentThreads(IdeaBankArtifact):
