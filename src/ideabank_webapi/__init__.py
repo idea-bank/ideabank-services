@@ -17,6 +17,7 @@ from .handlers.creators import (
         ConceptLinkingHandler,
         StartFollowingAccountHandler,
         StartLikingConceptHandler,
+        CommentCreationHandler
         )
 from .handlers.retrievers import (
         AuthenticationHandler,
@@ -56,6 +57,9 @@ from .models import (
         ConceptLikingRecord,
         LikeRequest,
         UnlikeRequest,
+        ConceptComment,
+        CreateComment,
+        ConceptCommentThreads,
         EndpointErrorMessage,
         EndpointInformationalMessage
 )
@@ -492,6 +496,43 @@ def stop_liking(
             presenter=like_data.user_liking
             ),
         **like_data.dict()
+        ))
+    response.status_code = handler.result.code
+    return handler.result.body
+
+
+@app.post(
+        "/concepts/{author}/{title}/comment",
+        status_code=status.HTTP_201_CREATED,
+        responses={
+            status.HTTP_201_CREATED: {
+                'model': EndpointInformationalMessage
+                },
+            status.HTTP_403_FORBIDDEN: {
+                'model': EndpointErrorMessage
+                },
+            status.HTTP_401_UNAUTHORIZED: {
+                'model': EndpointErrorMessage
+                }
+            }
+        )
+def leave_comment_on_concept(
+        response: JSONResponse,
+        author: str,
+        title: str,
+        comment_data: ConceptComment,
+        authorization: str = Header(default='')
+        ):
+    """Creates a comment on the concept identified by {author}/{title}"""
+    handler = CommentCreationHandler()
+    handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+    handler.receive(CreateComment(
+        auth_token=AuthorizationToken(
+            token=authorization,
+            presenter=comment_data.comment_author
+            ),
+        concept_id=f'{author}/{title}',
+        **comment_data.dict()
         ))
     response.status_code = handler.result.code
     return handler.result.body
