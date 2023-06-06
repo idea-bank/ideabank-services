@@ -60,7 +60,6 @@ from .models import (
         UnlikeRequest,
         ConceptComment,
         CreateComment,
-        ConceptCommentThreads,
         EndpointErrorMessage,
         EndpointInformationalMessage
 )
@@ -542,7 +541,6 @@ def leave_comment_on_concept(
 
 @app.get(
         "/concepts/{author}/{title}/comment",
-        status_code=status.HTTP_201_CREATED,
         responses={
             status.HTTP_200_OK: {
                 'model': EndpointInformationalMessage
