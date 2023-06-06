@@ -215,10 +215,11 @@ for concept in concept_rows:
                     for _ in range(thread_count)
                     ]
             for comment in this_concepts_comments:
-                if random.random(0, 2):
+                if random.randint(0, 2):
                     parent = random.choice(this_concepts_comments)
                     if parent != comment and parent.created_at < comment.created_at:
                         comment.parent = parent.comment_id
+            comment_rows.extend(this_concepts_comments)
         except ValueError as err:
             print(str(err))
             continue
