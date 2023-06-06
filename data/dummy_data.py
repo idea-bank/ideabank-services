@@ -175,7 +175,7 @@ class FakeComment:
         self.comment_id = uuid.uuid4()
         self.comment_on = f'{concept.author}/{concept.title}'
         self.comment_by = commenter.display_name
-        self.parent = parent_comment.comment_id
+        self.parent = parent_comment.comment_id if parent_comment else None
         self.comment_text = fake.sentence()
         self.created_at = fake.date_time_between_dates(
                 earlier_possible_timestamp,
@@ -207,9 +207,10 @@ while len(link_rows) < 5000:
 
 
 for concept in concept_rows:
-    thread_count = random.randint(0, 55)
+    thread_count = random.randint(0, 5)
     reponse_count = thread_count
     for _ in range(thread_count):
+        print("build thread #", _)
         while True:
             try:
                 new_comment = FakeComment(concept, list(account_rows))
@@ -219,6 +220,7 @@ for concept in concept_rows:
                 continue
             break
         while reponse_count > 0:
+            print("Responses:", reponse_count)
             for existing_comment in comment_rows:
                 while True:
                     try:
