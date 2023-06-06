@@ -207,30 +207,22 @@ while len(link_rows) < 5000:
 
 
 for concept in concept_rows:
-    thread_count = random.randint(0, 10)
-    for _ in range(thread_count):
-        while True:
-            try:
-                new_comment = FakeComment(concept, list(account_rows))
-                comment_rows.append(new_comment)
-            except ValueError as err:
-                print(str(err))
-                continue
-            break
-for existing_comment in comment_rows:
+    thread_count = random.randint(0, 55)
     while True:
         try:
-            comment_rows.extend(
-                    [
-                        FakeComment(concept, list(account_rows), existing_comment)
-                        for _ in range(random.randint(0, 5))
-                        ]
-                    )
+            this_concepts_comments = [
+                    FakeComment(concept, list(account_rows))
+                    for _ in range(thread_count)
+                    ]
+            for comment in this_concepts_comments:
+                if random.random(0, 2):
+                    parent = random.choice(this_concepts_comments)
+                    if parent != comment and parent.created_at < comment.created_at:
+                        comment.parent = parent.comment_id
         except ValueError as err:
             print(str(err))
             continue
         break
-
 
 for concept in concept_rows:
     like_count = random.randint(0, 55)
