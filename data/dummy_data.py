@@ -209,7 +209,6 @@ while len(link_rows) < 5000:
 for concept in concept_rows:
     thread_count = random.randint(0, 10)
     for _ in range(thread_count):
-        print("build thread #", _)
         while True:
             try:
                 new_comment = FakeComment(concept, list(account_rows))
@@ -218,23 +217,19 @@ for concept in concept_rows:
                 print(str(err))
                 continue
             break
-reponse_count = random.random(0, 5)
-while reponse_count > 0:
-    print("Responses:", reponse_count)
-    for existing_comment in comment_rows:
-        while True:
-            try:
-                comment_rows.extend(
-                        [
-                            FakeComment(concept, list(account_rows), existing_comment)
-                            for _ in range(random.randint(0, reponse_count))
-                            ]
-                        )
-            except ValueError as err:
-                print(str(err))
-                continue
-            break
-    reponse_count = reponse_count // 2
+for existing_comment in comment_rows:
+    while True:
+        try:
+            comment_rows.extend(
+                    [
+                        FakeComment(concept, list(account_rows), existing_comment)
+                        for _ in range(random.randint(0, 5))
+                        ]
+                    )
+        except ValueError as err:
+            print(str(err))
+            continue
+        break
 
 
 for concept in concept_rows:
