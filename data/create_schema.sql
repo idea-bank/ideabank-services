@@ -98,4 +98,5 @@ DELIMITER '|';
 
 COPY Comments(comment_id, comment_on, comment_by, free_text, parent, created_at)
 FROM '/docker-entrypoint-initdb.d/test_comments.csv'
+WITH NULL AS 'NULL'
 DELIMITER '|';
