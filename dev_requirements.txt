@@ -4,6 +4,7 @@ pytest-cov
 pytest-sugar
 pylint
 freezegun
+httpx
 
 # modules used to generate fake data
 faker
