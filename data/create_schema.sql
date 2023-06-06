@@ -95,3 +95,7 @@ DELIMITER '|';
 COPY Follows(follower, followee)
 FROM '/docker-entrypoint-initdb.d/test_follows.csv'
 DELIMITER '|';
+
+COPY Comments(comment_id, comment_on, comment_by, free_text, parent, created_at)
+FROM '/docker-entrypoint-initdb.d/test_comments.csv'
+DELIMITER '|';
