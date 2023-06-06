@@ -1,25 +1,229 @@
 """Tests for ideabank_webapi"""
 
 import pytest
+from unittest.mock import patch, PropertyMock
+from fastapi import status
+from fastapi.testclient import TestClient
 
-import ideabank_webapi
-
-
-@pytest.mark.skip
-def test_vacuous():
-    """A test that passes vacuously"""
-    pass
-
-
-@pytest.mark.skip
-def test_exception():
-    """A test that checks if an exception was raised"""
-    with pytest.raises(ValueError):
-        raise ValueError()
+from ideabank_webapi import app
+from ideabank_webapi.handlers import BaseEndpointHandler, EndpointHandlerStatus
+from ideabank_webapi.handlers.preprocessors import AuthorizationRequired
+from ideabank_webapi.models import (
+        EndpointResponse,
+        EndpointInformationalMessage
+        )
 
 
-@pytest.mark.skip
-@pytest.mark.parametrize("x, y", [(a, b) for a in range(10) for b in range(10)])
-def test_parametrize(x, y):
-    """Test cases can be parametrized to test multiple inputs at once"""
-    assert x + y == y + x
+@pytest.fixture(scope='session')
+def test_client():
+    return TestClient(app)
+
+
+test_response = EndpointResponse(
+            code=status.HTTP_418_IM_A_TEAPOT,
+            body=EndpointInformationalMessage(msg="I'm a teapot")
+            )
+
+
+@pytest.mark.parametrize("endpoint", ['/accounts/create', '/accounts/authenticate'])
+@patch.object(BaseEndpointHandler, 'receive')
+@patch.object(BaseEndpointHandler, 'result', new_callable=PropertyMock, return_value=test_response)
+@patch.object(BaseEndpointHandler, 'status', new_callable=PropertyMock, return_value=EndpointHandlerStatus.COMPLETE)
+def test_post_accounts_endpoints(
+        mock_status,
+        mock_result,
+        mock_receive,
+        endpoint,
+        test_client,
+        ):
+    test_client.post(
+            endpoint,
+            json={
+                'display_name': 'testuser',
+                'password': 'supersecretpassword'
+                }
+            )
+
+
+@patch.object(BaseEndpointHandler, 'receive')
+@patch.object(BaseEndpointHandler, 'result', new_callable=PropertyMock, return_value=test_response)
+@patch.object(BaseEndpointHandler, 'status', new_callable=PropertyMock, return_value=EndpointHandlerStatus.COMPLETE)
+def test_get_accounts_endpoint(
+        mock_status,
+        mock_result,
+        mock_receive,
+        test_client
+        ):
+    test_client.get(
+            '/accounts/testuser/profile'
+            )
+
+
+@patch.object(AuthorizationRequired, 'receive')
+@patch.object(BaseEndpointHandler, 'result', new_callable=PropertyMock, return_value=test_response)
+@patch.object(BaseEndpointHandler, 'status', new_callable=PropertyMock, return_value=EndpointHandlerStatus.COMPLETE)
+def test_new_concept_endpoint(
+        mock_status,
+        mock_result,
+        mock_receive,
+        test_client
+        ):
+    test_client.post(
+        '/concepts',
+        headers={'authorization': 'testtoken'},
+        json={
+            'author': 'testuser',
+            'title': 'sample-idea',
+            'description': 'a really cool idea',
+            'diagram': {}
+            }
+        )
+
+
+@patch.object(AuthorizationRequired, 'receive')
+@patch.object(BaseEndpointHandler, 'result', new_callable=PropertyMock, return_value=test_response)
+@patch.object(BaseEndpointHandler, 'status', new_callable=PropertyMock, return_value=EndpointHandlerStatus.COMPLETE)
+def test_new_link_endpoint(
+        mock_status,
+        mock_result,
+        mock_receive,
+        test_client
+        ):
+    test_client.post(
+            '/links',
+            headers={'authorization': 'testtoken'},
+            json={
+                'ancestor': 'a-previous-idea',
+                'descendant': 'a-new-and-improved-idea'
+                }
+            )
+
+
+@pytest.mark.parametrize("endpoint", [
+    '/concepts/testuser/sample-idea',
+    '/concepts?author=testuser&fuzzy=title-only',
+    '/concepts/testuser/sample-idea/lineage',
+    '/concepts/testuser/sample-idea/comments'
+    ])
+@patch.object(BaseEndpointHandler, 'receive')
+@patch.object(BaseEndpointHandler, 'result', new_callable=PropertyMock, return_value=test_response)
+@patch.object(BaseEndpointHandler, 'status', new_callable=PropertyMock, return_value=EndpointHandlerStatus.COMPLETE)
+def test_get_concepts_endpoints(
+        mock_status,
+        mock_result,
+        mock_receive,
+        endpoint,
+        test_client
+        ):
+    test_client.get(endpoint)
+
+
+@patch.object(AuthorizationRequired, 'receive')
+@patch.object(BaseEndpointHandler, 'result', new_callable=PropertyMock, return_value=test_response)
+@patch.object(BaseEndpointHandler, 'status', new_callable=PropertyMock, return_value=EndpointHandlerStatus.COMPLETE)
+def test_follow_cycle_endpoints(
+        mock_status,
+        mock_result,
+        mock_receive,
+        test_client
+        ):
+    test_client.post(
+            '/accounts/follow',
+            headers={'authorization': 'testtoken'},
+            json={
+                'follower': 'testuser',
+                'followee': 'someuser'
+                }
+            )
+    test_client.request(
+            'delete',
+            '/accounts/follow',
+            headers={'authorization': 'testtoken'},
+            json={
+                'follower': 'testuser',
+                'followee': 'someuser'
+                }
+            )
+
+
+@patch.object(BaseEndpointHandler, 'receive')
+@patch.object(BaseEndpointHandler, 'result', new_callable=PropertyMock, return_value=test_response)
+@patch.object(BaseEndpointHandler, 'status', new_callable=PropertyMock, return_value=EndpointHandlerStatus.COMPLETE)
+def test_check_follow_status_endpoint(
+        mock_status,
+        mock_result,
+        mock_receive,
+        test_client
+        ):
+    test_client.get('accounts/testuser/follows/someuser')
+
+
+@patch.object(AuthorizationRequired, 'receive')
+@patch.object(BaseEndpointHandler, 'result', new_callable=PropertyMock, return_value=test_response)
+@patch.object(BaseEndpointHandler, 'status', new_callable=PropertyMock, return_value=EndpointHandlerStatus.COMPLETE)
+def test_like_cycle_endpoints(
+        mock_status,
+        mock_result,
+        mock_receive,
+        test_client
+        ):
+    test_client.post(
+            '/accounts/likes',
+            headers={'authorization': 'testtoken'},
+            json={
+                'user_liking': 'testuser',
+                'concept_liked': 'someuser/cool-idea'
+                }
+            )
+    test_client.request(
+            'delete',
+            '/accounts/likes',
+            headers={'authorization': 'testtoken'},
+            json={
+                'user_liking': 'testuser',
+                'concept_liked': 'someuser/cool-idea'
+                }
+            )
+
+
+@patch.object(BaseEndpointHandler, 'receive')
+@patch.object(BaseEndpointHandler, 'result', new_callable=PropertyMock, return_value=test_response)
+@patch.object(BaseEndpointHandler, 'status', new_callable=PropertyMock, return_value=EndpointHandlerStatus.COMPLETE)
+def test_check_like_status_endpoint(
+        mock_status,
+        mock_result,
+        mock_receive,
+        test_client
+        ):
+    test_client.get('accounts/testuser/likes/someuser/cool-idea')
+
+
+@patch.object(AuthorizationRequired, 'receive')
+@patch.object(BaseEndpointHandler, 'result', new_callable=PropertyMock, return_value=test_response)
+@patch.object(BaseEndpointHandler, 'status', new_callable=PropertyMock, return_value=EndpointHandlerStatus.COMPLETE)
+def test_new_comment_endpoint(
+        mock_status,
+        mock_result,
+        mock_receive,
+        test_client
+        ):
+    test_client.post(
+        '/concepts/someuser/some-idea/comment',
+        headers={'authorization': 'testtoken'},
+        json={
+            'comment_author': 'testuser',
+            'comment_text': 'I like this'
+            }
+        )
+
+
+@patch.object(BaseEndpointHandler, 'receive')
+@patch.object(BaseEndpointHandler, 'result', new_callable=PropertyMock, return_value=test_response)
+@patch.object(BaseEndpointHandler, 'status', new_callable=PropertyMock, return_value=EndpointHandlerStatus.COMPLETE)
+def test_get_comment_endpoint(
+        mock_status,
+        mock_result,
+        mock_receive,
+        test_client
+        ):
+    test_client.get('/concepts/someuser/cool-idea/comment')
