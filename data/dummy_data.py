@@ -207,8 +207,7 @@ while len(link_rows) < 5000:
 
 
 for concept in concept_rows:
-    thread_count = random.randint(0, 5)
-    reponse_count = thread_count
+    thread_count = random.randint(0, 10)
     for _ in range(thread_count):
         print("build thread #", _)
         while True:
@@ -219,22 +218,23 @@ for concept in concept_rows:
                 print(str(err))
                 continue
             break
-        while reponse_count > 0:
-            print("Responses:", reponse_count)
-            for existing_comment in comment_rows:
-                while True:
-                    try:
-                        comment_rows.extend(
-                                [
-                                    FakeComment(concept, list(account_rows), existing_comment)
-                                    for _ in range(random.randint(0, reponse_count))
-                                    ]
-                                )
-                    except ValueError as err:
-                        print(str(err))
-                        continue
-                    break
-            reponse_count = reponse_count // 2
+reponse_count = random.random(0, 5)
+while reponse_count > 0:
+    print("Responses:", reponse_count)
+    for existing_comment in comment_rows:
+        while True:
+            try:
+                comment_rows.extend(
+                        [
+                            FakeComment(concept, list(account_rows), existing_comment)
+                            for _ in range(random.randint(0, reponse_count))
+                            ]
+                        )
+            except ValueError as err:
+                print(str(err))
+                continue
+            break
+    reponse_count = reponse_count // 2
 
 
 for concept in concept_rows:
@@ -283,7 +283,7 @@ with open('test_concepts.csv', newline='', mode='w') as concepts_csv:
                 ]
         concept_writer.writerow(row)
 
-with open('test_comments.csv', newline='', mode='2') as comments_csv:
+with open('test_comments.csv', newline='', mode='w') as comments_csv:
     comment_writer = csv.writer(comments_csv, quotechar="'", delimiter='|')
     for comment in comment_rows:
         row = [
