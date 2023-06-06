@@ -14,6 +14,7 @@ import csv
 import json
 import os
 import shutil
+import uuid
 from PIL import Image
 
 
@@ -155,11 +156,41 @@ class FakeFollow:
         print(f"Fake follow: {self.followee} <- {self.follower}")
 
 
+class FakeComment:
+    def __eq__(self, other):
+        return self.comment_id == other.comment_id
+
+    def __hash___(self):
+        return hash(self.comment_id)
+
+    def __init__(self, concept, commenter_pool, parent_comment=None):
+        commenter = random.choice(commenter_pool)
+        earlier_possible_timestamp = max(
+                concept.created_at,
+                commenter.created_at,
+                parent_comment.created_at if parent_comment else datetime.datetime.fromtimestamp(0, datetime.timezone.utc)
+                )
+        if earlier_possible_timestamp < commenter.created_at:
+            raise ValueError("Account cannot comment before creation")
+        self.comment_id = uuid.uuid4()
+        self.comment_on = f'{concept.author}/{concept.title}'
+        self.comment_by = commenter.display_name
+        self.parent = parent_comment.comment_id
+        self.comment_text = fake.sentence()
+        self.created_at = fake.date_time_between_dates(
+                earlier_possible_timestamp,
+                datetime.datetime.now(tz=datetime.timezone.utc),
+                datetime.timezone.utc
+                )
+        print(f"Fake comment: {self.comment_by} commented on {self.comment_on}")
+
+
 account_rows = set()
 concept_rows = set()
 link_rows = set()
 like_rows = set()
 follow_rows = set()
+comment_rows = list()
 
 while len(account_rows) < 1000:
     account_rows.add(FakeAccount())
@@ -173,6 +204,35 @@ while len(link_rows) < 5000:
         link_rows.add(FakeLink(list(concept_rows)))
     except ValueError as err:
         print(str(err))
+
+
+for concept in concept_rows:
+    thread_count = random.randint(0, 55)
+    reponse_count = thread_count
+    for _ in range(thread_count):
+        while True:
+            try:
+                new_comment = FakeComment(concept, list(account_rows))
+                comment_rows.append(new_comment)
+            except ValueError as err:
+                print(str(err))
+                continue
+            break
+        while reponse_count > 0:
+            for existing_comment in comment_rows:
+                while True:
+                    try:
+                        comment_rows.extend(
+                                [
+                                    FakeComment(concept, list(account_rows), existing_comment)
+                                    for _ in range(random.randint(0, reponse_count))
+                                    ]
+                                )
+                    except ValueError as err:
+                        print(str(err))
+                        continue
+                    break
+            reponse_count = reponse_count // 2
 
 
 for concept in concept_rows:
@@ -220,6 +280,19 @@ with open('test_concepts.csv', newline='', mode='w') as concepts_csv:
                 concept.updated_at.isoformat()
                 ]
         concept_writer.writerow(row)
+
+with open('test_comments.csv', newline='', mode='2') as comments_csv:
+    comment_writer = csv.writer(comments_csv, quotechar="'", delimiter='|')
+    for comment in comment_rows:
+        row = [
+                str(comment.comment_id),
+                comment.comment_on,
+                comment.comment_by,
+                comment.comment_text,
+                str(comment.parent) if comment.parent else 'NULL',
+                comment.created_at.isoformat()
+                ]
+        comment_writer.writerow(row)
 
 with open('test_links.csv', newline='', mode='w') as links_csv:
     link_writer = csv.writer(links_csv, quotechar="'", delimiter='|')
