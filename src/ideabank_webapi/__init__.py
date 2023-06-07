@@ -11,7 +11,8 @@ from typing import Union, List
 from fastapi import FastAPI, status, Header
 from fastapi.responses import JSONResponse
 
-from .handlers.creators import (
+from .handlers.factory import EndpointHandlerFactory
+"""from .handlers.creators import (
         AccountCreationHandler,
         ConceptCreationHandler,
         ConceptLinkingHandler,
@@ -33,6 +34,7 @@ from .handlers.erasers import (
         StopFollowingAccountHandler,
         StopLikingConceptHandler
         )
+"""
 from .services import (
         RegisteredService,
         AccountsDataService,
@@ -65,7 +67,14 @@ from .models import (
 )
 from .models.artifacts import FuzzyOption
 
-app = FastAPI()
+
+class IdeabankAPI(FastAPI):
+    def __init__(self):
+        super().__init__()
+        self.endpoint_factory = EndpointHandlerFactory()
+
+
+app = IdeabankAPI()
 
 LOGGER = logging.getLogger(__name__)
 LOG_HANDLER = logging.StreamHandler()
@@ -96,8 +105,10 @@ def create_account(
         response: JSONResponse
         ):
     """Create a new account with the given display name and password if available"""
-    handler = AccountCreationHandler()
-    handler.use_service(RegisteredService.ACCOUNTS_DS)
+    handler = app.endpoint_factory.create_handler(
+            'AccountCreationHandler',
+            RegisteredService.ACCOUNTS_DS
+            )
     handler.receive(new_account)
     response.status_code = handler.result.code
     return handler.result.body
@@ -122,8 +133,10 @@ def authenticate(
         Verify the provided credentials against stored version.
         Provides the client with an AuthorizationToken if correct
     """
-    handler = AuthenticationHandler()
-    handler.use_service(RegisteredService.ACCOUNTS_DS)
+    handler = app.endpoint_factory.create_handler(
+            'AuthenticationHandler',
+            RegisteredService.ACCOUNTS_DS
+            )
     handler.receive(credentials)
     response.status_code = handler.result.code
     return handler.result.body
@@ -145,8 +158,10 @@ def fetch_profile(
         response: JSONResponse
         ):
     """Fetches the profile view of the request display name if it exists"""
-    handler = ProfileRetrievalHandler()
-    handler.use_service(RegisteredService.ACCOUNTS_DS)
+    handler = app.endpoint_factory.create_handler(
+            'ProfileRetrievalHandler',
+            RegisteredService.ACCOUNTS_DS
+            )
     handler.receive(display_name)
     response.status_code = handler.result.code
     return handler.result.body
@@ -173,8 +188,10 @@ def create_concept(
         authorization: str = Header(default="")
         ):
     """Creates a new concept with the given data if valid/available AND authroization is OK"""
-    handler = ConceptCreationHandler()
-    handler.use_service(RegisteredService.CONCEPTS_DS)
+    handler = app.endpoint_factory.create_handler(
+            'ConceptCreationHandler',
+            RegisteredService.CONCEPTS_DS
+            )
     handler.receive(
             CreateConcept(
                 auth_token=AuthorizationToken(
@@ -209,7 +226,10 @@ def create_link(
         authorization: str = Header(default="")
         ):
     """Creates a link between two concepts in valid and authorization is OK"""
-    handler = ConceptLinkingHandler()
+    handler = app.endpoint_factory.create_handler(
+            'ConceptLinkingHandler',
+            RegisteredService.CONCEPTS_DS
+            )
     handler.use_service(RegisteredService.CONCEPTS_DS)
     handler.receive(
             EstablishLink(
@@ -242,7 +262,10 @@ def get_specific_concept(
         simple: bool = False
         ):
     """Retrieves the concept specified by author/concept if it exists"""
-    handler = SpecificConceptRetrievalHandler()
+    handler = app.endpoint_factory.create_handler(
+            'SpecificConceptRetrievalHandler',
+            RegisteredService.CONCEPTS_DS
+            )
     handler.use_service(RegisteredService.CONCEPTS_DS)
     handler.receive(
             ConceptRequest(
@@ -272,8 +295,10 @@ def search_concepts(
         fuzzy: FuzzyOption = FuzzyOption.NONE
         ):  # pylint:disable=too-many-arguments
     """Retrieves the concepts matching the given criteria"""
-    handler = ConceptSearchResultHandler()
-    handler.use_service(RegisteredService.CONCEPTS_DS)
+    handler = app.endpoint_factory.create_handler(
+            'ConceptSearchResultHandler',
+            RegisteredService.CONCEPTS_DS
+            )
     handler.receive(ConceptSearchQuery(
         author=author,
         title=title,
@@ -302,8 +327,10 @@ def get_lineage(
         response: JSONResponse
         ):
     """Retrieve a tree-like structure showing the lineage of the specified concept"""
-    handler = ConceptLineageHandler()
-    handler.use_service(RegisteredService.CONCEPTS_DS)
+    handler = app.endpoint_factory.create_handler(
+            'ConceptLineageHandler',
+            RegisteredService.CONCEPTS_DS
+            )
     handler.receive(ConceptRequest(
         author=author,
         title=title,
@@ -334,8 +361,10 @@ def start_following(
         authorization: str = Header(default='')
         ):
     """Records the event where one account starts following another"""
-    handler = StartFollowingAccountHandler()
-    handler.use_service(RegisteredService.ENGAGE_DS)
+    handler = app.endpoint_factory.create_handler(
+            'StartFollowingAccountHandler',
+            RegisteredService.ENGAGE_DS
+            )
     handler.receive(FollowRequest(
         auth_token=AuthorizationToken(
             token=authorization,
@@ -364,8 +393,10 @@ def check_following(
         followee: str
         ):
     """Checks if a following record between the specified accounts exists"""
-    handler = CheckFollowingStatusHandler()
-    handler.use_service(RegisteredService.ENGAGE_DS)
+    handler = app.endpoint_factory.create_handler(
+            'CheckFollowingStatusHandler',
+            RegisteredService.ENGAGE_DS
+            )
     handler.receive(AccountFollowingRecord(
         follower=follower,
         followee=followee
@@ -394,8 +425,10 @@ def stop_following(
         authorization: str = Header(default='')
         ):
     """Records the event where one account starts following another"""
-    handler = StopFollowingAccountHandler()
-    handler.use_service(RegisteredService.ENGAGE_DS)
+    handler = app.endpoint_factory.create_handler(
+            'StopFollowingAccountHandler',
+            RegisteredService.ENGAGE_DS
+            )
     handler.receive(UnfollowRequest(
         auth_token=AuthorizationToken(
             token=authorization,
@@ -428,8 +461,10 @@ def start_liking(
         authorization: str = Header(default='')
         ):
     """Records the event where one user likes a given concept"""
-    handler = StartLikingConceptHandler()
-    handler.use_service(RegisteredService.ENGAGE_DS)
+    handler = app.endpoint_factory.create_handler(
+            'StartLikingConceptHandler',
+            RegisteredService.ENGAGE_DS
+            )
     handler.receive(LikeRequest(
         auth_token=AuthorizationToken(
             token=authorization,
@@ -458,8 +493,10 @@ def check_liking(
         concept: str
         ):
     """Checks if a liking record between the specified account and concept"""
-    handler = CheckLikingStatusHandler()
-    handler.use_service(RegisteredService.ENGAGE_DS)
+    handler = app.endpoint_factory.create_handler(
+            'CheckLikingStatusHandler',
+            RegisteredService.ENGAGE_DS
+            )
     handler.receive(ConceptLikingRecord(
         user_liking=display_name,
         concept_liked=concept
@@ -488,8 +525,10 @@ def stop_liking(
         authorization: str = Header(default='')
         ):
     """Records the event where one account stops liking another"""
-    handler = StopLikingConceptHandler()
-    handler.use_service(RegisteredService.ENGAGE_DS)
+    handler = app.endpoint_factory.create_handler(
+            'StopLikingConceptHandler',
+            RegisteredService.ENGAGE_DS
+            )
     handler.receive(UnlikeRequest(
         auth_token=AuthorizationToken(
             token=authorization,
@@ -524,8 +563,10 @@ def leave_comment_on_concept(
         authorization: str = Header(default='')
         ):
     """Creates a comment on the concept identified by {author}/{title}"""
-    handler = CommentCreationHandler()
-    handler.use_service(RegisteredService.ENGAGE_DS)
+    handler = app.endpoint_factory.create_handler(
+            'CommentCreationHandler',
+            RegisteredService.ENGAGE_DS
+            )
     handler.receive(CreateComment(
         auth_token=AuthorizationToken(
             token=authorization,
@@ -553,8 +594,10 @@ def get_comments_section_on_concept(
         title: str
         ):
     """Gathers all the comments left on a concept ordered by oldest to newest"""
-    handler = ConceptCommentsSectionHandler()
-    handler.use_service(RegisteredService.ENGAGE_DS)
+    handler = app.endpoint_factory.create_handler(
+            'ConceptCommentsSectionHandler',
+            RegisteredService.ENGAGE_DS
+            )
     handler.receive(ConceptRequest(
         author=author,
         title=title,

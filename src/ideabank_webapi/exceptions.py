@@ -33,6 +33,10 @@ class IdeaBankEndpointHandlerException(BaseIdeaBankAPIException):
     """Base exception for endpoint handlers"""
 
 
+class NoSuchHandlerException(IdeaBankEndpointHandlerException):
+    """Exception raised when requesting construction of a nonexistant handler"""
+
+
 class HandlerNotIdleException(IdeaBankEndpointHandlerException):
     """Exception raised when handler attempts to receive a request when not idle"""
 
