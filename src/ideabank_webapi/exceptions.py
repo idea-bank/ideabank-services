@@ -45,10 +45,6 @@ class NoRegisteredProviderError(IdeaBankEndpointHandlerException):
     """Exception raised when a service provider is requested, but not registered"""
 
 
-class ProviderMisconfiguredError(IdeaBankEndpointHandlerException):
-    """Exception raised when a service provider is not the expected type"""
-
-
 class NotAuthorizedError(IdeaBankEndpointHandlerException):
     """Exception raised when an authorization check fails"""
 

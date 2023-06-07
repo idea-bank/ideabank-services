@@ -97,7 +97,7 @@ def create_account(
         ):
     """Create a new account with the given display name and password if available"""
     handler = AccountCreationHandler()
-    handler.use_service(RegisteredService.ACCOUNTS_DS, AccountsDataService())
+    handler.use_service(RegisteredService.ACCOUNTS_DS)
     handler.receive(new_account)
     response.status_code = handler.result.code
     return handler.result.body
@@ -123,7 +123,7 @@ def authenticate(
         Provides the client with an AuthorizationToken if correct
     """
     handler = AuthenticationHandler()
-    handler.use_service(RegisteredService.ACCOUNTS_DS, AccountsDataService())
+    handler.use_service(RegisteredService.ACCOUNTS_DS)
     handler.receive(credentials)
     response.status_code = handler.result.code
     return handler.result.body
@@ -146,7 +146,7 @@ def fetch_profile(
         ):
     """Fetches the profile view of the request display name if it exists"""
     handler = ProfileRetrievalHandler()
-    handler.use_service(RegisteredService.ACCOUNTS_DS, AccountsDataService())
+    handler.use_service(RegisteredService.ACCOUNTS_DS)
     handler.receive(display_name)
     response.status_code = handler.result.code
     return handler.result.body
@@ -174,7 +174,7 @@ def create_concept(
         ):
     """Creates a new concept with the given data if valid/available AND authroization is OK"""
     handler = ConceptCreationHandler()
-    handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
+    handler.use_service(RegisteredService.CONCEPTS_DS)
     handler.receive(
             CreateConcept(
                 auth_token=AuthorizationToken(
@@ -210,7 +210,7 @@ def create_link(
         ):
     """Creates a link between two concepts in valid and authorization is OK"""
     handler = ConceptLinkingHandler()
-    handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
+    handler.use_service(RegisteredService.CONCEPTS_DS)
     handler.receive(
             EstablishLink(
                 auth_token=AuthorizationToken(
@@ -243,7 +243,7 @@ def get_specific_concept(
         ):
     """Retrieves the concept specified by author/concept if it exists"""
     handler = SpecificConceptRetrievalHandler()
-    handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
+    handler.use_service(RegisteredService.CONCEPTS_DS)
     handler.receive(
             ConceptRequest(
                 title=title,
@@ -273,7 +273,7 @@ def search_concepts(
         ):  # pylint:disable=too-many-arguments
     """Retrieves the concepts matching the given criteria"""
     handler = ConceptSearchResultHandler()
-    handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
+    handler.use_service(RegisteredService.CONCEPTS_DS)
     handler.receive(ConceptSearchQuery(
         author=author,
         title=title,
@@ -303,7 +303,7 @@ def get_lineage(
         ):
     """Retrieve a tree-like structure showing the lineage of the specified concept"""
     handler = ConceptLineageHandler()
-    handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
+    handler.use_service(RegisteredService.CONCEPTS_DS)
     handler.receive(ConceptRequest(
         author=author,
         title=title,
@@ -335,7 +335,7 @@ def start_following(
         ):
     """Records the event where one account starts following another"""
     handler = StartFollowingAccountHandler()
-    handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+    handler.use_service(RegisteredService.ENGAGE_DS)
     handler.receive(FollowRequest(
         auth_token=AuthorizationToken(
             token=authorization,
@@ -365,7 +365,7 @@ def check_following(
         ):
     """Checks if a following record between the specified accounts exists"""
     handler = CheckFollowingStatusHandler()
-    handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+    handler.use_service(RegisteredService.ENGAGE_DS)
     handler.receive(AccountFollowingRecord(
         follower=follower,
         followee=followee
@@ -395,7 +395,7 @@ def stop_following(
         ):
     """Records the event where one account starts following another"""
     handler = StopFollowingAccountHandler()
-    handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+    handler.use_service(RegisteredService.ENGAGE_DS)
     handler.receive(UnfollowRequest(
         auth_token=AuthorizationToken(
             token=authorization,
@@ -429,7 +429,7 @@ def start_liking(
         ):
     """Records the event where one user likes a given concept"""
     handler = StartLikingConceptHandler()
-    handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+    handler.use_service(RegisteredService.ENGAGE_DS)
     handler.receive(LikeRequest(
         auth_token=AuthorizationToken(
             token=authorization,
@@ -459,7 +459,7 @@ def check_liking(
         ):
     """Checks if a liking record between the specified account and concept"""
     handler = CheckLikingStatusHandler()
-    handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+    handler.use_service(RegisteredService.ENGAGE_DS)
     handler.receive(ConceptLikingRecord(
         user_liking=display_name,
         concept_liked=concept
@@ -489,7 +489,7 @@ def stop_liking(
         ):
     """Records the event where one account stops liking another"""
     handler = StopLikingConceptHandler()
-    handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+    handler.use_service(RegisteredService.ENGAGE_DS)
     handler.receive(UnlikeRequest(
         auth_token=AuthorizationToken(
             token=authorization,
@@ -525,7 +525,7 @@ def leave_comment_on_concept(
         ):
     """Creates a comment on the concept identified by {author}/{title}"""
     handler = CommentCreationHandler()
-    handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+    handler.use_service(RegisteredService.ENGAGE_DS)
     handler.receive(CreateComment(
         auth_token=AuthorizationToken(
             token=authorization,
@@ -554,7 +554,7 @@ def get_comments_section_on_concept(
         ):
     """Gathers all the comments left on a concept ordered by oldest to newest"""
     handler = ConceptCommentsSectionHandler()
-    handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+    handler.use_service(RegisteredService.ENGAGE_DS)
     handler.receive(ConceptRequest(
         author=author,
         title=title,

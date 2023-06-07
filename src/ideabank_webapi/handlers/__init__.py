@@ -22,7 +22,6 @@ from ..exceptions import (
         BaseIdeaBankAPIException,
         HandlerNotIdleException,
         NoRegisteredProviderError,
-        ProviderMisconfiguredError,
         PrematureResultRetrievalException
         )
 
@@ -76,17 +75,16 @@ class BaseEndpointHandler(ABC):
                     )
         return self._result
 
-    def use_service(self, name: RegisteredService, provider: Any) -> None:
+    def use_service(self, name: RegisteredService) -> None:
         """Register a service provider that this handler can use.
         The current provider is replaced if the named service already exist
         Arguments:
             name: [RegisteredService] enum member of known services
-            provider: instance of [name] that provides the service
         """
         LOGGER.debug("Using service provider for %s", str(name))
-        self._services.update({name: provider})
+        self._services.update({name: name.value()})
 
-    def get_service(self, name: RegisteredService) -> Any:
+    def get_service(self, name: RegisteredService):
         """Obtain the service provider instance registed under name
         Arguments:
             name: [RegisteredService] enum member of knwon services
@@ -98,16 +96,6 @@ class BaseEndpointHandler(ABC):
         """
         try:
             provider = self._services[name]
-            if not isinstance(provider, name.value):
-                LOGGER.error(
-                        "Expected %s instance, got %s instance",
-                        name.value.__name__,
-                        provider.__class__.__name__
-                        )
-                raise ProviderMisconfiguredError(
-                        f"Expected instance of {name.value.__name__}, "
-                        f"got instance of {provider.__class__.__name__}"
-                        )
             LOGGER.debug("Retrieved registered service provider: %s", str(name))
             return provider
         except KeyError as err:
