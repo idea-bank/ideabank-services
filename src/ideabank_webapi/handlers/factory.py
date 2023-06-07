@@ -6,6 +6,7 @@
 
 import logging
 import typing
+import inspect
 import importlib
 
 from . import BaseEndpointHandler
@@ -59,6 +60,7 @@ class EndpointHandlerFactory:  # pylint:disable=too-few-public-methods
                     s
                     for c in cls.__subclasses__()
                     for s in self._discover_concrete_subclasses(c)
+                    if not inspect.isabstract(s)
                     ]
                 )
 
