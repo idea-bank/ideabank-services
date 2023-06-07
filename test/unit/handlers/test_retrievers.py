@@ -20,9 +20,6 @@ from ideabank_webapi.handlers.retrievers import (
         )
 from ideabank_webapi.services import (
         RegisteredService,
-        AccountsDataService,
-        ConceptsDataService,
-        EngagementDataService,
         QueryService,
         S3Crud
         )
@@ -204,7 +201,7 @@ class TestAccountAuthenticationHandler:
 
     def setup_method(self):
         self.handler = AuthenticationHandler()
-        self.handler.use_service(RegisteredService.ACCOUNTS_DS, AccountsDataService())
+        self.handler.use_service(RegisteredService.ACCOUNTS_DS)
 
     @patch('jwt.encode', return_value="testtoken")
     def test_successful_user_authentication(
@@ -286,7 +283,7 @@ class TestProfileRetrievalHandler:
 
     def setup_method(self):
         self.handler = ProfileRetrievalHandler()
-        self.handler.use_service(RegisteredService.ACCOUNTS_DS, AccountsDataService())
+        self.handler.use_service(RegisteredService.ACCOUNTS_DS)
 
     @patch.object(
             S3Crud,
@@ -352,7 +349,7 @@ class TestSpecificConceptRetrievalHandler:
 
     def setup_method(self):
         self.handler = SpecificConceptRetrievalHandler()
-        self.handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
+        self.handler.use_service(RegisteredService.CONCEPTS_DS)
 
     @pytest.mark.parametrize("simple", [
         True,
@@ -443,7 +440,7 @@ class TestConceptSearchHandler:
 
     def setup_method(self):
         self.handler = ConceptSearchResultHandler()
-        self.handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
+        self.handler.use_service(RegisteredService.CONCEPTS_DS)
 
     @patch.object(
             S3Crud,
@@ -524,7 +521,7 @@ class TestConceptLineageHandler:
 
     def setup_method(self):
         self.handler = ConceptLineageHandler()
-        self.handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
+        self.handler.use_service(RegisteredService.CONCEPTS_DS)
 
     @patch.object(
             S3Crud,
@@ -607,7 +604,7 @@ class TestFollowStatusHandler:
 
     def setup_method(self):
         self.handler = CheckFollowingStatusHandler()
-        self.handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+        self.handler.use_service(RegisteredService.ENGAGE_DS)
 
     def test_check_affirms_following_status(
             self,
@@ -665,7 +662,7 @@ class TestLikeStatusHandler:
 
     def setup_method(self):
         self.handler = CheckLikingStatusHandler()
-        self.handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+        self.handler.use_service(RegisteredService.ENGAGE_DS)
 
     def test_check_affirms_liking_status(
             self,
@@ -723,7 +720,7 @@ class TestCommentSectionHandler:
 
     def setup_method(self):
         self.handler = ConceptCommentsSectionHandler()
-        self.handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+        self.handler.use_service(RegisteredService.ENGAGE_DS)
 
     def test_obtain_existing_comment_thread(
             self,

@@ -12,17 +12,14 @@ from ideabank_webapi.handlers.erasers import (
 from ideabank_webapi.handlers.preprocessors import AuthorizationRequired
 from ideabank_webapi.services import (
         QueryService,
-        EngagementDataService,
         RegisteredService
         )
 from ideabank_webapi.models import (
-        AccountFollowingRecord,
         UnfollowRequest,
         UnlikeRequest,
         AuthorizationToken,
         EndpointInformationalMessage,
         EndpointErrorMessage,
-        EndpointResponse
         )
 from ideabank_webapi.exceptions import NotAuthorizedError, BaseIdeaBankAPIException
 
@@ -60,7 +57,7 @@ class TestStopFollowingHandler:
 
     def setup_method(self):
         self.handler = StopFollowingAccountHandler()
-        self.handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+        self.handler.use_service(RegisteredService.ENGAGE_DS)
 
     @patch.object(AuthorizationRequired, '_check_if_authorized')
     def test_processing_unfollow_request(
@@ -126,7 +123,7 @@ class TestStopLikingHandler:
 
     def setup_method(self):
         self.handler = StopLikingConceptHandler()
-        self.handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+        self.handler.use_service(RegisteredService.ENGAGE_DS)
 
     @patch.object(AuthorizationRequired, '_check_if_authorized')
     def test_processing_unfollow_request(

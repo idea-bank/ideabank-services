@@ -15,10 +15,8 @@ from ideabank_webapi.handlers.creators import (
 from ideabank_webapi.handlers.preprocessors import AuthorizationRequired
 from ideabank_webapi.services import (
         RegisteredService,
-        AccountsDataService,
         QueryService,
-        ConceptsDataService,
-        EngagementDataService
+        S3Crud,
         )
 from ideabank_webapi.models import (
         CredentialSet,
@@ -134,7 +132,7 @@ class TestAccountCreationHandler:
 
     def setup_method(self):
         self.handler = AccountCreationHandler()
-        self.handler.use_service(RegisteredService.ACCOUNTS_DS, AccountsDataService())
+        self.handler.use_service(RegisteredService.ACCOUNTS_DS)
 
     def test_create_new_account(
            self,
@@ -193,10 +191,10 @@ class TestConceptCreationHandler:
 
     def setup_method(self):
         self.handler = ConceptCreationHandler()
-        self.handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
+        self.handler.use_service(RegisteredService.CONCEPTS_DS)
 
     @patch.object(AuthorizationRequired, '_check_if_authorized')
-    @patch.object(ConceptsDataService, 'share_item')
+    @patch.object(S3Crud, 'share_item')
     def test_successful_concept_creation(
         self,
         mock_s3_url,
@@ -222,7 +220,7 @@ class TestConceptCreationHandler:
         mock_auth_check.assert_called_once_with(test_auth_token)
 
     @patch.object(AuthorizationRequired, '_check_if_authorized')
-    @patch.object(ConceptsDataService, 'share_item')
+    @patch.object(S3Crud, 'share_item')
     def test_duplicate_concept_creation(
         self,
         mock_s3_url,
@@ -249,7 +247,7 @@ class TestConceptCreationHandler:
         (NotAuthorizedError, 'Unable to verify token ownership')
         ])
     @patch.object(AuthorizationRequired, '_check_if_authorized')
-    @patch.object(ConceptsDataService, 'share_item')
+    @patch.object(S3Crud, 'share_item')
     def test_unauthorized_concept_creation(
         self,
         mock_s3_url,
@@ -306,7 +304,7 @@ class TestConceptLinkingHandler:
 
     def setup_method(self):
         self.handler = ConceptLinkingHandler()
-        self.handler.use_service(RegisteredService.CONCEPTS_DS, ConceptsDataService())
+        self.handler.use_service(RegisteredService.CONCEPTS_DS)
 
     @patch.object(AuthorizationRequired, '_check_if_authorized')
     def test_successful_linking_request(
@@ -442,7 +440,7 @@ class TestStartFollowingHandler:
 
     def setup_method(self):
         self.handler = StartFollowingAccountHandler()
-        self.handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+        self.handler.use_service(RegisteredService.ENGAGE_DS)
 
     @patch.object(AuthorizationRequired, "_check_if_authorized")
     def test_successful_start_following_user(
@@ -565,7 +563,7 @@ class TestStartLikingHandler:
 
     def setup_method(self):
         self.handler = StartLikingConceptHandler()
-        self.handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+        self.handler.use_service(RegisteredService.ENGAGE_DS)
 
     @patch.object(AuthorizationRequired, "_check_if_authorized")
     def test_successful_start_liking_concept(
@@ -672,7 +670,7 @@ class TestCommentCreationHandler:
 
     def setup_method(self):
         self.handler = CommentCreationHandler()
-        self.handler.use_service(RegisteredService.ENGAGE_DS, EngagementDataService())
+        self.handler.use_service(RegisteredService.ENGAGE_DS)
 
     @patch.object(AuthorizationRequired, "_check_if_authorized")
     def test_successful_thread_creation(

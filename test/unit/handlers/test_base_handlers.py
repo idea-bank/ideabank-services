@@ -104,9 +104,10 @@ def test_handler_state_is_error_when_failed(test_handler, error_type, error_code
         err.assert_called_once()
 
 
-def test_handler_can_use_a_specific_service(test_handler):
+@pytest.mark.parametrize("service", RegisteredService)
+def test_handler_can_use_a_specific_service(service, test_handler):
     th = test_handler()
-    th.use_service(RegisteredService.RAW_DB, QueryService())
+    th.use_service(service)
     assert len(th._services) > 0
 
 
@@ -119,7 +120,7 @@ def test_non_idle_handler_cannot_receive(test_handler):
 
 def test_use_of_service_provider(test_handler):
     th = test_handler()
-    th.use_service(RegisteredService.RAW_DB, QueryService())
+    th.use_service(RegisteredService.RAW_DB)
     provider = th.get_service(RegisteredService.RAW_DB)
     assert isinstance(provider, QueryService)
 
@@ -127,13 +128,6 @@ def test_use_of_service_provider(test_handler):
 @pytest.mark.xfail(raises=NoRegisteredProviderError)
 def test_use_of_missing_service_provider(test_handler):
     th = test_handler()
-    th.get_service(RegisteredService.RAW_DB)
-
-
-@pytest.mark.xfail(raises=ProviderMisconfiguredError)
-def test_use_of_misconfigured_service_provider(test_handler):
-    th = test_handler()
-    th.use_service(RegisteredService.RAW_DB, S3Crud())
     th.get_service(RegisteredService.RAW_DB)
 
 
