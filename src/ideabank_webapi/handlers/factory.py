@@ -17,7 +17,7 @@ LOGGER = logging.getLogger(__name__)
 Handler = typing.TypeVar('Handler', bound=BaseEndpointHandler)
 
 
-class EndpointHandlerFactory:
+class EndpointHandlerFactory:  # pylint:disable=too-few-public-methods
     """Factory class responsible for constucting endpoint handlers"""
 
     def __init__(self):
@@ -71,9 +71,9 @@ class EndpointHandlerFactory:
         Raises:
             NoSuchHandlerException if no classname match is found
         """
-        for c in self._known_handlers:
-            if c.__name__ == name:
+        for cls in self._known_handlers:
+            if cls.__name__ == name:
                 LOGGER.info("Found matching handler by name: %s", name)
-                return c
+                return cls
         LOGGER.error("No matching handler by name: %s", name)
         raise NoSuchHandlerException(f"Unknown handler name: {name}")

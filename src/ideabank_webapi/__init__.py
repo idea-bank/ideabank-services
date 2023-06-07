@@ -12,35 +12,7 @@ from fastapi import FastAPI, status, Header
 from fastapi.responses import JSONResponse
 
 from .handlers.factory import EndpointHandlerFactory
-"""from .handlers.creators import (
-        AccountCreationHandler,
-        ConceptCreationHandler,
-        ConceptLinkingHandler,
-        StartFollowingAccountHandler,
-        StartLikingConceptHandler,
-        CommentCreationHandler
-        )
-from .handlers.retrievers import (
-        AuthenticationHandler,
-        ProfileRetrievalHandler,
-        SpecificConceptRetrievalHandler,
-        ConceptSearchResultHandler,
-        ConceptLineageHandler,
-        CheckFollowingStatusHandler,
-        CheckLikingStatusHandler,
-        ConceptCommentsSectionHandler
-        )
-from .handlers.erasers import (
-        StopFollowingAccountHandler,
-        StopLikingConceptHandler
-        )
-"""
-from .services import (
-        RegisteredService,
-        AccountsDataService,
-        ConceptsDataService,
-        EngagementDataService
-        )
+from .services import RegisteredService
 from .models import (
         CredentialSet,
         AuthorizationToken,
@@ -69,6 +41,8 @@ from .models.artifacts import FuzzyOption
 
 
 class IdeabankAPI(FastAPI):
+    """Extension of FastAPI application to include a factory object"""
+
     def __init__(self):
         super().__init__()
         self.endpoint_factory = EndpointHandlerFactory()
