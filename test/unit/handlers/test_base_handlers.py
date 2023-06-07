@@ -20,7 +20,6 @@ from ideabank_webapi.exceptions import (
         IdeaBankEndpointHandlerException,
         HandlerNotIdleException,
         NoRegisteredProviderError,
-        ProviderMisconfiguredError,
         PrematureResultRetrievalException
         )
 from ideabank_webapi.models import (
