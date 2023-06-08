@@ -33,39 +33,31 @@ def concept_structure():
             }
 
 
-@pytest.fixture
-def test_token():
-    return AuthorizationToken(
-            token='atoken',
-            presenter='auser'
-            )
-
-
-def test_concept_create_valid_structure(test_token, concept_structure):
+def test_concept_create_valid_structure(test_auth_token, concept_structure):
     CreateConcept(
-            auth_token=test_token,
+            auth_token=test_auth_token,
             **concept_structure
             )
 
 
 @pytest.mark.parametrize("bad_title", ['a', 300*'a', '\n\t\n\t\n\t\n\t'])
 @pytest.mark.xfail(raises=ValidationError)
-def test_concept_create_invalid_title(bad_title, test_token, concept_structure):
+def test_concept_create_invalid_title(bad_title, test_auth_token, concept_structure):
     concept_structure['title'] = bad_title
     CreateConcept(
-            auth_token=test_token,
+            auth_token=test_auth_token,
             **concept_structure
             )
 
 
 @pytest.mark.xfail(raises=ValidationError)
-def test_concept_create_invalid_diagram(test_token, concept_structure):
+def test_concept_create_invalid_diagram(test_auth_token, concept_structure):
     import math
     concept_structure['diagram'] = {
             x: math.sqrt(x)
             for x in map(lambda y: y*y, range(0, 25))
             }
     CreateConcept(
-            auth_token=test_token,
+            auth_token=test_auth_token,
             **concept_structure
             )

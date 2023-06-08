@@ -17,19 +17,10 @@ from ideabank_webapi.services import (
 from ideabank_webapi.models import (
         UnfollowRequest,
         UnlikeRequest,
-        AuthorizationToken,
         EndpointInformationalMessage,
         EndpointErrorMessage,
         )
 from ideabank_webapi.exceptions import NotAuthorizedError, BaseIdeaBankAPIException
-
-
-@pytest.fixture
-def test_auth_token():
-    return AuthorizationToken(
-            token='testtoken',
-            presenter='testuser'
-            )
 
 
 @pytest.fixture

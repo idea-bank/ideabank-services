@@ -22,7 +22,6 @@ from ideabank_webapi.models import (
         CredentialSet,
         EndpointInformationalMessage,
         EndpointErrorMessage,
-        AuthorizationToken,
         ConceptSimpleView,
         ConceptDataPayload,
         CreateConcept,
@@ -42,14 +41,6 @@ from ideabank_webapi.exceptions import (
 from sqlalchemy import create_engine
 from sqlalchemy.exc import IntegrityError
 from fastapi import status
-
-
-@pytest.fixture
-def test_auth_token():
-    return AuthorizationToken(
-            token='testtoken',
-            presenter='testuser'
-            )
 
 
 @pytest.fixture

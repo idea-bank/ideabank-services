@@ -1,8 +1,8 @@
 """Tests for retrieval handlers"""
 
 import pytest
-import secrets
-import hashlib
+import faker
+import random
 import datetime
 import treelib
 import uuid
@@ -41,42 +41,36 @@ from ideabank_webapi.models import (
         EndpointErrorMessage,
         EndpointInformationalMessage
 )
-from ideabank_webapi.models.schema import Comments
+from ideabank_webapi.models.schema import Comments, Accounts
 from ideabank_webapi.exceptions import BaseIdeaBankAPIException
 
 from sqlalchemy import create_engine
 from sqlalchemy.exc import NoResultFound
 from fastapi import status
-import jwt
 
 
 @pytest.fixture
-def test_valid_credential_set():
+def test_creds_set(test_auth_projection):
     return CredentialSet(
-            display_name='testuser',
-            password='testpassword'
+            display_name=test_auth_projection.display_name,
+            password='supersecretpassword'
             )
 
 
 @pytest.fixture
-def test_account_record(scope='session'):
-    salt = secrets.token_hex()
-    hashed = hashlib.sha256(
-            f'testpassword{salt}'.encode('utf-8')
-            ).hexdigest()
-    return AccountRecord(
-            display_name='testuser',
-            password_hash=hashed,
-            salt_value=salt
+def test_auth_projection(test_auth_token):
+    return Accounts(
+            display_name=test_auth_token.presenter,
+            password_hash='h4shh4sh',
+            salt_value='s4l7y'
             )
 
 
 @pytest.fixture
-def test_profile_view(scope='session'):
-    return ProfileView(
-            preferred_name='a real name',
-            biography='A short version of my life story',
-            avatar_url='http://example.com/avatars/testuser'
+def test_profile_projection(faker):
+    return Accounts(
+            preferred_name=faker.name(),
+            biography=faker.paragraph(nb_sentences=random.randint(2, 10)),
             )
 
 
@@ -203,23 +197,25 @@ class TestAccountAuthenticationHandler:
         self.handler = AuthenticationHandler()
         self.handler.use_service(RegisteredService.ACCOUNTS_DS)
 
-    @patch('jwt.encode', return_value="testtoken")
+    @patch('jwt.encode')
+    @patch('secrets.compare_digest', return_value=True)
     def test_successful_user_authentication(
             self,
+            mock_digest,
             mock_jwt,
             mock_query_results,
             mock_query,
-            test_valid_credential_set,
-            test_account_record
+            test_auth_projection,
+            test_auth_token,
+            test_creds_set
             ):
-        mock_query_results.one.return_value = test_account_record
-        self.handler.receive(test_valid_credential_set)
+        print(test_auth_token.token)
+        mock_query_results.one.return_value = test_auth_projection
+        mock_jwt.return_value = test_auth_token.token
+        self.handler.receive(test_creds_set)
         assert self.handler.status == EndpointHandlerStatus.COMPLETE
         assert self.handler.result.code == status.HTTP_200_OK
-        assert self.handler.result.body == AuthorizationToken(
-                token='testtoken',
-                presenter=test_account_record.display_name
-                )
+        assert self.handler.result.body == test_auth_token
 
     @patch('secrets.compare_digest', return_value=False)
     def test_unsuccessful_user_authentication(
@@ -227,11 +223,11 @@ class TestAccountAuthenticationHandler:
             mock_secrets,
             mock_query_results,
             mock_query,
-            test_valid_credential_set,
-            test_account_record
+            test_creds_set,
+            test_auth_projection
             ):
-        mock_query_results.one.return_value = test_account_record
-        self.handler.receive(test_valid_credential_set)
+        mock_query_results.one.return_value = test_auth_projection
+        self.handler.receive(test_creds_set)
         assert self.handler.status == EndpointHandlerStatus.ERROR
         assert self.handler.result.code == status.HTTP_401_UNAUTHORIZED
         assert self.handler.result.body == EndpointErrorMessage(
@@ -242,11 +238,10 @@ class TestAccountAuthenticationHandler:
             self,
             mock_query_results,
             mock_query,
-            test_valid_credential_set,
-            test_account_record
+            test_creds_set
             ):
         mock_query_results.one.side_effect = NoResultFound
-        self.handler.receive(test_valid_credential_set)
+        self.handler.receive(test_creds_set)
         assert self.handler.status == EndpointHandlerStatus.ERROR
         assert self.handler.result.code == status.HTTP_401_UNAUTHORIZED
         assert self.handler.result.body == EndpointErrorMessage(
@@ -262,12 +257,10 @@ class TestAccountAuthenticationHandler:
             self,
             mock_data_ops,
             mock_query_results,
-            mock_query
+            mock_query,
+            test_creds_set
             ):
-        self.handler.receive(CredentialSet(
-            display_name='unluckyuser',
-            password='unluckypassword'
-            ))
+        self.handler.receive(test_creds_set)
         mock_data_ops.assert_called_once()
         assert self.handler.status == EndpointHandlerStatus.ERROR
         assert self.handler.result.code == status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -295,14 +288,18 @@ class TestProfileRetrievalHandler:
             mock_share,
             mock_query_results,
             mock_query,
-            test_account_record,
-            test_profile_view
+            test_creds_set,
+            test_profile_projection
             ):
-        mock_query_results.one.return_value = test_profile_view
-        self.handler.receive(test_account_record.display_name)
+        mock_query_results.one.return_value = test_profile_projection
+        self.handler.receive(test_creds_set.display_name)
         assert self.handler.status == EndpointHandlerStatus.COMPLETE
         assert self.handler.result.code == status.HTTP_200_OK
-        assert self.handler.result.body == test_profile_view
+        assert self.handler.result.body == ProfileView(
+                preferred_name=test_profile_projection.preferred_name,
+                biography=test_profile_projection.biography,
+                avatar_url=f'http://example.com/avatars/{test_creds_set.display_name}'
+                )
 
     @pytest.mark.parametrize("username", [
         'notauser',
@@ -332,9 +329,9 @@ class TestProfileRetrievalHandler:
             mock_data_ops,
             mock_query_results,
             mock_query,
-            test_account_record
+            test_creds_set
             ):
-        self.handler.receive(test_account_record.display_name)
+        self.handler.receive(test_creds_set.display_name)
         assert self.handler.status == EndpointHandlerStatus.ERROR
         assert self.handler.result.code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert self.handler.result.body == EndpointErrorMessage(

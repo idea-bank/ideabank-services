@@ -66,11 +66,12 @@ def test_new_concept_endpoint(
         mock_status,
         mock_result,
         mock_receive,
-        test_client
+        test_client,
+        test_auth_token
         ):
     test_client.post(
         '/concepts',
-        headers={'authorization': 'testtoken'},
+        headers={'authorization': test_auth_token.token},
         json={
             'author': 'testuser',
             'title': 'sample-idea',
@@ -87,14 +88,15 @@ def test_new_link_endpoint(
         mock_status,
         mock_result,
         mock_receive,
-        test_client
+        test_client,
+        test_auth_token
         ):
     test_client.post(
             '/links',
-            headers={'authorization': 'testtoken'},
+            headers={'authorization': test_auth_token.token},
             json={
-                'ancestor': 'a-previous-idea',
-                'descendant': 'a-new-and-improved-idea'
+                'ancestor': 'testuser/a-previous-idea',
+                'descendant': 'anotheruser/a-new-and-improved-idea'
                 }
             )
 
@@ -125,11 +127,12 @@ def test_follow_cycle_endpoints(
         mock_status,
         mock_result,
         mock_receive,
-        test_client
+        test_client,
+        test_auth_token
         ):
     test_client.post(
             '/accounts/follow',
-            headers={'authorization': 'testtoken'},
+            headers={'authorization': test_auth_token.token},
             json={
                 'follower': 'testuser',
                 'followee': 'someuser'
@@ -138,7 +141,7 @@ def test_follow_cycle_endpoints(
     test_client.request(
             'delete',
             '/accounts/follow',
-            headers={'authorization': 'testtoken'},
+            headers={'authorization': test_auth_token.token},
             json={
                 'follower': 'testuser',
                 'followee': 'someuser'
@@ -165,11 +168,12 @@ def test_like_cycle_endpoints(
         mock_status,
         mock_result,
         mock_receive,
-        test_client
+        test_client,
+        test_auth_token
         ):
     test_client.post(
             '/accounts/likes',
-            headers={'authorization': 'testtoken'},
+            headers={'authorization': test_auth_token.token},
             json={
                 'user_liking': 'testuser',
                 'concept_liked': 'someuser/cool-idea'
@@ -178,7 +182,7 @@ def test_like_cycle_endpoints(
     test_client.request(
             'delete',
             '/accounts/likes',
-            headers={'authorization': 'testtoken'},
+            headers={'authorization': test_auth_token.token},
             json={
                 'user_liking': 'testuser',
                 'concept_liked': 'someuser/cool-idea'
@@ -205,11 +209,12 @@ def test_new_comment_endpoint(
         mock_status,
         mock_result,
         mock_receive,
-        test_client
+        test_client,
+        test_auth_token
         ):
     test_client.post(
         '/concepts/someuser/some-idea/comment',
-        headers={'authorization': 'testtoken'},
+        headers={'authorization': test_auth_token.token},
         json={
             'comment_author': 'testuser',
             'comment_text': 'I like this'

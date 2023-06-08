@@ -40,15 +40,11 @@ def test_auth_handler():
     return TestAuthorizedHandler
 
 
-@patch('jwt.decode', return_value={'username': 'user'})
-def test_handler_proceeds_when_authorized(mock_jwt, test_auth_handler):
+@patch('jwt.decode')
+def test_handler_proceeds_when_authorized(mock_jwt, test_auth_handler, test_auth_token):
     th = test_auth_handler()
-    th.receive(AuthorizedPayload(
-        auth_token=AuthorizationToken(
-            token='token',
-            presenter='user'
-            ))
-        )
+    mock_jwt.return_value = {'username': test_auth_token.presenter}
+    th.receive(AuthorizedPayload(auth_token=test_auth_token))
     assert th.status == EndpointHandlerStatus.COMPLETE
     assert th.result.code == status.HTTP_200_OK
     assert th.result.body == EndpointInformationalMessage(
@@ -56,15 +52,11 @@ def test_handler_proceeds_when_authorized(mock_jwt, test_auth_handler):
             )
 
 
-@patch('jwt.decode', return_value={'username': 'imposter'})
-def test_handler_fails_when_ownership_is_falsified(mock_jwt, test_auth_handler):
+@patch('jwt.decode')
+def test_handler_fails_when_ownership_is_falsified(mock_jwt, test_auth_handler, test_auth_token):
     th = test_auth_handler()
-    th.receive(AuthorizedPayload(
-        auth_token=AuthorizationToken(
-            token='token',
-            presenter='user'
-            ))
-        )
+    mock_jwt.return_value = {'username': test_auth_token.presenter[::-1]}
+    th.receive(AuthorizedPayload(auth_token=test_auth_token))
     assert th.status == EndpointHandlerStatus.ERROR
     assert th.result.code == status.HTTP_401_UNAUTHORIZED
     assert th.result.body == EndpointErrorMessage(
@@ -73,14 +65,9 @@ def test_handler_fails_when_ownership_is_falsified(mock_jwt, test_auth_handler):
 
 
 @patch('jwt.decode', side_effect=jwt.exceptions.InvalidTokenError)
-def test_handler_fails_when_token_is_invalid(mock_jwt, test_auth_handler):
+def test_handler_fails_when_token_is_invalid(mock_jwt, test_auth_handler, test_auth_token):
     th = test_auth_handler()
-    th.receive(AuthorizedPayload(
-        auth_token=AuthorizationToken(
-            token='token',
-            presenter='user'
-            ))
-        )
+    th.receive(AuthorizedPayload(auth_token=test_auth_token))
     assert th.status == EndpointHandlerStatus.ERROR
     assert th.result.code == status.HTTP_401_UNAUTHORIZED
     assert th.result.body == EndpointErrorMessage(
@@ -88,20 +75,20 @@ def test_handler_fails_when_token_is_invalid(mock_jwt, test_auth_handler):
             )
 
 
-@patch('jwt.decode', return_value={'username': 'user'})
-def test_concrete_handler_errors_are_reported_after_authorization(mock_jwt, test_auth_handler):
+@patch('jwt.decode')
+def test_concrete_handler_errors_are_reported_after_authorization(
+        mock_jwt,
+        test_auth_handler,
+        test_auth_token
+        ):
     th = test_auth_handler()
+    mock_jwt.return_value = {'username': test_auth_token.presenter}
     with patch.object(
             type(th),
             '_do_data_ops',
             side_effect=IdeaBankEndpointHandlerException
             ):
-        th.receive(AuthorizedPayload(
-            auth_token=AuthorizationToken(
-                token='token',
-                presenter='user'
-                )
-            ))
+        th.receive(AuthorizedPayload(auth_token=test_auth_token))
         assert th.status == EndpointHandlerStatus.ERROR
         assert th.result.code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert th.result.body == EndpointErrorMessage(
