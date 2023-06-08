@@ -151,20 +151,7 @@ class EngagementDataService(QueryService):
                     )
 
     @staticmethod
-    def top_level_comments(concept_id: str) -> Select:
-        """Builds a selection statement to gather the initial comment threads of a concept
-        Arguments:
-            concept_id: [str] the string identifier of the concept being commented on
-        Returns:
-            A sqlalchemy selection statement to find the specified Comments
-        """
-        LOGGER.info("Built query to find initial threads on a given concept")
-        return select(Comments.comment_id, Comments.comment_by, Comments.free_text) \
-            .where(Comments.comment_on == concept_id, Comments.parent == None) \
-            .order_by(Comments.created_at)
-
-    @staticmethod
-    def comment_responses(concept_id: str, response_to: str) -> Select:
+    def comments_on(concept_id: str, response_to: str = None) -> Select:
         """Builds a selection statement to gather comments of a given thread on a given idea
         Arguments:
             concept_id: [str] the string identifier of the concept being commented on

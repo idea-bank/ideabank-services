@@ -474,7 +474,7 @@ class ConceptCommentsSectionHandler(BaseEndpointHandler):
 
     def __thread_starts(self, concept_id: str):
         with self.get_service(RegisteredService.ENGAGE_DS) as service:
-            service.add_query(service.top_level_comments(concept_id))
+            service.add_query(service.comments_on(concept_id))
             service.exec_next()
             return [
                     ConceptComment(
@@ -487,7 +487,7 @@ class ConceptCommentsSectionHandler(BaseEndpointHandler):
 
     def __gather_responses(self, concept_id: str, current_thread: ConceptComment):
         with self.get_service(RegisteredService.ENGAGE_DS) as service:
-            service.add_query(service.comment_responses(
+            service.add_query(service.comments_on(
                 concept_id=concept_id,
                 response_to=current_thread.comment_id
                 ))

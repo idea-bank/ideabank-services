@@ -62,7 +62,7 @@ def test_create_comment_query_builds():
 
 
 def test_find_threads():
-    stmt = EngagementDataService.top_level_comments("user/concept")
+    stmt = EngagementDataService.comments_on("user/concept")
     assert str(stmt) == 'SELECT comments.comment_id, comments.comment_by, comments.free_text \n' \
                         'FROM comments \n' \
                         'WHERE comments.comment_on = :comment_on_1 ' \
@@ -71,7 +71,7 @@ def test_find_threads():
 
 
 def test_find_thread_members():
-    stmt = EngagementDataService.comment_responses("user/concept", 69420)
+    stmt = EngagementDataService.comments_on("user/concept", 69420)
     assert str(stmt) == 'SELECT comments.comment_id, comments.comment_by, comments.free_text \n' \
                         'FROM comments \n' \
                         'WHERE comments.comment_on = :comment_on_1 ' \
