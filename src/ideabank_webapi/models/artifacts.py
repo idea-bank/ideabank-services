@@ -6,14 +6,13 @@
 
 from __future__ import annotations
 import logging
-import re
 import datetime
 from typing import Sequence, Union, List, Optional
 from enum import Enum
 
-from pydantic import (
+from pydantic import (  # pylint:disable=no-name-in-module
         BaseModel, Extra, validator,
-        constr, AnyHttpUrl, UUID4, Json  # pylint:disable=no-name-in-module
+        constr, AnyHttpUrl, UUID4, Json
         )
 from fastapi import status
 
@@ -40,6 +39,7 @@ class EndpointResponse(BaseModel):
 
     @validator('code')
     def check_code(cls, value):
+        """Check the response code is a valid HTTP status"""
         known_codes = {
                 status.__dict__[name] for name in status.__all__
                 }
