@@ -58,7 +58,7 @@ def test_handler():
             if isinstance(exc, RecoverableServiceException):
                 self._result = EndpointResponse(
                         code=status.HTTP_400_BAD_REQUEST,
-                        body=EndpointErrorMessage(err_msg='')
+                        body=EndpointErrorMessage(err_msg=str(exc))
                         )
             else:
                 super()._build_error_response(exc)
@@ -90,14 +90,14 @@ def test_handler_state_is_error_when_failed(test_handler, error_type, error_code
     with patch.object(
             type(th),
             '_do_data_ops',
-            side_effect=error_type
+            side_effect=error_type('oops')
             ) as err:
         th.receive(EndpointPayload())
         assert th.status == EndpointHandlerStatus.ERROR
         assert th.result == EndpointResponse(
                 code=error_code,
                 body=EndpointErrorMessage(
-                    err_msg=''
+                    err_msg='oops'
                     )
                 )
         err.assert_called_once()
