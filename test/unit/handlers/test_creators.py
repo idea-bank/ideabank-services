@@ -87,11 +87,28 @@ def test_linking_request():
 
 
 @pytest.fixture
+def test_circular_linking_request():
+    return ConceptLinkRecord(
+            ancestor='testuser/sample-idea',
+            descendant='testuser/sample-idea'
+            )
+
+
+@pytest.fixture
 def test_follow_request(test_auth_token):
     return FollowRequest(
             auth_token=test_auth_token,
             follower='user-a',
             followee='user-b'
+            )
+
+
+@pytest.fixture
+def test_invalid_follow_request(test_auth_token):
+    return FollowRequest(
+            auth_token=test_auth_token,
+            follower='user-a',
+            followee='user-a'
             )
 
 
@@ -378,12 +395,11 @@ class TestConceptLinkingHandler:
             mock_query_results,
             mock_query,
             test_auth_token,
-            test_linking_request
+            test_circular_linking_request
             ):
-        test_linking_request.descendant = test_linking_request.ancestor
         self.handler.receive(EstablishLink(
             auth_token=test_auth_token,
-            **test_linking_request.dict()
+            **test_circular_linking_request.dict()
             ))
         assert self.handler.status == EndpointHandlerStatus.ERROR
         assert self.handler.result.code == status.HTTP_403_FORBIDDEN
@@ -490,10 +506,9 @@ class TestStartFollowingHandler:
             mock_auth_check,
             mock_query_results,
             mock_query,
-            test_follow_request
+            test_invalid_follow_request
             ):
-        test_follow_request.followee = test_follow_request.follower
-        self.handler.receive(test_follow_request)
+        self.handler.receive(test_invalid_follow_request)
         self.handler.status == EndpointHandlerStatus.ERROR
         self.handler.result.code == status.HTTP_403_FORBIDDEN
         self.handler.result.body == EndpointErrorMessage(
