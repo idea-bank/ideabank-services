@@ -75,21 +75,15 @@ def test_profile_projection(faker):
 
 
 @pytest.fixture
-def test_simple_concept_view():
-    return ConceptSimpleView(
-            identifier='testuser/sample-idea',
-            thumbnail_url='http://example.com/thumbnails/testuser/sample-idea'
-            )
-
-
-@pytest.fixture
-def test_full_concept_view():
+def test_full_concept_view(test_concept_simple_view, faker):
     return ConceptFullView(
-            author='testuser',
-            title='sample-idea',
-            description='This is a explanation of the sample idea',
+            author=test_concept_simple_view.identifier.split('/')[0],
+            title=test_concept_simple_view.identifier.split('/')[1],
+            description=faker.sentence(),
             diagram='{}',
-            thumbnail_url='http://example.com/thumbnails/testuser/sample-idea'
+            thumbnail_url='http://example.com/thumbnails/'
+                          f"{test_concept_simple_view.identifier.split('/')[0]}/"
+                          f"{test_concept_simple_view.identifier.split('/')[1]}"
             )
 
 
@@ -135,18 +129,18 @@ def test_lineage():
 
 
 @pytest.fixture
-def test_following_record():
+def test_following_record(faker):
     return AccountFollowingRecord(
-            follower='user-a',
-            followee='user-b'
+            follower=faker.user_name(),
+            followee=faker.user_name()
             )
 
 
 @pytest.fixture
-def test_liking_record():
+def test_liking_record(faker):
     return ConceptLikingRecord(
-            user_liking='someuser',
-            concept_liked='testuser/sample-idea'
+            user_liking=faker.user_name(),
+            concept_liked=f'{faker.user_name()}/{faker.domain_word()}'
             )
 
 
@@ -363,7 +357,7 @@ class TestSpecificConceptRetrievalHandler:
             mock_query_results,
             mock_query,
             test_full_concept_view,
-            test_simple_concept_view,
+            test_concept_simple_view,
             simple
             ):
         mock_query_results.one.return_value = test_full_concept_view
@@ -374,7 +368,7 @@ class TestSpecificConceptRetrievalHandler:
             ))
         assert self.handler.status == EndpointHandlerStatus.COMPLETE
         assert self.handler.result.code == status.HTTP_200_OK
-        assert self.handler.result.body == test_simple_concept_view if simple else test_full_concept_view
+        assert self.handler.result.body == test_concept_simple_view if simple else test_full_concept_view
 
     @pytest.mark.parametrize("simple", [
         True,
@@ -449,12 +443,12 @@ class TestConceptSearchHandler:
             mock_s3_url,
             mock_query_results,
             mock_query,
-            test_simple_concept_view
+            test_concept_simple_view
             ):
-        mock_query_results.all.return_value = 10 * [test_simple_concept_view]
+        mock_query_results.all.return_value = 10 * [test_concept_simple_view]
         self.handler.receive(ConceptSearchQuery(
-                author=test_simple_concept_view.identifier.split('/')[0],
-                title=test_simple_concept_view.identifier.split('/')[1],
+                author=test_concept_simple_view.identifier.split('/')[0],
+                title=test_concept_simple_view.identifier.split('/')[1],
                 not_before=datetime.datetime.fromtimestamp(0, datetime.timezone.utc),
                 not_after=datetime.datetime.now(datetime.timezone.utc)
             ))
@@ -472,11 +466,11 @@ class TestConceptSearchHandler:
             mock_data_ops,
             mock_query_results,
             mock_query,
-            test_simple_concept_view
+            test_concept_simple_view
             ):
         self.handler.receive(ConceptSearchQuery(
-                author=test_simple_concept_view.identifier.split('/')[0],
-                title=test_simple_concept_view.identifier.split('/')[1],
+                author=test_concept_simple_view.identifier.split('/')[0],
+                title=test_concept_simple_view.identifier.split('/')[1],
                 not_before=datetime.datetime.fromtimestamp(0, datetime.timezone.utc),
                 not_after=datetime.datetime.now(datetime.timezone.utc)
             ))
@@ -497,12 +491,12 @@ class TestConceptSearchHandler:
             mock_s3_url,
             mock_query_results,
             mock_query,
-            test_simple_concept_view
+            test_concept_simple_view
             ):
         mock_query_results.all.return_value = []
         self.handler.receive(ConceptSearchQuery(
-                author=test_simple_concept_view.identifier.split('/')[0],
-                title=test_simple_concept_view.identifier.split('/')[1],
+                author=test_concept_simple_view.identifier.split('/')[0],
+                title=test_concept_simple_view.identifier.split('/')[1],
                 not_before=datetime.datetime.fromtimestamp(0, datetime.timezone.utc),
                 not_after=datetime.datetime.now(datetime.timezone.utc)
             ))
@@ -530,10 +524,10 @@ class TestConceptLineageHandler:
             mock_s3_url,
             mock_query_results,
             mock_query,
-            test_simple_concept_view,
+            test_concept_simple_view,
             test_lineage
             ):
-        mock_query_results.one.return_value = test_simple_concept_view
+        mock_query_results.one.return_value = test_concept_simple_view
         mock_query_results.all.side_effect = [
                 [ConceptLinkRecord(ancestor='testuser/old-idea', descendant='testuser/new-idea')],
                 [

@@ -1,6 +1,7 @@
 """Tests for creator handlers"""
 
 import pytest
+import faker
 import uuid
 from unittest.mock import patch
 from ideabank_webapi.handlers import EndpointHandlerStatus
@@ -44,91 +45,86 @@ from fastapi import status
 
 
 @pytest.fixture
-def test_concept_payload():
+def test_concept_payload(faker):
     return ConceptDataPayload(
-            author='testuser',
-            title='sample-idea',
-            description='An example of a really cool idea',
+            author=faker.user_name(),
+            title=faker.domain_word(),
+            description=faker.sentence(),
             diagram={}
             )
 
 
 @pytest.fixture
-def test_concept_simple_view():
-    return ConceptSimpleView(
-            identifier='testuser/sample-idea',
-            thumbnail_url='http://example.com/thumbnails/testuser/sample-idea'
-            )
-
-
-@pytest.fixture
-def test_valid_credential_set():
+def test_valid_credential_set(faker):
     return CredentialSet(
-            display_name='testuser',
+            display_name=faker.user_name(),
             password='testpassword'
             )
 
 
 @pytest.fixture
-def test_linking_request():
+def test_linking_request(faker):
     return ConceptLinkRecord(
-            ancestor='testuser/sample-idea',
-            descendant='anotheruser/derived-idea'
+            ancestor=f'{faker.user_name()}/{faker.domain_word()}',
+            descendant=f'{faker.user_name()}/{faker.domain_word()}'
             )
 
 
 @pytest.fixture
-def test_circular_linking_request():
+def test_circular_linking_request(faker):
+    fake_username = faker.user_name()
+    fake_title = faker.domain_word()
     return ConceptLinkRecord(
-            ancestor='testuser/sample-idea',
-            descendant='testuser/sample-idea'
+            ancestor=f'{fake_username}/{fake_title}',
+            descendant=f'{fake_username}/{fake_title}'
             )
 
 
 @pytest.fixture
-def test_follow_request(test_auth_token):
+def test_follow_request(test_auth_token, faker):
     return FollowRequest(
             auth_token=test_auth_token,
-            follower='user-a',
-            followee='user-b'
+            follower=faker.user_name(),
+            followee=faker.user_name()
             )
 
 
 @pytest.fixture
-def test_invalid_follow_request(test_auth_token):
+def test_invalid_follow_request(test_auth_token, faker):
+    fake_username = faker.user_name()
     return FollowRequest(
             auth_token=test_auth_token,
-            follower='user-a',
-            followee='user-a'
+            follower=fake_username,
+            followee=fake_username
             )
 
 
 @pytest.fixture
-def test_like_request(test_auth_token):
+def test_like_request(test_auth_token, faker):
     return LikeRequest(
             auth_token=test_auth_token,
-            user_liking='someuser',
-            concept_liked='testuser/sample-idea'
+            user_liking=faker.user_name(),
+            concept_liked=f'{faker.user_name()}/{faker.domain_word()}'
             )
 
 
 @pytest.fixture
-def test_start_new_thread(test_auth_token):
+def test_start_new_thread(test_auth_token, faker):
     return CreateComment(
             auth_token=test_auth_token,
-            concept_id="testuser/sample-idea",
-            comment_author="someuser",
-            comment_text="this is a cool idea"
+            concept_id=f'{faker.user_name()}/{faker.domain_word()}',
+            comment_author=faker.user_name(),
+            comment_text=faker.sentence()
             )
 
 
 @pytest.fixture
-def test_responsd_in_thread(test_auth_token):
+def test_responsd_in_thread(test_auth_token, faker):
     return CreateComment(
             auth_token=test_auth_token,
-            concept_id="testuser/sample-idea",
-            comment_author="testuser",
-            comment_text="Thank you",
+            concept_id=f'{faker.user_name()}/{faker.domain_word()}',
+            comment_author=faker.user_name(),
+            comment_text=faker.sentence(),
             response_to=uuid.uuid4()
             )
 
@@ -334,7 +330,7 @@ class TestConceptLinkingHandler:
 
     @pytest.mark.parametrize("err_type, err_cause, err_msg", [
         (IntegrityError, "not present in table", "Both concepts must exist to link them"),
-        (IntegrityError, "already exists", "A link already exists between testuser/sample-idea and anotheruser/derived-idea")
+        (IntegrityError, "already exists", "A link already exists between {} and {}")
         ])
     @patch.object(AuthorizationRequired, '_check_if_authorized')
     def test_unsuccessful_linking_request(
@@ -356,7 +352,7 @@ class TestConceptLinkingHandler:
         assert self.handler.status == EndpointHandlerStatus.ERROR
         assert self.handler.result.code == status.HTTP_403_FORBIDDEN
         assert self.handler.result.body == EndpointErrorMessage(
-                err_msg=err_msg
+                err_msg=err_msg.format(test_linking_request.ancestor, test_linking_request.descendant)
                 )
 
     @patch.object(AuthorizationRequired, '_check_if_authorized')

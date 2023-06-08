@@ -1,6 +1,7 @@
 """Tests for eraser endpoint handler"""
 
 import pytest
+import faker
 from unittest.mock import patch
 from sqlalchemy import create_engine
 from fastapi import status
@@ -24,20 +25,20 @@ from ideabank_webapi.exceptions import NotAuthorizedError, BaseIdeaBankAPIExcept
 
 
 @pytest.fixture
-def test_unfollow_request(test_auth_token):
+def test_unfollow_request(test_auth_token, faker):
     return UnfollowRequest(
             auth_token=test_auth_token,
-            follower='user-a',
-            followee='user-b'
+            follower=faker.user_name(),
+            followee=faker.user_name()
             )
 
 
 @pytest.fixture
-def test_unlike_request(test_auth_token):
+def test_unlike_request(test_auth_token, faker):
     return UnlikeRequest(
             auth_token=test_auth_token,
-            user_liking='someuser',
-            concept_liked='testuser/sample-idea'
+            user_liking=faker.user_name(),
+            concept_liked=f'{faker.user_name()}/{faker.domain_word()}'
             )
 
 
