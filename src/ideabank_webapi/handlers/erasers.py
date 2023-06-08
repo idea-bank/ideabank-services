@@ -24,7 +24,7 @@ LOGGER = logging.getLogger(__name__)
 class StopFollowingAccountHandler(AuthorizationRequired):
     """Endpoint handler dealing with removing following records"""
 
-    def _do_data_ops(self, request: UnfollowRequest):
+    def _do_data_ops(self, request: UnfollowRequest) -> EndpointInformationalMessage:
         LOGGER.info(
                 "Removing the following record %s <- %s",
                 request.followee,
@@ -54,7 +54,7 @@ class StopFollowingAccountHandler(AuthorizationRequired):
 class StopLikingConceptHandler(AuthorizationRequired):
     """Endpoint handler dealing with removing liking records"""
 
-    def _do_data_ops(self, request: UnlikeRequest):
+    def _do_data_ops(self, request: UnlikeRequest) -> EndpointInformationalMessage:
         LOGGER.info(
                 "Removing the liking record %s <- %s",
                 request.concept_liked,

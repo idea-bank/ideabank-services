@@ -40,7 +40,7 @@ LOGGER = logging.getLogger(__name__)
 class AccountCreationHandler(BaseEndpointHandler):
     """Endpoint handler dealing with account creation"""
 
-    def _do_data_ops(self, request: CredentialSet):
+    def _do_data_ops(self, request: CredentialSet) -> str:
         LOGGER.info("Securing new account credentials")
         secured_request = self._secure_payload(
                 username=request.display_name,
@@ -101,7 +101,7 @@ class AccountCreationHandler(BaseEndpointHandler):
 class ConceptCreationHandler(AuthorizationRequired):
     """Endpoint handler dealing with concept creation"""
 
-    def _do_data_ops(self, request: CreateConcept):
+    def _do_data_ops(self, request: CreateConcept) -> ConceptSimpleView:
         LOGGER.info(
                 "Creating concept record `%s` authored by `%s`",
                 request.title,
@@ -155,7 +155,7 @@ class ConceptCreationHandler(AuthorizationRequired):
 class ConceptLinkingHandler(AuthorizationRequired):
     """Endpoint handler dealing with concept linking"""
 
-    def _do_data_ops(self, request: EstablishLink):
+    def _do_data_ops(self, request: EstablishLink) -> ConceptLinkRecord:
         LOGGER.info(
                 "Establishing a link between `%s` and `%s`",
                 request.ancestor,
@@ -217,7 +217,7 @@ class ConceptLinkingHandler(AuthorizationRequired):
 class StartFollowingAccountHandler(AuthorizationRequired):
     """Endpoint handler dealing with creating following records"""
 
-    def _do_data_ops(self, request: FollowRequest):
+    def _do_data_ops(self, request: FollowRequest) -> EndpointInformationalMessage:
         LOGGER.info(
                 "Creating the follow record: %s <- %s",
                 request.followee,
@@ -277,7 +277,7 @@ class StartFollowingAccountHandler(AuthorizationRequired):
 class StartLikingConceptHandler(AuthorizationRequired):
     """Endpoint handler dealing with creating liking records"""
 
-    def _do_data_ops(self, request: LikeRequest):
+    def _do_data_ops(self, request: LikeRequest) -> EndpointInformationalMessage:
         LOGGER.info(
                 "Creating the likes record: %s <- %s",
                 request.concept_liked,
@@ -331,7 +331,7 @@ class StartLikingConceptHandler(AuthorizationRequired):
 class CommentCreationHandler(AuthorizationRequired):
     """Endpoint handler dealing with comment creation"""
 
-    def _do_data_ops(self, request: CreateComment):
+    def _do_data_ops(self, request: CreateComment) -> EndpointInformationalMessage:
         LOGGER.info(
                 "%s left a comment on %s",
                 request.comment_author,

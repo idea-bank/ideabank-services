@@ -164,7 +164,7 @@ class ProfileRetrievalHandler(BaseEndpointHandler):
 class SpecificConceptRetrievalHandler(BaseEndpointHandler):
     """Handler for dealing with requests for a particular concept"""
 
-    def _do_data_ops(self, request: ConceptRequest):
+    def _do_data_ops(self, request: ConceptRequest) -> ConceptSimpleView:
         LOGGER.info(
                 "Searching for specific concept: %s/%s",
                 request.author,
@@ -363,7 +363,7 @@ class ConceptLineageHandler(BaseEndpointHandler):
 class CheckFollowingStatusHandler(BaseEndpointHandler):
     """Endpoint handler dealing with checking if a user follows another"""
 
-    def _do_data_ops(self, request: AccountFollowingRecord):
+    def _do_data_ops(self, request: AccountFollowingRecord) -> EndpointInformationalMessage:
         LOGGER.info(
                 "Checking if %s follows %s",
                 request.follower,
@@ -407,7 +407,7 @@ class CheckFollowingStatusHandler(BaseEndpointHandler):
 class CheckLikingStatusHandler(BaseEndpointHandler):
     """Endpoint handler dealing with checking if a user likes a concept"""
 
-    def _do_data_ops(self, request: ConceptLikingRecord):
+    def _do_data_ops(self, request: ConceptLikingRecord) -> EndpointInformationalMessage:
         LOGGER.info(
                 "Checking if %s likes %s",
                 request.user_liking,
@@ -451,7 +451,7 @@ class CheckLikingStatusHandler(BaseEndpointHandler):
 class ConceptCommentsSectionHandler(BaseEndpointHandler):
     """Endpoint handler for retrieving the comments section of a concept"""
 
-    def _do_data_ops(self, request: ConceptRequest):
+    def _do_data_ops(self, request: ConceptRequest) -> ConceptCommentThreads:
         comment_tree = ConceptCommentThreads(threads=[])
         comment_tree.threads.extend(self.__thread_starts(
             concept_id=f'{request.author}/{request.title}'
