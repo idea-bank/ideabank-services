@@ -1,16 +1,17 @@
 """Tests for payload models"""
 
 import pytest
+import faker
 from ideabank_webapi.models import CreateConcept, AuthorizedPayload, AuthorizationToken
 from pydantic import ValidationError
 
 
 @pytest.fixture
-def concept_structure():
+def concept_structure(faker):
     return {
-            'title': 'example-title',
-            'author': 'example author',
-            'description': 'example description',
+            'title': faker.domain_word(),
+            'author': faker.user_name(),
+            'description': faker.sentence(),
             'diagram': {
                         "nodes": [
                             {"id": 1, "label": "Board"},
@@ -40,7 +41,7 @@ def test_concept_create_valid_structure(test_auth_token, concept_structure):
             )
 
 
-@pytest.mark.parametrize("bad_title", ['a', 300*'a', '\n\t\n\t\n\t\n\t'])
+@pytest.mark.parametrize("bad_title", ['', 300*'a', '\n\t\n\t\n\t\n\t'])
 @pytest.mark.xfail(raises=ValidationError)
 def test_concept_create_invalid_title(bad_title, test_auth_token, concept_structure):
     concept_structure['title'] = bad_title
