@@ -12,7 +12,7 @@ from enum import Enum
 
 from pydantic import (  # pylint:disable=no-name-in-module
         BaseModel, Extra, validator,
-        constr, AnyHttpUrl, UUID4, Json
+        constr, conint, AnyHttpUrl, UUID4, Json
         )
 from fastapi import status
 
@@ -104,7 +104,7 @@ class ConceptSimpleView(IdeaBankArtifact):
         identifier: the {author}/{title} formatted string identifying a concept
         thumbnail_url: link to view the concept thumbnail
     """
-    identifier: str
+    identifier: constr(regex=r"^[\w]{3,64}/[\w\-]{1,128}$")
     thumbnail_url: AnyHttpUrl
 
 
@@ -117,9 +117,9 @@ class ConceptFullView(IdeaBankArtifact):
         diagram: JSON representation of idea's component graph
         thumbnail_url: link to view thumbnail of idea
     """
-    author: str
-    title: str
-    description: str
+    author: constr(min_length=3, max_length=64, regex=r"^[\w]{3,64}$")
+    title: constr(min_length=1, max_length=128, regex=r"^[\w\-]{1,128}$")
+    description: constr(min_length=1)
     diagram: Json
     thumbnail_url: AnyHttpUrl
 
@@ -130,8 +130,8 @@ class ConceptLinkRecord(IdeaBankArtifact):
         ancestor: the {author}/{title} formatted string identifying the parent
         descendant: the {author}/{title} formatted string identifying the child
     """
-    ancestor: str
-    descendant: str
+    ancestor: constr(regex=r"^[\w]{3,64}/[\w\-]{1,128}$")
+    descendant: constr(regex=r"^[\w]{3,64}/[\w\-]{1,128}$")
 
 
 class FuzzyOption(str, Enum):
@@ -160,27 +160,27 @@ class ConceptSearchQuery(IdeaBankArtifact):
 
 class ConceptLineage(IdeaBankArtifact):
     """Model representing a report of an idea's lineage"""
-    nodes: int
+    nodes: conint(ge=0)
     lineage: dict
 
 
 class AccountFollowingRecord(IdeaBankArtifact):
     """Models an instance of one account following another"""
-    follower: str
-    followee: str
+    follower: constr(min_length=3, max_length=64, regex=r"^[\w]{3,64}$")
+    followee: constr(min_length=3, max_length=64, regex=r"^[\w]{3,64}$")
 
 
 class ConceptLikingRecord(IdeaBankArtifact):
     """Models an instance of one account liking a concept"""
-    user_liking: str
-    concept_liked: str
+    user_liking: constr(min_length=3, max_length=64, regex=r"^[\w]{3,64}$")
+    concept_liked: constr(regex=r"^[\w]{3,64}/[\w\-]{1,128}$")
 
 
 class ConceptComment(IdeaBankArtifact):
     """Models a single comment instance left by a user"""
     comment_id: Optional[UUID4]
-    comment_author: str
-    comment_text: str
+    comment_author: constr(min_length=3, max_length=64, regex=r"^[\w]{3,64}$")
+    comment_text: constr(min_length=1)
     responses: List[ConceptComment] = []
 
 
