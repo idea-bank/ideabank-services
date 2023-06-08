@@ -9,9 +9,32 @@ from pydantic import ValidationError
 from ideabank_webapi.models import (
         CredentialSet,
         AccountRecord,
-        ConceptSearchQuery
+        ConceptSearchQuery,
+        EndpointResponse,
+        EndpointInformationalMessage,
+        EndpointErrorMessage
         )
 from ideabank_webapi.models.artifacts import FuzzyOption
+
+
+def test_response_with_valid_status_code():
+    response = EndpointResponse(
+            code=200,
+            body=EndpointInformationalMessage(
+                msg="Everything's a ok."
+                )
+            )
+    assert response.code == 200
+
+
+@pytest.mark.xfail(raises=ValidationError)
+def test_response_with_invalid_status_code():
+    EndpointResponse(
+            code=666,
+            body=EndpointErrorMessage(
+                err_msg="Something's not ok."
+                )
+            )
 
 
 def test_valid_credential_set():
