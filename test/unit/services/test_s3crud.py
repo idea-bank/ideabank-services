@@ -11,19 +11,20 @@ class TestS3CrudService:
     def setup_method(self):
         self.s3 = S3Crud()
 
-    @pytest.mark.parametrize("key, data", [
-        ('path/to/key', b'data1'),
-        ('name-to-key', b'data2')
+    @pytest.mark.parametrize("key", [
+        ('path/to/key',),
+        ('name-to-key',)
         ])
-    def test_put_item(self, key, data):
+    def test_put_item(self, key):
         with patch.object(self.s3, '_s3_client') as mock_s3:
-            self.s3.put_item(key, data)
-            mock_s3.put_object.assert_called_once_with(
-                    Bucket=ServiceConfig.FileBucket.BUCKET_NAME,
-                    Key=key,
-                    Body=data,
-                    ACL='private',
-                    ContentType='image/*'
+            self.s3.put_item(key)
+            mock_s3.generate_presigned_url.assert_called_once_with(
+                   ClientMethod='put_object',
+                   Params={
+                       'Key': key,
+                       'Bucket': ServiceConfig.FileBucket.BUCKET_NAME
+                       },
+                   ExpiresIn=self.s3.LINK_TLL
             )
 
     @pytest.mark.parametrize("key", ['path/to/key', 'name-to-key'])

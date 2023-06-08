@@ -29,19 +29,19 @@ class S3Crud:
                 aws_secret_access_key=ServiceConfig.FileBucket.BUCKET_SECRET
                 )
 
-    def put_item(self, key: str, data: bytes) -> None:
-        """Put the given data in an s3 bucket with the gvien key
+    def put_item(self, key: str) -> str:
+        """Provides a link to put an item in file store bucket with the given key
         Arguments:
             key: unique string that indexes the data. Can be path like
-            data: raw data to be uploaded to the bucket
         """
-        LOGGER.debug("Putting binary data to %s", key)
-        self._s3_client.put_object(
-                Bucket=ServiceConfig.FileBucket.BUCKET_NAME,
-                Key=key,
-                Body=data,
-                ACL='private',
-                ContentType='image/*'
+        LOGGER.debug("Generating upload link for %s", key)
+        return self._s3_client.generate_presigned_url(
+                ClientMethod='put_object',
+                Params={
+                    'Bucket': ServiceConfig.FileBucket.BUCKET_NAME,
+                    'Key': key
+                    },
+                ExpiresIn=self.LINK_TLL
                 )
 
     def share_item(self, key) -> str:
